@@ -105,6 +105,16 @@ export default {
               host: 'www.pallinky.com',
               pathPrefix: '/event',
             },
+            {
+              scheme: 'https',
+              host: 'pallinky.com',
+              pathPrefix: '/add',
+            },
+            {
+              scheme: 'https',
+              host: 'www.pallinky.com',
+              pathPrefix: '/add',
+            },
           ],
           category: ['BROWSABLE', 'DEFAULT'],
         },

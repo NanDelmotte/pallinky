@@ -160,6 +160,18 @@ export type TranslationKey =
 | 'people_no_idea_responses'
 | 'common_tbd'
 | 'people_second_degree_card_hint'
+| 'add_landing_metadata_title'
+| 'add_landing_metadata_description'
+| 'add_landing_fallback_name'
+| 'add_landing_badge'
+| 'add_landing_title'
+| 'add_landing_body'
+| 'add_landing_avatar_alt'
+| 'add_landing_open_app'
+| 'add_landing_download_ios'
+| 'add_landing_download_android'
+| 'add_landing_installed_hint'
+| 'add_landing_learn_more'
 
   ;
-  
+

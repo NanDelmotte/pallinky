@@ -4,7 +4,7 @@
     "details": [
       {
         "appID": "GS37LFTD5H.com.nancy.pallinky",
-        "paths": [ "/event/*" ]
+        "paths": [ "/event/*", "/add", "/add/*" ]
       }
     ]
   }

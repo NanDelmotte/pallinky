@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StyledText } from '@pallinky/ui';
@@ -12,39 +12,79 @@ import { supabase, useSession } from '@pallinky/core';
 
 interface ProfileRow {
   id: string;
+  full_name: string | null;
+  avatar_url: string | null;
 }
+
 export default function ShareProfileScreen() {
- const { session } = useSession();
+  const { session } = useSession();
 
-const [profile, setProfile] = useState<ProfileRow | null>(null);
-useEffect(() => {
-  async function loadProfile() {
-    if (!session?.user?.id) return;
+  const [profile, setProfile] = useState<ProfileRow | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', session.user.id)
-      .maybeSingle();
+  useEffect(() => {
+    let isMounted = true;
 
-    if (error) {
-      console.log('Share profile load error:', error);
-      return;
+    async function loadProfile() {
+      if (!session?.user?.id) {
+        setProfile(null);
+        setLoadingProfile(false);
+        return;
+      }
+
+      setLoadingProfile(true);
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      if (!isMounted) return;
+
+      if (error) {
+        console.log('Share profile load error:', error);
+        setProfile({ id: session.user.id, full_name: null, avatar_url: null });
+        setLoadingProfile(false);
+        return;
+      }
+
+      setProfile(
+        (data as ProfileRow | null) || {
+          id: session.user.id,
+          full_name: null,
+          avatar_url: null,
+        },
+      );
+      setLoadingProfile(false);
     }
 
-    setProfile((data as ProfileRow | null) || null);
-  }
+    void loadProfile();
 
-  void loadProfile();
-}, [session?.user?.id]);
+    return () => {
+      isMounted = false;
+    };
+  }, [session?.user?.id]);
 
   const profileShareUrl = useMemo(() => {
-  if (!profile?.id) {
-    return '';
-  }
+    if (!profile?.id) {
+      return '';
+    }
 
-  return `https://pallinky.com/add?profileId=${profile.id}`;
-}, [profile?.id]);
+    const params = new URLSearchParams({ profileId: profile.id });
+    const displayName = profile.full_name?.trim();
+    const avatarUrl = profile.avatar_url?.trim();
+
+    if (displayName) {
+      params.set('name', displayName);
+    }
+
+    if (avatarUrl) {
+      params.set('avatarUrl', avatarUrl);
+    }
+
+    return `https://pallinky.com/add?${params.toString()}`;
+  }, [profile?.avatar_url, profile?.full_name, profile?.id]);
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -55,10 +95,24 @@ useEffect(() => {
         </StyledText>
 
         <View style={styles.qrCard}>
-          <QRCode value={profileShareUrl} size={220} />
+          {profileShareUrl ? (
+            <QRCode value={profileShareUrl} size={220} />
+          ) : (
+            <View style={styles.qrPlaceholder}>
+              {loadingProfile ? (
+                <ActivityIndicator color="#43691b" />
+              ) : (
+                <StyledText style={styles.placeholderText}>
+                  Sign in to create your share code.
+                </StyledText>
+              )}
+            </View>
+          )}
         </View>
 
-        <StyledText style={styles.linkText}>{profileShareUrl}</StyledText>
+        {profileShareUrl ? (
+          <StyledText style={styles.linkText}>{profileShareUrl}</StyledText>
+        ) : null}
       </View>
     </SafeAreaView>
   );
@@ -94,6 +148,18 @@ const styles = StyleSheet.create({
     padding: 24,
     borderRadius: 28,
     marginBottom: 20,
+  },
+  qrPlaceholder: {
+    width: 220,
+    height: 220,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  placeholderText: {
+    fontSize: 15,
+    color: '#46515f',
+    textAlign: 'center',
+    lineHeight: 20,
   },
   linkText: {
     fontSize: 13,
