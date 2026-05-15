@@ -33,7 +33,7 @@ const CURRENT_APP = IS_DEV ? APP.development : APP.production;
 export default {
   expo: {
     name: CURRENT_APP.name,
-    slug: 'tarti-flette',
+    slug: 'pallinky',
     scheme: CURRENT_APP.scheme,
     version: '1.1.3',
     orientation: 'portrait',
@@ -140,7 +140,7 @@ export default {
     extra: {
       appVariant: APP_VARIANT,
       eas: {
-        projectId: '885c6685-b242-4f1b-b985-a201c6191ac2',
+        projectId: '3a13b9ce-13b3-48f4-88b4-e4945d9698dc',
       },
     },
 
@@ -148,7 +148,7 @@ export default {
     runtimeVersion: '1.1.3',
 
     updates: {
-      url: 'https://u.expo.dev/885c6685-b242-4f1b-b985-a201c6191ac2',
+      url: 'https://u.expo.dev/3a13b9ce-13b3-48f4-88b4-e4945d9698dc',
       requestHeaders: {
         'expo-channel-name': CURRENT_APP.updatesChannel,
       },
