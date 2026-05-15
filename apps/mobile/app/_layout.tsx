@@ -180,13 +180,41 @@ function AppNavigator() {
         let match = normalized.match(/^https?:\/\/(?:www\.)?pallinky\.com\/event\/([^/?#]+)/i);
         if (match?.[1]) return decodeURIComponent(match[1]);
 
-        match = normalized.match(/^pallinky:\/\/event\/([^/?#]+)/i);
+        match = normalized.match(/^pallinky(?:-dev)?:\/\/event\/([^/?#]+)/i);
         if (match?.[1]) return decodeURIComponent(match[1]);
 
         match = normalized.match(/\/event\/([^/?#]+)/i);
         if (match?.[1]) return decodeURIComponent(match[1]);
 
         return null;
+      } catch {
+        return null;
+      }
+    };
+
+    const extractProfileIdFromAddUrl = (url: string): string | null => {
+      try {
+        const parsed = new URL(String(url || '').trim());
+        const protocol = parsed.protocol.toLowerCase();
+        const hostname = parsed.hostname.toLowerCase();
+        const pathname = parsed.pathname.toLowerCase();
+        const isWebAddLink =
+          protocol === 'https:' &&
+          (hostname === 'pallinky.com' || hostname === 'www.pallinky.com') &&
+          pathname === '/add';
+        const isAppAddLink =
+          (protocol === 'pallinky:' || protocol === 'pallinky-dev:') &&
+          (hostname === 'add' ||
+            (hostname === 'people' && pathname === '/add') ||
+            pathname === '/add' ||
+            pathname === '/people/add');
+
+        if (!isWebAddLink && !isAppAddLink) {
+          return null;
+        }
+
+        const profileId = parsed.searchParams.get('profileId')?.trim();
+        return profileId || null;
       } catch {
         return null;
       }
@@ -202,6 +230,16 @@ function AppNavigator() {
           router.push({
             pathname: '/event/[slug]/details',
             params: { slug },
+          } as any);
+          return;
+        }
+
+        const profileId = extractProfileIdFromAddUrl(url);
+
+        if (profileId) {
+          router.push({
+            pathname: '/people/add',
+            params: { profileId },
           } as any);
           return;
         }
