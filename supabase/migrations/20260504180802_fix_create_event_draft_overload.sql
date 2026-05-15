@@ -1,0 +1,23 @@
+drop function if exists public.create_event_draft(
+  text,
+  text,
+  text,
+  text,
+  timestamptz,
+  timestamptz,
+  text,
+  text,
+  text,
+  text,
+  integer,
+  text,
+  text[],
+  integer,
+  text,
+  text,
+  boolean,
+  integer,
+  date,
+  boolean,
+  text
+);

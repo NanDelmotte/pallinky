@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "584767169510",
+    "project_id": "pallinky",
+    "storage_bucket": "pallinky.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:584767169510:android:7c7d268c85633e75206c27",
+        "android_client_info": {
+          "package_name": "com.nancy.pallinky"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB-5Z4iSrcTJ2r8g00jcqePqYPseVeDh1w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:584767169510:android:2cdbb995f24ff039206c27",
+        "android_client_info": {
+          "package_name": "com.nancy.pallinky.dev"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB-5Z4iSrcTJ2r8g00jcqePqYPseVeDh1w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

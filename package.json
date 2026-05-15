@@ -1,0 +1,32 @@
+{
+  "name": "pallinky-root",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "android": "npm run android --workspace=apps/mobile",
+    "ios": "npm run ios --workspace=apps/mobile",
+    "mobile": "npm run mobile --workspace=apps/mobile",
+    "web": "npm run dev --workspace=apps/web",
+    "build:web": "npm run build --workspace=apps/web"
+  },
+  "devDependencies": {
+    "babel-plugin-module-resolver": "^5.0.2",
+    "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-native-svg": "15.15.3"
+  },
+  "dependencies": {
+    "expo": "~55.0.17",
+    "react": "19.2.0",
+    "react-native": "0.83.6",
+    "react-native-qrcode-svg": "^6.3.21",
+    "react-native-svg": "15.15.3"
+  }
+}

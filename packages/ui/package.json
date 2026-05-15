@@ -1,0 +1,16 @@
+{
+  "name": "@pallinky/ui",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "dependencies": {
+    "@react-navigation/elements": "^2.9.10"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*",
+    "expo-router": "*",
+    "expo-web-browser": "*",
+    "@expo/vector-icons": "*"
+  }
+}

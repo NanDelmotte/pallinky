@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.nancy.pallinky",
+      "sha256_cert_fingerprints": [
+        "BC:D9:83:98:62:DD:0B:4A:AE:FD:79:C0:01:27:A6:32:96:69:0B:E4:51:83:2D:39:7D:1D:CC:F1:FD:30:DB:2C"
+      ]
+    }
+  }
+]

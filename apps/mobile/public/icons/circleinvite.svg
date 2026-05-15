@@ -1,0 +1,33 @@
+<svg
+  width="260"
+  height="260"
+  viewBox="0 0 260 260"
+  xmlns="http://www.w3.org/2000/svg"
+  style="
+    --_box: var(--box-bg);
+  "
+>
+
+  <!-- Bullseye (all using box background color now) -->
+  <circle cx="130" cy="130" r="110" fill="var(--_box)" opacity="0.18" />
+  <circle cx="130" cy="130" r="80"  fill="var(--_box)" opacity="0.12" />
+  <circle cx="130" cy="130" r="50"  fill="var(--_box)" opacity="0.09" />
+
+  <!-- Text larger and extends past circles -->
+  <text
+    x="50%"
+    y="50%"
+    text-anchor="middle"
+    dominant-baseline="central"
+    font-family="system-ui, sans-serif"
+    font-weight="900"
+    font-size="66"
+    fill="var(--_box)"
+  >
+    CircleInvite
+  </text>
+</svg>
+
+
+
+    

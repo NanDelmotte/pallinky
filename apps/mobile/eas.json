@@ -1,0 +1,26 @@
+{
+  "cli": {
+    "version": ">= 18.3.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+  "developmentClient": true,
+  "distribution": "internal",
+  "channel": "development",
+  "ios": {
+    "scheme": "PallinkyDev"
+  },
+  "android": {
+    "gradleCommand": ":app:assembleDebug"
+  }
+},
+    "production": {
+      "autoIncrement": true,
+      "channel": "production"
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

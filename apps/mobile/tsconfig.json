@@ -1,0 +1,41 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "~/*": [
+        "./*"
+      ],
+      "@pallinky/ui": [
+        "../../packages/ui/src"
+      ],
+      "@pallinky/ui/*": [
+        "../../packages/ui/src/*"
+      ],
+      "@pallinky/core": [
+        "../../packages/core/src"
+      ],
+      "@pallinky/core/*": [
+        "../../packages/core/src/*"
+      ]
+    },
+    "incremental": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "../../packages/core/src/**/*.ts",
+    "../../packages/core/src/**/*.tsx",
+    "../../packages/ui/src/**/*.ts",
+    "../../packages/ui/src/**/*.tsx",
+    ".next/types/**/*.ts"
+  ]
+}

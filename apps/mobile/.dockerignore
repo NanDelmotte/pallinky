@@ -1,0 +1,45 @@
+# dependencies
+node_modules
+**/node_modules
+
+# git
+.git
+.gitignore
+
+# next / expo / build outputs
+.next
+**/.next
+dist
+**/dist
+build
+**/build
+out
+**/out
+.expo
+**/.expo
+.expo-shared
+**/.expo-shared
+
+# native / temp / logs
+ios/build
+**/ios/build
+android/app/build
+**/android/app/build
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# env / local noise
+.env
+.env.*
+!.env.example
+.DS_Store
+
+# docs / misc
+coverage
+**/coverage
+tmp
+**/tmp
+.temp
+**/.temp

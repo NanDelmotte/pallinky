@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "GS37LFTD5H.com.nancy.pallinky",
+        "paths": [ "/event/*" ]
+      }
+    ]
+  }
+}
