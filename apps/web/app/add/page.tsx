@@ -4,17 +4,24 @@
  */
 
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { headers } from 'next/headers';
 import Link from 'next/link';
+import { t, type AppLanguage } from '@pallinky/i18n';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Add on Pallinky',
-  description: 'Open Pallinky to add this person to your contacts.',
+  title: t('en', 'add_landing_metadata_title'),
+  description: t('en', 'add_landing_metadata_description'),
 };
 
 type Props = {
-  searchParams: Promise<{ profileId?: string | string[] }>;
+  searchParams: Promise<{
+    profileId?: string | string[];
+    name?: string | string[];
+    avatarUrl?: string | string[];
+    lang?: string | string[];
+  }>;
 };
 
 type ProfileRow = {
@@ -34,6 +41,23 @@ function avatarFallback(name: string) {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(
     name || 'Pallinky friend',
   )}&background=43691b&color=fff`;
+}
+
+function isSupportedLanguage(value: string): value is AppLanguage {
+  return value === 'en' || value === 'nl' || value === 'fr';
+}
+
+function resolveLanguage(langParam: string | undefined, acceptLanguage: string) {
+  if (langParam && isSupportedLanguage(langParam)) {
+    return langParam;
+  }
+
+  const preferred = acceptLanguage
+    .split(',')
+    .map((part) => part.trim().slice(0, 2).toLowerCase())
+    .find(isSupportedLanguage);
+
+  return preferred || 'en';
 }
 
 async function loadPublicProfile(profileId: string): Promise<ProfileRow | null> {
@@ -66,12 +90,25 @@ async function loadPublicProfile(profileId: string): Promise<ProfileRow | null> 
 }
 
 export default async function AddProfilePage({ searchParams }: Props) {
-  const { profileId: rawProfileId } = await searchParams;
+  const {
+    profileId: rawProfileId,
+    name: rawName,
+    avatarUrl: rawAvatarUrl,
+    lang: rawLang,
+  } = await searchParams;
+  const requestHeaders = await headers();
+  const lang = resolveLanguage(
+    firstParam(rawLang)?.trim().toLowerCase(),
+    requestHeaders.get('accept-language') || '',
+  );
   const profileId = firstParam(rawProfileId)?.trim() || '';
+  const sharedName = firstParam(rawName)?.trim() || '';
+  const sharedAvatarUrl = firstParam(rawAvatarUrl)?.trim() || '';
   const profile = profileId ? await loadPublicProfile(profileId) : null;
 
-  const displayName = profile?.full_name?.trim() || 'Someone';
-  const avatarUrl = profile?.avatar_url || avatarFallback(displayName);
+  const displayName =
+    profile?.full_name?.trim() || sharedName || t(lang, 'add_landing_fallback_name');
+  const avatarUrl = profile?.avatar_url?.trim() || sharedAvatarUrl || avatarFallback(displayName);
   const appUrl = profileId
     ? `pallinky://add?profileId=${encodeURIComponent(profileId)}`
     : 'pallinky://';
@@ -80,6 +117,8 @@ export default async function AddProfilePage({ searchParams }: Props) {
     <main
       style={{
         minHeight: '100vh',
+        fontFamily:
+          '-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif',
         background: 'linear-gradient(180deg, #f8fbf3 0%, #eef5e5 50%, #e7f0db 100%)',
         display: 'flex',
         alignItems: 'center',
@@ -101,7 +140,7 @@ export default async function AddProfilePage({ searchParams }: Props) {
       >
         <img
           src={avatarUrl}
-          alt={`${displayName} profile`}
+          alt={t(lang, 'add_landing_avatar_alt', { name: displayName })}
           style={{
             width: '112px',
             height: '112px',
@@ -122,7 +161,7 @@ export default async function AddProfilePage({ searchParams }: Props) {
             fontSize: '0.78rem',
           }}
         >
-          Pallinky contact request
+          {t(lang, 'add_landing_badge')}
         </p>
 
         <h1
@@ -135,7 +174,7 @@ export default async function AddProfilePage({ searchParams }: Props) {
             letterSpacing: '-0.03em',
           }}
         >
-          Add {displayName} on Pallinky
+          {t(lang, 'add_landing_title', { name: displayName })}
         </h1>
 
         <p
@@ -147,8 +186,7 @@ export default async function AddProfilePage({ searchParams }: Props) {
             color: '#4f5d43',
           }}
         >
-          Open Pallinky to add this person to your contacts and start making
-          plans together.
+          {t(lang, 'add_landing_body')}
         </p>
 
         <div
@@ -175,7 +213,7 @@ export default async function AddProfilePage({ searchParams }: Props) {
               boxShadow: '0 10px 24px rgba(67, 105, 27, 0.18)',
             }}
           >
-            Open in Pallinky
+            {t(lang, 'add_landing_open_app')}
           </a>
 
           <a
@@ -197,7 +235,7 @@ export default async function AddProfilePage({ searchParams }: Props) {
               border: '1px solid rgba(67, 105, 27, 0.16)',
             }}
           >
-            Download on the App Store
+            {t(lang, 'add_landing_download_ios')}
           </a>
 
           <a
@@ -219,12 +257,12 @@ export default async function AddProfilePage({ searchParams }: Props) {
               border: '1px solid rgba(67, 105, 27, 0.16)',
             }}
           >
-            Get it on Android
+            {t(lang, 'add_landing_download_android')}
           </a>
         </div>
 
         <p style={{ margin: '22px 0 0', color: '#66715f', fontSize: '0.92rem' }}>
-          If you just installed Pallinky, come back to this page and tap Open in Pallinky.
+          {t(lang, 'add_landing_installed_hint')}
         </p>
 
         <div style={{ marginTop: '24px' }}>
@@ -236,7 +274,7 @@ export default async function AddProfilePage({ searchParams }: Props) {
               fontWeight: 700,
             }}
           >
-            Learn more about Pallinky
+            {t(lang, 'add_landing_learn_more')}
           </Link>
         </div>
       </div>

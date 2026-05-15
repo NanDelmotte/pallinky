@@ -17,7 +17,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body
+        style={{
+          margin: 0,
+          fontFamily:
+            '-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif',
+        }}
+      >
+        {children}
+      </body>
     </html>
   );
 }

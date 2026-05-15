@@ -12,6 +12,8 @@ import { supabase, useSession } from '@pallinky/core';
 
 interface ProfileRow {
   id: string;
+  full_name: string | null;
+  avatar_url: string | null;
 }
 
 export default function ShareProfileScreen() {
@@ -34,7 +36,7 @@ export default function ShareProfileScreen() {
 
       const { data, error } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, full_name, avatar_url')
         .eq('id', session.user.id)
         .maybeSingle();
 
@@ -42,12 +44,18 @@ export default function ShareProfileScreen() {
 
       if (error) {
         console.log('Share profile load error:', error);
-        setProfile({ id: session.user.id });
+        setProfile({ id: session.user.id, full_name: null, avatar_url: null });
         setLoadingProfile(false);
         return;
       }
 
-      setProfile((data as ProfileRow | null) || { id: session.user.id });
+      setProfile(
+        (data as ProfileRow | null) || {
+          id: session.user.id,
+          full_name: null,
+          avatar_url: null,
+        },
+      );
       setLoadingProfile(false);
     }
 
@@ -63,8 +71,20 @@ export default function ShareProfileScreen() {
       return '';
     }
 
-    return `https://pallinky.com/add?profileId=${encodeURIComponent(profile.id)}`;
-  }, [profile?.id]);
+    const params = new URLSearchParams({ profileId: profile.id });
+    const displayName = profile.full_name?.trim();
+    const avatarUrl = profile.avatar_url?.trim();
+
+    if (displayName) {
+      params.set('name', displayName);
+    }
+
+    if (avatarUrl) {
+      params.set('avatarUrl', avatarUrl);
+    }
+
+    return `https://pallinky.com/add?${params.toString()}`;
+  }, [profile?.avatar_url, profile?.full_name, profile?.id]);
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
