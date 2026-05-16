@@ -28,6 +28,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>pallinky</string>
+				<string>pallinky-dev</string>
 			</array>
 		</dict>
 		<dict>

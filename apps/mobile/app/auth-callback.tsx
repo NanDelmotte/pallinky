@@ -9,9 +9,9 @@
 import React, { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
+import * as Linking from 'expo-linking';
 import * as SecureStore from 'expo-secure-store';
-
-const AUTH_RETURN_KEY = 'pallinky_auth_return_to';
+import { completeSupabaseAuthFromUrl, AUTH_RETURN_KEY } from '../lib/authRedirect';
 
 export default function AuthCallback() {
   useEffect(() => {
@@ -19,6 +19,12 @@ export default function AuthCallback() {
 
     const recover = async () => {
       try {
+        const callbackUrl = await Linking.getInitialURL();
+
+        if (callbackUrl) {
+          await completeSupabaseAuthFromUrl(callbackUrl);
+        }
+
         const storedReturnTo = await SecureStore.getItemAsync(AUTH_RETURN_KEY);
         const destination = storedReturnTo?.trim() || '/(tabs)';
 
