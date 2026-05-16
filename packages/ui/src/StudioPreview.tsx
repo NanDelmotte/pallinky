@@ -97,6 +97,10 @@ export const StudioPreview = (props: PreviewProps) => {
       >
         {activeTab === 'event' ? (
           <View style={[styles.eventScreen, { backgroundColor: theme.bg }]}>
+            <View pointerEvents="none" style={styles.previewWatermark}>
+              <StyledText style={styles.previewWatermarkText}>PREVIEW</StyledText>
+            </View>
+
             {coverImageUrl ? (
               <View style={styles.previewImageWrap}>
                 <Image source={{ uri: coverImageUrl }} style={styles.previewCoverImage} />
@@ -357,51 +361,70 @@ const styles = StyleSheet.create({
   },
 
   previewArea: {
-    padding: 14,
-    paddingBottom: 30,
+    padding: 12,
+    paddingBottom: 14,
   },
 
   eventScreen: {
     borderRadius: 18,
     overflow: 'hidden',
-    minHeight: 760,
-    paddingBottom: 24,
+    paddingBottom: 14,
+    position: 'relative',
+  },
+  previewWatermark: {
+    position: 'absolute',
+    top: 12,
+    left: 14,
+    right: 14,
+    zIndex: 3,
+    alignItems: 'center',
+  },
+  previewWatermarkText: {
+    backgroundColor: 'rgba(17,24,39,0.62)',
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 3,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: 999,
+    overflow: 'hidden',
   },
   previewImageWrap: {
     width: '100%',
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingHorizontal: 14,
+    paddingTop: 14,
   },
   previewCoverImage: {
     width: '100%',
-    height: 220,
-    borderRadius: 24,
+    height: 118,
+    borderRadius: 18,
   },
   previewContent: {
-    paddingHorizontal: 25,
-    paddingTop: 18,
+    paddingHorizontal: 18,
+    paddingTop: 12,
   },
   previewTitle: {
-    fontSize: 34,
+    fontSize: 24,
     fontWeight: '900',
-    letterSpacing: -1,
-    marginBottom: 4,
+    letterSpacing: -0.5,
+    marginBottom: 2,
   },
   previewHost: {
-    fontSize: 18,
-    marginBottom: 25,
+    fontSize: 14,
+    marginBottom: 8,
   },
   previewInfoBox: {
-    marginBottom: 30,
+    marginBottom: 8,
   },
   previewInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 12,
+    gap: 8,
+    marginBottom: 7,
   },
   previewInfoText: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '600',
     flex: 1,
   },
@@ -409,32 +432,32 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
   previewCalendarRow: {
-    marginTop: 8,
+    marginTop: 2,
   },
   previewCalendarText: {
     fontSize: 15,
     fontWeight: '800',
   },
   previewDescriptionWrap: {
-    marginBottom: 35,
-    paddingHorizontal: 5,
+    marginBottom: 8,
+    paddingHorizontal: 3,
   },
   previewDescription: {
-    fontSize: 17,
-    lineHeight: 26,
+    fontSize: 13,
+    lineHeight: 18,
   },
   previewBtnStack: {
-    gap: 10,
-    marginBottom: 40,
+    gap: 8,
+    marginBottom: 14,
   },
   previewPrimaryBtn: {
-    height: 60,
-    borderRadius: 16,
+    height: 42,
+    borderRadius: 13,
     justifyContent: 'center',
     alignItems: 'center',
   },
   previewPrimaryBtnText: {
-    fontSize: 19,
+    fontSize: 15,
     fontWeight: '800',
   },
   previewTwoColRow: {
@@ -443,8 +466,8 @@ const styles = StyleSheet.create({
   },
   previewSecondaryHalfBtn: {
     flex: 1,
-    height: 55,
-    borderRadius: 16,
+    height: 38,
+    borderRadius: 13,
     borderWidth: 1.5,
     justifyContent: 'center',
     alignItems: 'center',
@@ -454,10 +477,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   previewGuestTitle: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '800',
-    marginBottom: 15,
-    paddingBottom: 8,
+    marginBottom: 9,
+    paddingBottom: 6,
     borderBottomWidth: 1,
   },
   previewGuestList: {
@@ -467,8 +490,8 @@ const styles = StyleSheet.create({
   },
   previewGuestCard: {
     flexDirection: 'row',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 10,
     alignItems: 'center',
     borderWidth: 1,
@@ -484,20 +507,19 @@ const styles = StyleSheet.create({
   },
 
   thanksScreen: {
-    minHeight: 760,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 40,
-    paddingVertical: 50,
+    paddingHorizontal: 28,
+    paddingVertical: 24,
     borderRadius: 18,
   },
   gifContainer: {
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    borderWidth: 6,
+    width: 136,
+    height: 136,
+    borderRadius: 68,
+    borderWidth: 5,
     overflow: 'hidden',
-    marginBottom: 30,
+    marginBottom: 16,
     backgroundColor: 'rgba(0,0,0,0.05)',
   },
   gif: {
@@ -505,24 +527,24 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   thanksPageTitle: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: '900',
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
     letterSpacing: -0.5,
   },
   thanksPageSubtitle: {
-    fontSize: 18,
+    fontSize: 14,
     textAlign: 'center',
-    marginBottom: 30,
+    marginBottom: 16,
     fontWeight: '500',
   },
   thanksReminderCard: {
     width: '100%',
-    padding: 25,
-    borderRadius: 28,
+    padding: 16,
+    borderRadius: 22,
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 16,
     borderWidth: 1,
   },
   thanksReminderTitle: {
@@ -534,8 +556,8 @@ const styles = StyleSheet.create({
   },
   thanksCalendarBtn: {
     width: '100%',
-    minHeight: 52,
-    borderRadius: 18,
+    minHeight: 42,
+    borderRadius: 15,
     borderWidth: 1.5,
     justifyContent: 'center',
     alignItems: 'center',
@@ -552,11 +574,11 @@ const styles = StyleSheet.create({
   },
   thanksPrimaryBtn: {
     width: '100%',
-    paddingVertical: 18,
-    borderRadius: 20,
+    paddingVertical: 12,
+    borderRadius: 16,
     borderWidth: 2,
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   thanksPrimaryBtnText: {
     fontSize: 16,
@@ -564,8 +586,8 @@ const styles = StyleSheet.create({
   },
   thanksSecondaryBtn: {
     width: '100%',
-    paddingVertical: 18,
-    borderRadius: 20,
+    paddingVertical: 12,
+    borderRadius: 16,
     borderWidth: 2,
     alignItems: 'center',
     backgroundColor: SYSTEM.surface,
@@ -578,6 +600,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     textDecorationLine: 'underline',
-    marginTop: 25,
+    marginTop: 14,
   },
 });

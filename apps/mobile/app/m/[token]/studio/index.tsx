@@ -197,23 +197,62 @@ export default function DesignStudioScreen() {
     fontFamily: FONTS.find((f) => f.id === studioState.font)?.family || 'System',
   };
 
+  const persistStudioState = async (nextState: StudioState) => {
+    if (!token) return;
+
+    setSaving(true);
+
+    try {
+      const { error } = await supabase.rpc('update_event_studio_by_manage_token', {
+        p_manage_token: token,
+        p_gif_key: nextState.theme,
+        p_cover_image_url: nextState.coverImageUrl || null,
+        p_font_family: nextState.font,
+        p_thanks_gif_url: nextState.thanksGifUrl || null,
+      });
+
+      if (error) throw error;
+
+      setInitialStudioState(nextState);
+      setEvent((prev: any) =>
+        prev
+          ? {
+              ...prev,
+              gif_key: nextState.theme,
+              cover_image_url: nextState.coverImageUrl || null,
+              font_family: nextState.font,
+              thanks_gif_url: nextState.thanksGifUrl || null,
+            }
+          : prev
+      );
+    } catch (error) {
+      console.error('Studio autosave failed', error);
+      Alert.alert('Save failed', 'Could not save your studio changes.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const updateStudioState = (patch: Partial<StudioState>) => {
-    setStudioState((prev) => ({ ...prev, ...patch }));
+    setStudioState((prev) => {
+      const next = { ...prev, ...patch };
+      void persistStudioState(next);
+      return next;
+    });
   };
 
   const selectTheme = (themeKey: string) => {
     const defaults = THEME_DEFAULTS[themeKey] || THEME_DEFAULTS.zen;
 
-    setStudioState((prev) => ({
-      ...prev,
+    updateStudioState({
       theme: themeKey,
-      font: prev.font || defaults.font,
+      font: studioState.font || defaults.font,
       coverImageUrl:
-        !prev.coverImageUrl || DEFAULT_COVER_IMAGE_URLS.has(prev.coverImageUrl)
+        !studioState.coverImageUrl || DEFAULT_COVER_IMAGE_URLS.has(studioState.coverImageUrl)
           ? defaults.coverImageUrl
-          : prev.coverImageUrl,
-      thanksGifUrl: prev.thanksGifUrl || defaults.thanksGifUrl,
-    }));
+          : studioState.coverImageUrl,
+      thanksGifUrl: studioState.thanksGifUrl || defaults.thanksGifUrl,
+    });
 
     setStep(2);
   };
@@ -256,8 +295,8 @@ export default function DesignStudioScreen() {
 
       const contentType = asset.mimeType || 'image/jpeg';
       const extension = contentType.includes('png') ? 'png' : 'jpg';
-      const safeEventId = String(event?.id || 'event').replace(/[^a-zA-Z0-9_-]/g, '_');
-      const fileName = `cover_${safeEventId}_${Date.now()}.${extension}`;
+      const safeManageToken = String(token || 'event').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const fileName = `${safeManageToken}/cover_${Date.now()}.${extension}`;
       const response = await fetch(asset.uri);
       const arrayBuffer = await response.arrayBuffer();
 
@@ -265,7 +304,7 @@ export default function DesignStudioScreen() {
         .from('covers')
         .upload(fileName, arrayBuffer, {
           contentType,
-          upsert: true,
+          upsert: false,
         });
 
       if (error) throw error;
@@ -283,35 +322,8 @@ export default function DesignStudioScreen() {
     }
   };
 
-  const handleSave = async () => {
-    if (!event?.id) return;
-
-    try {
-      setSaving(true);
-
-      const { error } = await supabase
-        .from('events')
-        .update({
-          gif_key: studioState.theme,
-          cover_image_url: studioState.coverImageUrl || null,
-          font_family: studioState.font,
-          thanks_gif_url: studioState.thanksGifUrl || null,
-        })
-        .eq('id', event.id);
-
-      if (error) throw error;
-
-      setInitialStudioState(studioState);
-      router.back();
-    } catch {
-      Alert.alert('Error', 'Could not save changes.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const resetChanges = () => {
-    setStudioState(initialStudioState);
+    updateStudioState(initialStudioState);
   };
 
   if (loading) {
@@ -365,15 +377,9 @@ export default function DesignStudioScreen() {
 
         <StyledText style={styles.headerTitle}>Studio</StyledText>
 
-        <TouchableOpacity onPress={handleSave} disabled={!hasChanges || saving}>
-          {saving ? (
-            <ActivityIndicator size="small" />
-          ) : (
-            <StyledText style={[styles.saveAction, !hasChanges && styles.disabledText]}>
-              Save
-            </StyledText>
-          )}
-        </TouchableOpacity>
+        <View style={styles.headerStatusSlot}>
+          {saving ? <ActivityIndicator size="small" color="#43691b" /> : null}
+        </View>
       </View>
 
       {step === 1 ? (
@@ -433,16 +439,6 @@ export default function DesignStudioScreen() {
         </View>
       ) : (
         <View style={styles.stepTwoWrap}>
-          <StudioPreview
-            theme={theme}
-            fontStyle={fontStyle}
-            event={event}
-            coverImageUrl={studioState.coverImageUrl}
-            thanksGifUrl={studioState.thanksGifUrl}
-            activeTab={previewTab}
-            onTabChange={setPreviewTab}
-          />
-
           <View style={styles.controlsPanel}>
             {previewTab === 'event' ? (
               <>
@@ -491,6 +487,16 @@ export default function DesignStudioScreen() {
               </TouchableOpacity>
             ) : null}
           </View>
+
+          <StudioPreview
+            theme={theme}
+            fontStyle={fontStyle}
+            event={event}
+            coverImageUrl={studioState.coverImageUrl}
+            thanksGifUrl={studioState.thanksGifUrl}
+            activeTab={previewTab}
+            onTabChange={setPreviewTab}
+          />
         </View>
       )}
     </SafeAreaView>
@@ -516,19 +522,16 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#111827',
   },
-  saveAction: {
-    color: '#43691b',
-    fontWeight: '800',
-    fontSize: 16,
-  },
-  disabledText: {
-    color: '#c7c7c7',
+  headerStatusSlot: {
+    width: 28,
+    alignItems: 'flex-end',
   },
 
   stepOneCenterWrap: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingHorizontal: 20,
+    paddingTop: 28,
     paddingBottom: 24,
   },
   stepOneContainer: {
@@ -631,10 +634,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   controlsPanel: {
-    marginTop: 'auto',
     paddingHorizontal: 20,
     paddingTop: 14,
-    paddingBottom: 28,
+    paddingBottom: 12,
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
