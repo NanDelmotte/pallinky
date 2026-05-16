@@ -27,7 +27,7 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker';
 
 import { StyledText } from '@pallinky/ui';
-import { useFormalDraft } from './_formalDraft';
+import { useFormalDraft } from '../../lib/formalDraft';
 
 const COLORS = {
   background: '#F6F7F9',

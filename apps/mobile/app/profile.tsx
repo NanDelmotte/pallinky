@@ -102,7 +102,7 @@ export default function ProfileScreen() {
 
   const [editingName, setEditingName] = useState(false);
   const [draftName, setDraftName] = useState('');
-const [qrVisible, setQrVisible] = useState(false);
+  const [qrVisible, setQrVisible] = useState(false);
   const emailLower = normalizeEmail(session?.user?.email);
 
   const displayName = useMemo(() => {
@@ -113,9 +113,9 @@ const [qrVisible, setQrVisible] = useState(false);
   }, [profile?.full_name, emailLower]);
 
   const avatarUrl = profile?.avatar_url || avatarFallback(displayName);
-const qrValue = profile?.id
-  ? `https://pallinky.com/add?profileId=${profile.id}`
-  : '';
+  const qrValue = profile?.id
+    ? `https://pallinky.com/add?profileId=${profile.id}`
+    : '';
   const joinedDate = useMemo(() => {
     const fromProfile = profile?.created_at || null;
     const fromAuth = (session?.user as any)?.created_at || null;
@@ -289,11 +289,12 @@ const qrValue = profile?.id
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-  mediaTypes: ImagePicker.MediaTypeOptions.Images,
-  allowsEditing: true,
-  aspect: [1, 1],
-  quality: 0.7,
-});
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      shape: 'oval',
+      quality: 0.7,
+    });
 
     if (result.canceled || !result.assets?.[0]?.uri) return;
 
@@ -350,37 +351,37 @@ const qrValue = profile?.id
   }
 
   if (loading) {
-  return (
-    <View style={styles.centered}>
-      <ActivityIndicator color="#43691b" size="large" />
-    </View>
-  );
-}
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator color="#43691b" size="large" />
+      </View>
+    );
+  }
 
-if (!session?.user?.id) {
-  return (
-    <View style={styles.centered}>
-      <StyledText style={{ color: '#1f2a1b', fontSize: 16, fontWeight: '700' }}>
-        Please log in to view your profile.
-      </StyledText>
-
-      <TouchableOpacity
-        onPress={() => router.replace('/welcome')}
-        style={{
-          marginTop: 16,
-          backgroundColor: '#43691b',
-          paddingHorizontal: 18,
-          paddingVertical: 12,
-          borderRadius: 999,
-        }}
-      >
-        <StyledText style={{ color: '#fff', fontWeight: '800' }}>
-          Go to welcome
+  if (!session?.user?.id) {
+    return (
+      <View style={styles.centered}>
+        <StyledText style={{ color: '#1f2a1b', fontSize: 16, fontWeight: '700' }}>
+          Please log in to view your profile.
         </StyledText>
-      </TouchableOpacity>
-    </View>
-  );
-}
+
+        <TouchableOpacity
+          onPress={() => router.replace('/welcome')}
+          style={{
+            marginTop: 16,
+            backgroundColor: '#43691b',
+            paddingHorizontal: 18,
+            paddingVertical: 12,
+            borderRadius: 999,
+          }}
+        >
+          <StyledText style={{ color: '#fff', fontWeight: '800' }}>
+            Go to welcome
+          </StyledText>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -446,11 +447,11 @@ if (!session?.user?.id) {
 
         {joinedDate ? <StyledText style={styles.joined}>Joined {joinedDate}</StyledText> : null}
         {qrValue ? (
-  <TouchableOpacity style={styles.qrButton} onPress={() => setQrVisible(true)}>
-    <Ionicons name="qr-code-outline" size={18} color="#43691b" />
-    <StyledText style={styles.qrButtonText}>Show my Pallinky QR</StyledText>
-  </TouchableOpacity>
-) : null}
+          <TouchableOpacity style={styles.qrButton} onPress={() => setQrVisible(true)}>
+            <Ionicons name="qr-code-outline" size={18} color="#43691b" />
+            <StyledText style={styles.qrButtonText}>Show my Pallinky QR</StyledText>
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       <View style={styles.statsRow}>
@@ -481,13 +482,13 @@ if (!session?.user?.id) {
             >
               <View style={styles.activityTopRow}>
                 <StyledText style={styles.activityTitle}>{item.title}</StyledText>
-           {item.kind === 'hosted' ? (
-  <View style={[styles.badge, styles.hostedBadge]}>
-    <StyledText style={[styles.badgeText, styles.hostedBadgeText]}>
-      Hosted
-    </StyledText>
-  </View>
-) : null}
+                {item.kind === 'hosted' ? (
+                  <View style={[styles.badge, styles.hostedBadge]}>
+                    <StyledText style={[styles.badgeText, styles.hostedBadgeText]}>
+                      Hosted
+                    </StyledText>
+                  </View>
+                ) : null}
               </View>
 
               {item.happenedAt ? (
@@ -746,7 +747,7 @@ const styles = StyleSheet.create({
   rsvpedBadgeText: {
     color: '#6A4C93',
   },
-    qrButton: {
+  qrButton: {
     marginTop: 16,
     flexDirection: 'row',
     alignItems: 'center',

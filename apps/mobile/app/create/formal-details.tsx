@@ -37,7 +37,7 @@ import LocationSearch from '../../components/LocationSearch';
 import {
   ReminderDays,
   useFormalDraft,
-} from './_formalDraft';
+} from '../../lib/formalDraft';
 
 type VisibilityDraft = {
   send_rsvp_reminders: boolean;

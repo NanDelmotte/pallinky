@@ -3,7 +3,7 @@
  */
 
 import { Stack } from 'expo-router';
-import { FormalDraftProvider } from './_formalDraft';
+import { FormalDraftProvider } from '../../lib/formalDraft';
 
 export const unstable_settings = {
   initialRouteName: 'formal',
