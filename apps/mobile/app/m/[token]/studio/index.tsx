@@ -17,7 +17,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { decode } from 'base64-arraybuffer';
 import { Ionicons } from '@expo/vector-icons';
 
 import { supabase } from '@pallinky/core';
@@ -227,6 +226,13 @@ export default function DesignStudioScreen() {
 
   const handleImageUpload = async () => {
     try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permission.granted) {
+        Alert.alert('Permission needed', 'Please allow photo library access.');
+        return;
+      }
+
       setUploadingCover(true);
 
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -234,21 +240,26 @@ export default function DesignStudioScreen() {
         allowsEditing: true,
         aspect: [16, 9],
         quality: 0.7,
-        base64: true,
       });
 
-      if (result.canceled || !result.assets?.[0]?.base64) {
-        setUploadingCover(false);
+      const asset = result.assets?.[0];
+
+      if (result.canceled || !asset?.uri) {
         return;
       }
 
-      const fileName = `cover_${Date.now()}.jpg`;
+      const contentType = asset.mimeType || 'image/jpeg';
+      const extension = contentType.includes('png') ? 'png' : 'jpg';
+      const safeEventId = String(event?.id || 'event').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const fileName = `cover_${safeEventId}_${Date.now()}.${extension}`;
+      const response = await fetch(asset.uri);
+      const arrayBuffer = await response.arrayBuffer();
 
       const { error } = await supabase.storage
         .from('covers')
-        .upload(fileName, decode(result.assets[0].base64), {
-          contentType: 'image/jpeg',
-          upsert: false,
+        .upload(fileName, arrayBuffer, {
+          contentType,
+          upsert: true,
         });
 
       if (error) throw error;
@@ -258,7 +269,8 @@ export default function DesignStudioScreen() {
       } = supabase.storage.from('covers').getPublicUrl(fileName);
 
       updateStudioState({ coverImageUrl: publicUrl });
-    } catch {
+    } catch (error) {
+      console.error('Cover upload failed', error);
       Alert.alert('Upload failed', 'Could not upload the cover image.');
     } finally {
       setUploadingCover(false);
@@ -427,9 +439,15 @@ export default function DesignStudioScreen() {
                     <StyledText style={styles.controlValue}>Search</StyledText>
                   </TouchableOpacity>
 
-                  <TouchableOpacity style={styles.controlRow} onPress={handleImageUpload}>
+                  <TouchableOpacity
+                    style={styles.controlRow}
+                    onPress={handleImageUpload}
+                    disabled={uploadingCover}
+                  >
                     <Ionicons name="cloud-upload-outline" size={20} color="#6b7280" />
-                    <StyledText style={styles.controlText}>Upload Your Own Image</StyledText>
+                    <StyledText style={styles.controlText}>
+                      {uploadingCover ? 'Uploading Image...' : 'Upload Your Own Image'}
+                    </StyledText>
                   </TouchableOpacity>
                 </View>
 
