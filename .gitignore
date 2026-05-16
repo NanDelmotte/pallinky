@@ -9,3 +9,13 @@ ios/Pods/
 ios/build/
 android/.gradle/
 android/app/build/
+*.jks
+*.keystore
+*.log
+*.tmp
+*.pem
+credentials.json
+credentials.json.enc
+supabase/.temp
+supabase/.env
+/supabase/dev_schema.sql
