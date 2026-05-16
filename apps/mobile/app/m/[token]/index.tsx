@@ -404,7 +404,7 @@ export default function ManageEventScreen() {
             <View style={styles.guestTextWrap}>
               <StyledText style={styles.guestName}>{guest.name}</StyledText>
               {guest.message ? (
-                <StyledText style={styles.guestMsg}>"{guest.message}"</StyledText>
+                <StyledText style={styles.guestMsg}>{`"${guest.message}"`}</StyledText>
               ) : null}
             </View>
 

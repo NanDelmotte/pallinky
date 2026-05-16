@@ -58,6 +58,34 @@ type Theme = {
   isDark: boolean;
 };
 
+type BaseEventKind = 'fixed_date' | 'poll' | 'reach_out';
+type EventKind = BaseEventKind | 'series';
+
+type EventModel = {
+  kind: EventKind;
+  baseKind: BaseEventKind;
+  isSeries: boolean;
+};
+
+function getEventModel(event: any): EventModel {
+  const eventType = normalizeStatus(event?.event_type);
+  const isSeries = !!event?.series_id;
+
+  let baseKind: BaseEventKind = 'fixed_date';
+
+  if (eventType === 'poll' || eventType === 'vibe') {
+    baseKind = 'poll';
+  } else if (eventType === 'reach_out') {
+    baseKind = 'reach_out';
+  }
+
+  return {
+    kind: isSeries ? 'series' : baseKind,
+    baseKind,
+    isSeries,
+  };
+}
+
 function normalizeEmail(value: string | null | undefined) {
   return value?.toLowerCase().trim() || '';
 }
@@ -180,14 +208,12 @@ function HostHeaderSection({
 }
 
 function EventInfoSection({
-  event,
   theme,
   locationText,
   description,
   eventDateText,
   eventTimeText,
 }: {
-  event: any;
   theme: Theme;
   locationText: string | null | undefined;
   description: string | null | undefined;
@@ -247,20 +273,6 @@ function EventInfoSection({
         </View>
       </View>
 
-      <View style={styles.eventInfoFooter}>
-        {locationText ? (
-          <TouchableOpacity style={styles.mapLink} onPress={openMap}>
-            <MaterialCommunityIcons name="map-marker-radius" size={15} color={theme.accent} />
-            <Text style={[styles.mapLinkText, { color: theme.accent }]}>Open map</Text>
-          </TouchableOpacity>
-        ) : (
-          <View />
-        )}
-
-        <View style={styles.calendarCtaWrap}>
-          <CalendarButton event={event} theme={theme} />
-        </View>
-      </View>
     </View>
   );
 }
@@ -844,18 +856,17 @@ setInvites(invitesRes.data || []);
     );
   }
 
-  const isFixedDate = event.event_type === 'fixed_date' || event.event_type === 'formal';
-  const isPoll =
-  event.event_type === 'poll' ||
-  event.event_type === 'vibe';
-  const isReachOut = event.event_type === 'reach_out';
+  const eventModel = getEventModel(event);
+  const isFixedDate = eventModel.baseKind === 'fixed_date';
+  const isPoll = eventModel.baseKind === 'poll';
+  const isReachOut = eventModel.baseKind === 'reach_out';
   const isHost = viewerEmail !== '' && normalizeEmail(event.host_email) === viewerEmail;
   const myStatus = normalizeStatus(myRsvp?.status);
   const myStatusLabel = getRsvpLabel(myStatus);
-  const isSeries = !!event?.series_id;
+  const isSeries = eventModel.kind === 'series';
   const visibleSeriesEvents = seriesEvents.filter((item) => item?.id !== event?.id);
   const seriesIndex = getSeriesIndex(seriesEvents, event.id);
-const seriesTotal = seriesEvents.length;
+  const seriesTotal = seriesEvents.length;
   const hostEmailLc = normalizeEmail(event.host_email);
   const hostNameFirst = getFirstName(event.host_name);
   const eventDateText = formatEventDate(event.starts_at);
@@ -872,12 +883,11 @@ const seriesTotal = seriesEvents.length;
     );
 
   const canOpenChat = isHost || hasRsvpAccess;
-  const canShowRsvpCta =
-  isReachOut ||
-  accessDecision?.can_rsvp === true ||
-  isHost ||
-  !!myRsvp;
+  const canShowPrimaryCta = isHost
+    ? isPoll || isReachOut
+    : isReachOut || accessDecision?.can_rsvp === true || !!myRsvp;
   const canOpenHostDm = !!hostEmailLc && canDmTarget(hostEmailLc);
+  const canOpenEventSettings = isHost && !!event.manage_handle;
 
   const hasLocationInDesc = event.description?.includes('Location: ');
   const description = hasLocationInDesc
@@ -896,32 +906,23 @@ const seriesTotal = seriesEvents.length;
       };
     }
 
-   if (isHost && isReachOut) {
-  return {
-    label: 'Manage reach-out',
-    onPress: () => router.push(`/event/${slug}/reach-out` as any),
-  };
-}
+    if (isHost && isReachOut) {
+      return {
+        label: 'Manage reach-out',
+        onPress: () => router.push(`/event/${slug}/reach-out` as any),
+      };
+    }
 
-if (isHost) {
-  return {
-    label: 'Manage Event',
-    onPress: () => {
-      if (event.manage_handle) {
-        router.push(`/m/${event.manage_handle}` as any);
-        return;
-      }
-      router.push('/(tabs)' as any);
-    },
-  };
-}
+    if (isHost) {
+      return null;
+    }
 
     if (isReachOut) {
-  return {
-    label: 'Help make a plan',
-    onPress: () => router.push(`/event/${slug}/reach-out` as any),
-  };
-}
+      return {
+        label: 'Help make a plan',
+        onPress: () => router.push(`/event/${slug}/reach-out` as any),
+      };
+    }
 
     if (isPoll) {
       return {
@@ -936,12 +937,14 @@ if (isHost) {
     };
   })();
 
+  const handleOpenEventSettings = () => {
+    if (!event.manage_handle) return;
+    router.push(`/m/${event.manage_handle}` as any);
+  };
+
   const handleInvitePress = () => {
     router.push({
-      pathname:
-        event.event_type === 'fixed_date' || event.event_type === 'formal'
-          ? '/create/success'
-          : '/create/success-vibe',
+      pathname: isFixedDate ? '/create/success' : '/create/success-vibe',
       params: {
         slug: event.slug,
         manage_handle: event.manage_handle,
@@ -963,7 +966,12 @@ if (isHost) {
       <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
 
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.replace('/(tabs)' as any)}>
+        <TouchableOpacity
+          style={styles.headerIconBtn}
+          onPress={() => router.replace('/(tabs)' as any)}
+          accessibilityRole="button"
+          accessibilityLabel="Back to social hub"
+        >
           <Ionicons name="arrow-back" size={20} color={theme.accent} />
         </TouchableOpacity>
       </View>
@@ -976,10 +984,50 @@ if (isHost) {
         ) : null}
 
         <View style={styles.content}>
-          <Text style={[styles.title, { color: theme.text }]}>
-  {event.title}
-  {seriesIndex ? ` (Part ${seriesIndex} of ${seriesTotal})` : ''}
-</Text>
+          <View style={styles.titleRow}>
+            <View style={styles.titleTextWrap}>
+              <Text style={[styles.title, { color: theme.text }]}>
+                {event.title}
+                {seriesIndex ? ` (Part ${seriesIndex} of ${seriesTotal})` : ''}
+              </Text>
+            </View>
+
+            <View style={styles.titleActions}>
+              {isFixedDate && event.starts_at ? (
+                <CalendarButton
+                  event={event}
+                  theme={theme}
+                  touchableStyle={[
+                    styles.titleActionBtn,
+                    {
+                      borderColor: theme.isDark ? 'rgba(255,255,255,0.10)' : SYSTEM.borderSoft,
+                      backgroundColor: theme.isDark ? 'rgba(255,255,255,0.08)' : SYSTEM.surface,
+                    },
+                  ]}
+                  accessibilityLabel="Add event to calendar"
+                >
+                  <Ionicons name="calendar-outline" size={20} color={theme.accent} />
+                </CalendarButton>
+              ) : null}
+
+              {canOpenEventSettings ? (
+                <TouchableOpacity
+                  style={[
+                    styles.titleActionBtn,
+                    {
+                      borderColor: theme.isDark ? 'rgba(255,255,255,0.10)' : SYSTEM.borderSoft,
+                      backgroundColor: theme.isDark ? 'rgba(255,255,255,0.08)' : SYSTEM.surface,
+                    },
+                  ]}
+                  onPress={handleOpenEventSettings}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open event tools"
+                >
+                  <Ionicons name="ellipsis-horizontal" size={20} color={theme.accent} />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </View>
           <HostHeaderSection
             theme={theme}
             hostAvatarUrl={hostAvatarUrl}
@@ -993,7 +1041,6 @@ if (isHost) {
 
           {isFixedDate && event.starts_at ? (
             <EventInfoSection
-              event={event}
               theme={theme}
               locationText={locationText}
               description={description}
@@ -1065,7 +1112,7 @@ if (isHost) {
             />
           ) : null}
 
-          {canShowRsvpCta ? (
+          {canShowPrimaryCta && cta ? (
             <TouchableOpacity
               style={[styles.primaryBtn, { backgroundColor: theme.accent }]}
               onPress={cta.onPress}
@@ -1170,9 +1217,11 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 
-  backBtn: {
+  headerIconBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -1202,10 +1251,35 @@ const styles = StyleSheet.create({
     padding: 25,
   },
 
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 10,
+  },
+
+  titleTextWrap: {
+    flex: 1,
+  },
+
   title: {
     fontSize: 34,
     fontWeight: '900',
-    marginBottom: 10,
+  },
+
+  titleActions: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingTop: 3,
+  },
+
+  titleActionBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   hostHeaderWrap: {
@@ -1330,31 +1404,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 21,
     opacity: 0.82,
-  },
-
-  eventInfoFooter: {
-    marginTop: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-
-  mapLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    minHeight: 32,
-  },
-
-  mapLinkText: {
-    fontSize: 14,
-    fontWeight: '800',
-  },
-
-  calendarCtaWrap: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
   },
 
   infoRow: {
