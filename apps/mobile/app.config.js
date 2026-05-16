@@ -33,6 +33,7 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.nancy.pallinky',
+      usesAppleSignIn: true,
 
       associatedDomains: ['applinks:pallinky.com'],
 
@@ -41,7 +42,7 @@ export default {
 
         CFBundleURLTypes: [
           {
-            CFBundleURLSchemes: ['pallinky'],
+            CFBundleURLSchemes: ['pallinky', 'pallinky-dev'],
           },
         ],
 

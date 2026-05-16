@@ -74,6 +74,7 @@ const [codeSent, setCodeSent] = useState(false);
       options: {
         redirectTo: redirectUrl,
         skipBrowserRedirect: true,
+        scopes: provider === 'apple' ? 'name email' : undefined,
         queryParams:
           provider === 'google'
             ? {
@@ -99,8 +100,42 @@ const result = await WebBrowser.openAuthSessionAsync(
     if (result.type === 'success' && result.url) {
       console.log('[OAuth] returned url:', result.url);
 
-      const session = await completeSupabaseAuthFromUrl(result.url);
-      console.log('[OAuth] completed session:', session);
+      const url = new URL(result.url);
+      console.log('[OAuth] returned search:', url.search);
+      console.log('[OAuth] returned hash:', url.hash);
+
+      const code = url.searchParams.get('code');
+      const errorCode = url.searchParams.get('error');
+      const errorDescription = url.searchParams.get('error_description');
+
+      const hash = result.url.split('#')[1] ?? '';
+      const hashParams = new URLSearchParams(hash);
+      const access_token = hashParams.get('access_token');
+      const refresh_token = hashParams.get('refresh_token');
+
+      console.log('[OAuth] code exists:', Boolean(code));
+      console.log('[OAuth] error:', errorCode);
+      console.log('[OAuth] error_description:', errorDescription);
+      console.log('[OAuth] access_token exists:', Boolean(access_token));
+      console.log('[OAuth] refresh_token exists:', Boolean(refresh_token));
+
+      if (code) {
+        const exchange = await supabase.auth.exchangeCodeForSession(code);
+        console.log('[OAuth] exchange error:', exchange.error);
+        console.log('[OAuth] exchange session:', exchange.data?.session);
+      }
+
+      if (access_token && refresh_token) {
+        const setSession = await supabase.auth.setSession({
+          access_token,
+          refresh_token,
+        });
+        console.log('[OAuth] setSession error:', setSession.error);
+        console.log('[OAuth] setSession session:', setSession.data?.session);
+      }
+
+      const afterSession = await supabase.auth.getSession();
+      console.log('[OAuth] session after:', afterSession.data.session);
     }
   } catch (error: any) {
     console.log('[OAuth] caught error:', error);
