@@ -208,14 +208,12 @@ function HostHeaderSection({
 }
 
 function EventInfoSection({
-  event,
   theme,
   locationText,
   description,
   eventDateText,
   eventTimeText,
 }: {
-  event: any;
   theme: Theme;
   locationText: string | null | undefined;
   description: string | null | undefined;
@@ -275,20 +273,6 @@ function EventInfoSection({
         </View>
       </View>
 
-      <View style={styles.eventInfoFooter}>
-        {locationText ? (
-          <TouchableOpacity style={styles.mapLink} onPress={openMap}>
-            <MaterialCommunityIcons name="map-marker-radius" size={15} color={theme.accent} />
-            <Text style={[styles.mapLinkText, { color: theme.accent }]}>Open map</Text>
-          </TouchableOpacity>
-        ) : (
-          <View />
-        )}
-
-        <View style={styles.calendarCtaWrap}>
-          <CalendarButton event={event} theme={theme} />
-        </View>
-      </View>
     </View>
   );
 }
@@ -990,19 +974,6 @@ setInvites(invitesRes.data || []);
         >
           <Ionicons name="arrow-back" size={20} color={theme.accent} />
         </TouchableOpacity>
-
-        {canOpenEventSettings ? (
-          <TouchableOpacity
-            style={styles.headerIconBtn}
-            onPress={handleOpenEventSettings}
-            accessibilityRole="button"
-            accessibilityLabel="Open event settings"
-          >
-            <Ionicons name="settings-outline" size={20} color={theme.accent} />
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.headerIconSpacer} />
-        )}
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -1013,10 +984,50 @@ setInvites(invitesRes.data || []);
         ) : null}
 
         <View style={styles.content}>
-          <Text style={[styles.title, { color: theme.text }]}>
-  {event.title}
-  {seriesIndex ? ` (Part ${seriesIndex} of ${seriesTotal})` : ''}
-</Text>
+          <View style={styles.titleRow}>
+            <View style={styles.titleTextWrap}>
+              <Text style={[styles.title, { color: theme.text }]}>
+                {event.title}
+                {seriesIndex ? ` (Part ${seriesIndex} of ${seriesTotal})` : ''}
+              </Text>
+            </View>
+
+            <View style={styles.titleActions}>
+              {isFixedDate && event.starts_at ? (
+                <CalendarButton
+                  event={event}
+                  theme={theme}
+                  touchableStyle={[
+                    styles.titleActionBtn,
+                    {
+                      borderColor: theme.isDark ? 'rgba(255,255,255,0.10)' : SYSTEM.borderSoft,
+                      backgroundColor: theme.isDark ? 'rgba(255,255,255,0.08)' : SYSTEM.surface,
+                    },
+                  ]}
+                  accessibilityLabel="Add event to calendar"
+                >
+                  <Ionicons name="calendar-outline" size={20} color={theme.accent} />
+                </CalendarButton>
+              ) : null}
+
+              {canOpenEventSettings ? (
+                <TouchableOpacity
+                  style={[
+                    styles.titleActionBtn,
+                    {
+                      borderColor: theme.isDark ? 'rgba(255,255,255,0.10)' : SYSTEM.borderSoft,
+                      backgroundColor: theme.isDark ? 'rgba(255,255,255,0.08)' : SYSTEM.surface,
+                    },
+                  ]}
+                  onPress={handleOpenEventSettings}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open event tools"
+                >
+                  <Ionicons name="ellipsis-horizontal" size={20} color={theme.accent} />
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </View>
           <HostHeaderSection
             theme={theme}
             hostAvatarUrl={hostAvatarUrl}
@@ -1030,7 +1041,6 @@ setInvites(invitesRes.data || []);
 
           {isFixedDate && event.starts_at ? (
             <EventInfoSection
-              event={event}
               theme={theme}
               locationText={locationText}
               description={description}
@@ -1209,7 +1219,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
 
   headerIconBtn: {
@@ -1221,11 +1230,6 @@ const styles = StyleSheet.create({
     backgroundColor: SYSTEM.surface,
     borderWidth: 1,
     borderColor: SYSTEM.borderSoft,
-  },
-
-  headerIconSpacer: {
-    width: 40,
-    height: 40,
   },
 
   scrollContent: {
@@ -1247,10 +1251,35 @@ const styles = StyleSheet.create({
     padding: 25,
   },
 
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 10,
+  },
+
+  titleTextWrap: {
+    flex: 1,
+  },
+
   title: {
     fontSize: 34,
     fontWeight: '900',
-    marginBottom: 10,
+  },
+
+  titleActions: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingTop: 3,
+  },
+
+  titleActionBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   hostHeaderWrap: {
@@ -1375,31 +1404,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 21,
     opacity: 0.82,
-  },
-
-  eventInfoFooter: {
-    marginTop: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-
-  mapLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    minHeight: 32,
-  },
-
-  mapLinkText: {
-    fontSize: 14,
-    fontWeight: '800',
-  },
-
-  calendarCtaWrap: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
   },
 
   infoRow: {

@@ -2,16 +2,33 @@
  * Description: Robust calendar component. Now supports manual selection on both iOS (ActionSheet) and Android (Alert). 
  */
 import React from 'react';
-import { TouchableOpacity, Text, Alert, Platform, ActionSheetIOS } from 'react-native';
+import {
+  TouchableOpacity,
+  Text,
+  Alert,
+  Platform,
+  ActionSheetIOS,
+  StyleProp,
+  ViewStyle,
+} from 'react-native';
 import * as Calendar from 'expo-calendar';
 import * as Linking from 'expo-linking';
 
 interface Props {
   event: any;
   theme: { accent: string; bg: string };
+  children?: React.ReactNode;
+  touchableStyle?: StyleProp<ViewStyle>;
+  accessibilityLabel?: string;
 }
 
-export const CalendarButton = ({ event, theme }: Props) => {
+export const CalendarButton = ({
+  event,
+  theme,
+  children,
+  touchableStyle,
+  accessibilityLabel = 'Add to calendar',
+}: Props) => {
   const saveToSelectedCalendar = async (calendarId: string) => {
     try {
       const eventUrl = Linking.createURL(`/event/${event.slug}`);
@@ -67,8 +84,15 @@ export const CalendarButton = ({ event, theme }: Props) => {
   };
 
   return (
-    <TouchableOpacity onPress={handleAdd} style={{ marginTop: 10 }}>
-      <Text style={{ color: theme.accent, fontWeight: '700' }}>+ Add to Calendar</Text>
+    <TouchableOpacity
+      onPress={handleAdd}
+      style={touchableStyle || { marginTop: 10 }}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+    >
+      {children || (
+        <Text style={{ color: theme.accent, fontWeight: '700' }}>+ Add to Calendar</Text>
+      )}
     </TouchableOpacity>
   );
 };
