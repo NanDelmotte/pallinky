@@ -58,6 +58,34 @@ type Theme = {
   isDark: boolean;
 };
 
+type BaseEventKind = 'fixed_date' | 'poll' | 'reach_out';
+type EventKind = BaseEventKind | 'series';
+
+type EventModel = {
+  kind: EventKind;
+  baseKind: BaseEventKind;
+  isSeries: boolean;
+};
+
+function getEventModel(event: any): EventModel {
+  const eventType = normalizeStatus(event?.event_type);
+  const isSeries = !!event?.series_id;
+
+  let baseKind: BaseEventKind = 'fixed_date';
+
+  if (eventType === 'poll' || eventType === 'vibe') {
+    baseKind = 'poll';
+  } else if (eventType === 'reach_out') {
+    baseKind = 'reach_out';
+  }
+
+  return {
+    kind: isSeries ? 'series' : baseKind,
+    baseKind,
+    isSeries,
+  };
+}
+
 function normalizeEmail(value: string | null | undefined) {
   return value?.toLowerCase().trim() || '';
 }
@@ -844,18 +872,17 @@ setInvites(invitesRes.data || []);
     );
   }
 
-  const isFixedDate = event.event_type === 'fixed_date' || event.event_type === 'formal';
-  const isPoll =
-  event.event_type === 'poll' ||
-  event.event_type === 'vibe';
-  const isReachOut = event.event_type === 'reach_out';
+  const eventModel = getEventModel(event);
+  const isFixedDate = eventModel.baseKind === 'fixed_date';
+  const isPoll = eventModel.baseKind === 'poll';
+  const isReachOut = eventModel.baseKind === 'reach_out';
   const isHost = viewerEmail !== '' && normalizeEmail(event.host_email) === viewerEmail;
   const myStatus = normalizeStatus(myRsvp?.status);
   const myStatusLabel = getRsvpLabel(myStatus);
-  const isSeries = !!event?.series_id;
+  const isSeries = eventModel.kind === 'series';
   const visibleSeriesEvents = seriesEvents.filter((item) => item?.id !== event?.id);
   const seriesIndex = getSeriesIndex(seriesEvents, event.id);
-const seriesTotal = seriesEvents.length;
+  const seriesTotal = seriesEvents.length;
   const hostEmailLc = normalizeEmail(event.host_email);
   const hostNameFirst = getFirstName(event.host_name);
   const eventDateText = formatEventDate(event.starts_at);
@@ -872,12 +899,11 @@ const seriesTotal = seriesEvents.length;
     );
 
   const canOpenChat = isHost || hasRsvpAccess;
-  const canShowRsvpCta =
-  isReachOut ||
-  accessDecision?.can_rsvp === true ||
-  isHost ||
-  !!myRsvp;
+  const canShowPrimaryCta = isHost
+    ? isPoll || isReachOut
+    : isReachOut || accessDecision?.can_rsvp === true || !!myRsvp;
   const canOpenHostDm = !!hostEmailLc && canDmTarget(hostEmailLc);
+  const canOpenEventSettings = isHost && !!event.manage_handle;
 
   const hasLocationInDesc = event.description?.includes('Location: ');
   const description = hasLocationInDesc
@@ -896,32 +922,23 @@ const seriesTotal = seriesEvents.length;
       };
     }
 
-   if (isHost && isReachOut) {
-  return {
-    label: 'Manage reach-out',
-    onPress: () => router.push(`/event/${slug}/reach-out` as any),
-  };
-}
+    if (isHost && isReachOut) {
+      return {
+        label: 'Manage reach-out',
+        onPress: () => router.push(`/event/${slug}/reach-out` as any),
+      };
+    }
 
-if (isHost) {
-  return {
-    label: 'Manage Event',
-    onPress: () => {
-      if (event.manage_handle) {
-        router.push(`/m/${event.manage_handle}` as any);
-        return;
-      }
-      router.push('/(tabs)' as any);
-    },
-  };
-}
+    if (isHost) {
+      return null;
+    }
 
     if (isReachOut) {
-  return {
-    label: 'Help make a plan',
-    onPress: () => router.push(`/event/${slug}/reach-out` as any),
-  };
-}
+      return {
+        label: 'Help make a plan',
+        onPress: () => router.push(`/event/${slug}/reach-out` as any),
+      };
+    }
 
     if (isPoll) {
       return {
@@ -936,12 +953,14 @@ if (isHost) {
     };
   })();
 
+  const handleOpenEventSettings = () => {
+    if (!event.manage_handle) return;
+    router.push(`/m/${event.manage_handle}` as any);
+  };
+
   const handleInvitePress = () => {
     router.push({
-      pathname:
-        event.event_type === 'fixed_date' || event.event_type === 'formal'
-          ? '/create/success'
-          : '/create/success-vibe',
+      pathname: isFixedDate ? '/create/success' : '/create/success-vibe',
       params: {
         slug: event.slug,
         manage_handle: event.manage_handle,
@@ -963,9 +982,27 @@ if (isHost) {
       <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
 
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.replace('/(tabs)' as any)}>
+        <TouchableOpacity
+          style={styles.headerIconBtn}
+          onPress={() => router.replace('/(tabs)' as any)}
+          accessibilityRole="button"
+          accessibilityLabel="Back to social hub"
+        >
           <Ionicons name="arrow-back" size={20} color={theme.accent} />
         </TouchableOpacity>
+
+        {canOpenEventSettings ? (
+          <TouchableOpacity
+            style={styles.headerIconBtn}
+            onPress={handleOpenEventSettings}
+            accessibilityRole="button"
+            accessibilityLabel="Open event settings"
+          >
+            <Ionicons name="settings-outline" size={20} color={theme.accent} />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.headerIconSpacer} />
+        )}
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -1065,7 +1102,7 @@ if (isHost) {
             />
           ) : null}
 
-          {canShowRsvpCta ? (
+          {canShowPrimaryCta && cta ? (
             <TouchableOpacity
               style={[styles.primaryBtn, { backgroundColor: theme.accent }]}
               onPress={cta.onPress}
@@ -1170,9 +1207,12 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
 
-  backBtn: {
+  headerIconBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -1181,6 +1221,11 @@ const styles = StyleSheet.create({
     backgroundColor: SYSTEM.surface,
     borderWidth: 1,
     borderColor: SYSTEM.borderSoft,
+  },
+
+  headerIconSpacer: {
+    width: 40,
+    height: 40,
   },
 
   scrollContent: {

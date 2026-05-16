@@ -23,7 +23,7 @@ export default function WelcomeScreen() {
       <Text style={styles.title}>Pallinky</Text>
 
       <Text style={styles.body}>
-        Let's make group planning easier. 
+        {"Let's make group planning easier."}
         {'\n'} {'\n'}
        Pallinky is kind of like social media but for real life and helps us grow our social circles in a human way. 
         {'\n'}{'\n'}

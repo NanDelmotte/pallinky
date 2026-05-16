@@ -58,7 +58,7 @@ export default function WelcomeModal() {
           <StyledText style={styles.title}>Welcome to Pal-linky!</StyledText>
           
           <StyledText style={styles.body}>
-            Thanks for being an early tester. This app helps turn "we should hang out" into real plans and grow your social circles organically in REAL LIFE.
+            {'Thanks for being an early tester. This app helps turn "we should hang out" into real plans and grow your social circles organically in REAL LIFE.'}
           </StyledText>
 
           <View style={styles.bulletPoint}>
@@ -72,7 +72,7 @@ export default function WelcomeModal() {
           </View>
 
           <TouchableOpacity style={styles.button} onPress={handleClose}>
-            <StyledText style={styles.buttonText}>Let's Go</StyledText>
+            <StyledText style={styles.buttonText}>{"Let's Go"}</StyledText>
           </TouchableOpacity>
         </View>
       </View>

@@ -206,12 +206,6 @@ export default function ReachOutPage() {
     Alert.alert('Sign in required', 'Please sign in to respond.');
     return;
   }
-console.log('REACH_OUT_INSERT_PAYLOAD', {
-  responseType,
-  responseText,
-  suggestedDatesValue,
-  suggestedLocationValue,
-});
   const { error } = await supabase.from('reach_out_responses').insert({
     event_id: event.id,
     responder_email_lc: viewerEmail,
