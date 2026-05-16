@@ -23,7 +23,11 @@ import * as WebBrowser from 'expo-web-browser';
 import * as SecureStore from 'expo-secure-store';
 import { supabase } from '@pallinky/core';
 import { StyledInput, StyledText } from '@pallinky/ui';
-import * as Linking from 'expo-linking';
+import {
+  AUTH_RETURN_KEY,
+  completeSupabaseAuthFromUrl,
+  getAuthCallbackUrl,
+} from '../lib/authRedirect';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -33,8 +37,6 @@ type Props = {
   initialEmail?: string;
   returnTo?: string;
 };
-
-const AUTH_RETURN_KEY = 'pallinky_auth_return_to';
 
 const COLORS = {
   background: '#F6F7F9',
@@ -88,7 +90,7 @@ try {
   const { error } = await supabase.auth.signInWithOtp({
     email: cleanEmail,
     options: {
-      emailRedirectTo: 'pallinky://auth-callback',
+      emailRedirectTo: getAuthCallbackUrl(),
       shouldCreateUser: true,
     },
   });
@@ -141,7 +143,7 @@ try {
   const handleOAuthLogin = async (provider: 'apple' | 'google') => {
     setLoading(true);
 
-    const redirectUrl = Linking.createURL('auth-callback');
+    const redirectUrl = getAuthCallbackUrl();
 
     try {
       await storeReturnPath();
@@ -161,13 +163,9 @@ try {
         const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
 
         if (result.type === 'success' && result.url) {
-          const hash = result.url.split('#')[1] ?? '';
-          const params = new URLSearchParams(hash);
-          const access_token = params.get('access_token');
-          const refresh_token = params.get('refresh_token');
+          const session = await completeSupabaseAuthFromUrl(result.url);
 
-          if (access_token && refresh_token) {
-            await supabase.auth.setSession({ access_token, refresh_token });
+          if (session) {
             await clearReturnPath();
             onClose();
             return;

@@ -2,7 +2,7 @@
  * Path: apps/mobile/app/auth/verify.tsx
  * Version: v18.43
  */
-import React, { useEffect, useMemo, useRef,useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -17,9 +17,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '@pallinky/core';
 import { StyledText } from '@pallinky/ui';
 import { Ionicons } from '@expo/vector-icons';
-import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
-import Constants from 'expo-constants';
+import { completeSupabaseAuthFromUrl, getAuthCallbackUrl } from '../../lib/authRedirect';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -43,7 +42,6 @@ export default function VerifyOTPScreen() {
   const [token, setToken] = useState('');
 const [loading, setLoading] = useState(false);
 const [codeSent, setCodeSent] = useState(false);
-const oauthInProgressRef = useRef(false);
 
   const cleanEmail = useMemo(() => email.toLowerCase().trim(), [email]);
 
@@ -59,23 +57,10 @@ const oauthInProgressRef = useRef(false);
 
     return () => subscription.unsubscribe();
   }, [returnTo, router]);
-useEffect(() => {
-  const subscription = Linking.addEventListener('url', ({ url }) => {
-    console.log('[OAuth Linking] received url:', url);
-    console.log('[OAuth Linking] oauth in progress:', oauthInProgressRef.current);
-  });
-
-  return () => {
-    subscription.remove();
-  };
-}, []);
   const handleOAuthLogin = async (provider: 'apple' | 'google') => {
   setLoading(true);
 
-  const redirectUrl =
-  Constants.expoConfig?.extra?.appVariant === 'development'
-    ? 'pallinky-dev://auth-callback'
-    : 'pallinky://auth-callback';
+  const redirectUrl = getAuthCallbackUrl();
 
   console.log('[OAuth] provider:', provider);
   console.log('[OAuth] redirectUrl:', redirectUrl);
@@ -104,8 +89,6 @@ useEffect(() => {
     if (error) throw error;
     if (!data?.url) throw new Error('No OAuth URL returned.');
 
-    oauthInProgressRef.current = true;
-
 const result = await WebBrowser.openAuthSessionAsync(
   data.url,
   redirectUrl
@@ -116,48 +99,13 @@ const result = await WebBrowser.openAuthSessionAsync(
     if (result.type === 'success' && result.url) {
       console.log('[OAuth] returned url:', result.url);
 
-      const url = new URL(result.url);
-      console.log('[OAuth] returned search:', url.search);
-      console.log('[OAuth] returned hash:', url.hash);
-
-      const code = url.searchParams.get('code');
-      const errorCode = url.searchParams.get('error');
-      const errorDescription = url.searchParams.get('error_description');
-
-      const hash = result.url.split('#')[1] ?? '';
-      const hashParams = new URLSearchParams(hash);
-      const access_token = hashParams.get('access_token');
-      const refresh_token = hashParams.get('refresh_token');
-
-      console.log('[OAuth] code exists:', Boolean(code));
-      console.log('[OAuth] error:', errorCode);
-      console.log('[OAuth] error_description:', errorDescription);
-      console.log('[OAuth] access_token exists:', Boolean(access_token));
-      console.log('[OAuth] refresh_token exists:', Boolean(refresh_token));
-
-      if (code) {
-        const exchange = await supabase.auth.exchangeCodeForSession(code);
-        console.log('[OAuth] exchange error:', exchange.error);
-        console.log('[OAuth] exchange session:', exchange.data?.session);
-      }
-
-      if (access_token && refresh_token) {
-        const setSession = await supabase.auth.setSession({
-          access_token,
-          refresh_token,
-        });
-        console.log('[OAuth] setSession error:', setSession.error);
-        console.log('[OAuth] setSession session:', setSession.data?.session);
-      }
-
-      const afterSession = await supabase.auth.getSession();
-      console.log('[OAuth] session after:', afterSession.data.session);
+      const session = await completeSupabaseAuthFromUrl(result.url);
+      console.log('[OAuth] completed session:', session);
     }
   } catch (error: any) {
     console.log('[OAuth] caught error:', error);
     Alert.alert('Login Error', error.message ?? 'Could not complete login.');
   } finally {
-  oauthInProgressRef.current = false;
   setLoading(false);
 }
 };
@@ -186,10 +134,7 @@ try {
   const { error } = await supabase.auth.signInWithOtp({
     email: cleanEmail,
     options: {
-      emailRedirectTo:
-  process.env.EXPO_PUBLIC_APP_VARIANT === 'development'
-    ? 'pallinky-dev://auth-callback'
-    : 'pallinky://auth-callback',
+      emailRedirectTo: getAuthCallbackUrl(),
       shouldCreateUser: true,
     },
   });

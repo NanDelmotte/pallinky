@@ -1,9 +1,11 @@
+const appVariant = process.env.EXPO_PUBLIC_APP_VARIANT ?? 'production';
+
 export default {
   expo: {
     name: 'Pallinky',
     slug: 'pallinky',
     owner: 'nanbowles',
-    scheme: 'pallinky',
+    scheme: ['pallinky', 'pallinky-dev'],
 
     version: '1.1.4',
     runtimeVersion: '1.1.4',
@@ -127,6 +129,8 @@ export default {
       },
 
       router: {},
+
+      appVariant,
     },
 
     plugins: [
