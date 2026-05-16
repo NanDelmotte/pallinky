@@ -76,35 +76,35 @@ const THEME_DEFAULTS: Record<
   girly: {
     font: 'Cursive',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=1400&q=80',
+      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1400&q=80',
     thanksGifUrl:
       'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif',
   },
   fiesta: {
     font: 'Gothic',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1400&q=80',
+      'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?auto=format&fit=crop&w=1400&q=80',
     thanksGifUrl:
       'https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif',
   },
   classy: {
     font: 'Serif',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1400&q=80',
+      'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=1400&q=80',
     thanksGifUrl:
       'https://media.giphy.com/media/89x4osEodHEoo/giphy.gif',
   },
   spicy: {
     font: 'Sans',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=1400&q=80',
+      'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1400&q=80',
     thanksGifUrl:
       'https://media.giphy.com/media/xUPGcguWZHRC2HyBRS/giphy.gif',
   },
   submerged: {
     font: 'Sans',
     coverImageUrl:
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=80',
+      'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1400&q=80',
     thanksGifUrl:
       'https://media.giphy.com/media/26BRv0ThflsHCqDrG/giphy.gif',
   },
@@ -118,6 +118,9 @@ type StudioState = {
 };
 
 const THUMB_ORDER = ['zen', 'girly', 'fiesta', 'classy', 'spicy', 'submerged'] as const;
+const DEFAULT_COVER_IMAGE_URLS = new Set(
+  Object.values(THEME_DEFAULTS).map((defaults) => defaults.coverImageUrl)
+);
 
 export default function DesignStudioScreen() {
   const { token } = useLocalSearchParams<{ token: string }>();
@@ -205,7 +208,10 @@ export default function DesignStudioScreen() {
       ...prev,
       theme: themeKey,
       font: prev.font || defaults.font,
-      coverImageUrl: prev.coverImageUrl || defaults.coverImageUrl,
+      coverImageUrl:
+        !prev.coverImageUrl || DEFAULT_COVER_IMAGE_URLS.has(prev.coverImageUrl)
+          ? defaults.coverImageUrl
+          : prev.coverImageUrl,
       thanksGifUrl: prev.thanksGifUrl || defaults.thanksGifUrl,
     }));
 
@@ -373,16 +379,17 @@ export default function DesignStudioScreen() {
       {step === 1 ? (
         <View style={styles.stepOneCenterWrap}>
           <View style={styles.stepOneContainer}>
-            <StyledText style={styles.stepOneTitle}>Theme Selection</StyledText>
+            <StyledText style={styles.stepOneTitle}>Color Scheme</StyledText>
+            <StyledText style={styles.stepOneSubtitle}>
+              Pick a color palette. Each palette starts with its own cover photo, and you can
+              swap the photo in the next step.
+            </StyledText>
 
             <View style={styles.themeGrid}>
               {THUMB_ORDER.map((key) => {
                 const item = THEMES[key];
                 const isSelected = studioState.theme === key;
-                const thumbImage =
-                  studioState.theme === key && studioState.coverImageUrl
-                    ? studioState.coverImageUrl
-                    : THEME_DEFAULTS[key].coverImageUrl;
+                const thumbImage = THEME_DEFAULTS[key].coverImageUrl;
 
                 return (
                   <TouchableOpacity
@@ -394,23 +401,30 @@ export default function DesignStudioScreen() {
                     <Image source={{ uri: thumbImage }} style={styles.themeThumb} />
                     <View style={styles.thumbOverlay} />
 
-                    <View style={styles.themeSwatchWrap}>
-                      <View
-                        style={[
-                          styles.themeSwatchOuter,
-                          { backgroundColor: item.bg, borderColor: item.accent },
-                        ]}
-                      >
-                        <View
-                          style={[
-                            styles.themeSwatchInner,
-                            { backgroundColor: item.accent },
-                          ]}
-                        />
+                    {isSelected ? (
+                      <View style={styles.selectedPill}>
+                        <Ionicons name="checkmark" size={14} color="#fff" />
+                      </View>
+                    ) : null}
+
+                    <View
+                      style={[
+                        styles.themeInfoPanel,
+                        { backgroundColor: item.bg, borderTopColor: item.accent },
+                      ]}
+                    >
+                      <StyledText style={[styles.themeLabel, { color: item.text }]}>
+                        {item.label}
+                      </StyledText>
+                      <View style={styles.themePaletteRow}>
+                        {[item.bg, item.accent, item.text].map((color) => (
+                          <View
+                            key={`${key}-${color}`}
+                            style={[styles.themePaletteChip, { backgroundColor: color }]}
+                          />
+                        ))}
                       </View>
                     </View>
-
-                    <StyledText style={styles.themeLabel}>{item.label}</StyledText>
                   </TouchableOpacity>
                 );
               })}
@@ -523,10 +537,17 @@ const styles = StyleSheet.create({
     maxWidth: 520,
   },
   stepOneTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#374151',
-    marginBottom: 16,
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#111827',
+    marginBottom: 6,
+  },
+  stepOneSubtitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6b7280',
+    lineHeight: 20,
+    marginBottom: 18,
   },
 
   controlRowGroup: {
@@ -536,21 +557,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    rowGap: 16,
+    rowGap: 18,
     marginBottom: 22,
   },
   themeCard: {
-    width: '31%',
-    aspectRatio: 1,
-    borderRadius: 18,
+    width: '48%',
+    aspectRatio: 0.92,
+    borderRadius: 22,
     overflow: 'hidden',
     backgroundColor: '#ddd',
     position: 'relative',
-    borderWidth: 2,
-    borderColor: 'transparent',
+    borderWidth: 3,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOpacity: 0.14,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
   },
   themeCardSelected: {
     borderColor: '#111827',
+    transform: [{ scale: 1.02 }],
   },
   themeThumb: {
     width: '100%',
@@ -558,36 +585,46 @@ const styles = StyleSheet.create({
   },
   thumbOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.16)',
+    backgroundColor: 'rgba(0,0,0,0.08)',
   },
-  themeSwatchWrap: {
+  selectedPill: {
     position: 'absolute',
     top: 10,
     right: 10,
-  },
-  themeSwatchOuter: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    borderWidth: 2,
+    backgroundColor: '#111827',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
   },
-  themeSwatchInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+  themeInfoPanel: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 12,
+    borderTopWidth: 4,
   },
   themeLabel: {
-    position: 'absolute',
-    left: 10,
-    bottom: 10,
-    color: '#fff',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '900',
-    textShadowColor: 'rgba(0,0,0,0.35)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+  },
+  themePaletteRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 8,
+  },
+  themePaletteChip: {
+    flex: 1,
+    height: 18,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.8)',
   },
 
   stepTwoWrap: {
