@@ -40,7 +40,7 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="pallinky"/>
-        <data android:scheme="pallinky-dev"/>
+       
         <data android:scheme="exp+tarti-flette"/>
       </intent-filter>
       <intent-filter android:autoVerify="true" data-generated="true">
@@ -53,7 +53,7 @@
       <intent-filter android:autoVerify="true" data-generated="true">
         <action android:name="android.intent.action.VIEW"/>
         <data android:scheme="pallinky" android:host="auth-callback"/>
-        <data android:scheme="pallinky-dev" android:host="auth-callback"/>
+     
         <category android:name="android.intent.category.BROWSABLE"/>
         <category android:name="android.intent.category.DEFAULT"/>
       </intent-filter>

@@ -204,7 +204,7 @@ function AppNavigator() {
           (hostname === 'pallinky.com' || hostname === 'www.pallinky.com') &&
           pathname === '/add';
         const isAppAddLink =
-          (protocol === 'pallinky:' || protocol === 'pallinky-dev:') &&
+          protocol === 'pallinky:' &&
           (hostname === 'add' ||
             (hostname === 'people' && pathname === '/add') ||
             pathname === '/add' ||

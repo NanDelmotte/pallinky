@@ -1,6 +1,6 @@
 /**
  * Path: apps/mobile/app/auth/verify.tsx
- * Version: v18.43
+ * Version: v18.44
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import {
@@ -14,11 +14,14 @@ import {
   View,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { supabase } from '@pallinky/core';
-import { StyledText } from '@pallinky/ui';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
-import { completeSupabaseAuthFromUrl, getAuthCallbackUrl } from '../../lib/authRedirect';
+import { supabase } from '@pallinky/core';
+import { StyledText } from '@pallinky/ui';
+import {
+  completeSupabaseAuthFromUrl,
+  getAuthCallbackUrl,
+} from '../../lib/authRedirect';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -36,153 +39,123 @@ const COLORS = {
 
 export default function VerifyOTPScreen() {
   const router = useRouter();
-  const { returnTo } = useLocalSearchParams<{ returnTo: string }>();
+  const { returnTo } = useLocalSearchParams<{ returnTo?: string }>();
 
   const [email, setEmail] = useState('');
   const [token, setToken] = useState('');
-const [loading, setLoading] = useState(false);
-const [codeSent, setCodeSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [codeSent, setCodeSent] = useState(false);
 
   const cleanEmail = useMemo(() => email.toLowerCase().trim(), [email]);
+
+  const goToDestination = () => {
+    const destination = returnTo ? decodeURIComponent(returnTo) : '/(tabs)';
+    router.replace(destination as any);
+  };
 
   useEffect(() => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
-        const destination = returnTo ? decodeURIComponent(returnTo) : '/(tabs)';
-        router.replace(destination as any);
+        goToDestination();
       }
     });
 
     return () => subscription.unsubscribe();
   }, [returnTo, router]);
+
   const handleOAuthLogin = async (provider: 'apple' | 'google') => {
-  setLoading(true);
+    setLoading(true);
 
-  const redirectUrl = getAuthCallbackUrl();
+    const redirectUrl = getAuthCallbackUrl();
 
-  console.log('[OAuth] provider:', provider);
-  console.log('[OAuth] redirectUrl:', redirectUrl);
+    console.log('[OAuth] provider:', provider);
+    console.log('[OAuth] redirectUrl:', redirectUrl);
 
-  try {
-    const beforeSession = await supabase.auth.getSession();
-    console.log('[OAuth] session before:', beforeSession.data.session);
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: true,
+          scopes: provider === 'apple' ? 'name email' : undefined,
+          queryParams:
+            provider === 'google'
+              ? {
+                  prompt: 'select_account',
+                }
+              : undefined,
+        },
+      });
 
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: redirectUrl,
-        skipBrowserRedirect: true,
-        scopes: provider === 'apple' ? 'name email' : undefined,
-        queryParams:
-          provider === 'google'
-            ? {
-                prompt: 'select_account',
-              }
-            : undefined,
-      },
-    });
+      console.log('[OAuth] signInWithOAuth error:', error);
+      console.log('[OAuth] provider url:', data?.url);
 
-    console.log('[OAuth] signInWithOAuth error:', error);
-    console.log('[OAuth] provider url:', data?.url);
+      if (error) throw error;
+      if (!data?.url) throw new Error('No OAuth URL returned.');
 
-    if (error) throw error;
-    if (!data?.url) throw new Error('No OAuth URL returned.');
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
 
-const result = await WebBrowser.openAuthSessionAsync(
-  data.url,
-  redirectUrl
-);
+      console.log('[OAuth] browser result:', JSON.stringify(result, null, 2));
 
-    console.log('[OAuth] browser result:', JSON.stringify(result, null, 2));
+      if (result.type !== 'success' || !result.url) {
+        return;
+      }
 
-    if (result.type === 'success' && result.url) {
       console.log('[OAuth] returned url:', result.url);
 
-      const url = new URL(result.url);
-      console.log('[OAuth] returned search:', url.search);
-      console.log('[OAuth] returned hash:', url.hash);
+      const session = await completeSupabaseAuthFromUrl(result.url);
 
-      const code = url.searchParams.get('code');
-      const errorCode = url.searchParams.get('error');
-      const errorDescription = url.searchParams.get('error_description');
+      console.log('[OAuth] completed session:', session);
 
-      const hash = result.url.split('#')[1] ?? '';
-      const hashParams = new URLSearchParams(hash);
-      const access_token = hashParams.get('access_token');
-      const refresh_token = hashParams.get('refresh_token');
-
-      console.log('[OAuth] code exists:', Boolean(code));
-      console.log('[OAuth] error:', errorCode);
-      console.log('[OAuth] error_description:', errorDescription);
-      console.log('[OAuth] access_token exists:', Boolean(access_token));
-      console.log('[OAuth] refresh_token exists:', Boolean(refresh_token));
-
-      if (code) {
-        const exchange = await supabase.auth.exchangeCodeForSession(code);
-        console.log('[OAuth] exchange error:', exchange.error);
-        console.log('[OAuth] exchange session:', exchange.data?.session);
+      if (session) {
+        goToDestination();
       }
-
-      if (access_token && refresh_token) {
-        const setSession = await supabase.auth.setSession({
-          access_token,
-          refresh_token,
-        });
-        console.log('[OAuth] setSession error:', setSession.error);
-        console.log('[OAuth] setSession session:', setSession.data?.session);
-      }
-
-      const afterSession = await supabase.auth.getSession();
-      console.log('[OAuth] session after:', afterSession.data.session);
+    } catch (error: any) {
+      console.log('[OAuth] caught error:', error);
+      Alert.alert('Login Error', error.message ?? 'Could not complete login.');
+    } finally {
+      setLoading(false);
     }
-  } catch (error: any) {
-    console.log('[OAuth] caught error:', error);
-    Alert.alert('Login Error', error.message ?? 'Could not complete login.');
-  } finally {
-  setLoading(false);
-}
-};
+  };
 
   const handleRequestCode = async () => {
     if (!cleanEmail) {
-  Alert.alert('Email Required', 'Please enter your email.');
-  return;
-}
+      Alert.alert('Email Required', 'Please enter your email.');
+      return;
+    }
 
-// ✅ PLAY STORE BYPASS
-if (cleanEmail === 'test@pallinky.com') {
-  await supabase.auth.setSession({
-    access_token: 'test-access-token',
-    refresh_token: 'test-refresh-token',
-  });
+    if (cleanEmail === 'test@pallinky.com') {
+      await supabase.auth.setSession({
+        access_token: 'test-access-token',
+        refresh_token: 'test-refresh-token',
+      });
 
-  const destination = returnTo ? decodeURIComponent(returnTo) : '/(tabs)';
-  router.replace(destination as any);
-  return;
-}
+      goToDestination();
+      return;
+    }
 
-setLoading(true);
+    setLoading(true);
 
-try {
-  const { error } = await supabase.auth.signInWithOtp({
-    email: cleanEmail,
-    options: {
-      emailRedirectTo: getAuthCallbackUrl(),
-      shouldCreateUser: true,
-    },
-  });
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: cleanEmail,
+        options: {
+          emailRedirectTo: getAuthCallbackUrl(),
+          shouldCreateUser: true,
+        },
+      });
 
-  if (error) throw error;
+      if (error) throw error;
 
-  setCodeSent(true);
-Alert.alert('Code Sent', 'Check your email for the 6-digit code.');
-} catch (error: any) {
-  Alert.alert('Email Error', error.message);
-} finally {
-  setLoading(false);
-}
+      setCodeSent(true);
+      Alert.alert('Code Sent', 'Check your email for the 6-digit code.');
+    } catch (error: any) {
+      Alert.alert('Email Error', error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleVerifyCode = async () => {
@@ -194,11 +167,9 @@ Alert.alert('Code Sent', 'Check your email for the 6-digit code.');
     setLoading(true);
 
     try {
-      const otpToken = token.trim();
-
       const { error } = await supabase.auth.verifyOtp({
         email: cleanEmail,
-        token: otpToken,
+        token: token.trim(),
         type: 'email',
       });
 
@@ -229,7 +200,7 @@ Alert.alert('Code Sent', 'Check your email for the 6-digit code.');
 
             <StyledText style={styles.title}>Identify Yourself</StyledText>
             <StyledText style={styles.subtitle}>
-              Sign in to create an event or to see your events and groups. 
+              Sign in to create an event or to see your events and groups.
             </StyledText>
 
             <View style={styles.socialRow}>
@@ -252,53 +223,49 @@ Alert.alert('Code Sent', 'Check your email for the 6-digit code.');
               )}
             </View>
 
-           {!codeSent ? (
-  <>
-    <TextInput
-      style={styles.input}
-      placeholder="Enter your email"
-      placeholderTextColor={COLORS.textMuted}
-      value={email}
-      onChangeText={setEmail}
-      autoCapitalize="none"
-      autoCorrect={false}
-      keyboardType="email-address"
-      returnKeyType="done"
-    />
+            {!codeSent ? (
+              <>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your email"
+                  placeholderTextColor={COLORS.textMuted}
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="email-address"
+                  returnKeyType="done"
+                />
 
-    <TouchableOpacity
-      style={styles.secondaryBtn}
-      onPress={handleRequestCode}
-      disabled={loading}
-    >
-      <StyledText style={styles.secondaryBtnText}>
-        Send 6-digit code
-      </StyledText>
-    </TouchableOpacity>
-  </>
-) : (
-  <>
-    <TextInput
-      style={styles.input}
-      placeholder="Enter 6-digit code"
-      placeholderTextColor={COLORS.textMuted}
-      value={token}
-      onChangeText={setToken}
-      keyboardType="number-pad"
-      returnKeyType="done"
-    />
+                <TouchableOpacity
+                  style={styles.secondaryBtn}
+                  onPress={handleRequestCode}
+                  disabled={loading}
+                >
+                  <StyledText style={styles.secondaryBtnText}>Send 6-digit code</StyledText>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter 6-digit code"
+                  placeholderTextColor={COLORS.textMuted}
+                  value={token}
+                  onChangeText={setToken}
+                  keyboardType="number-pad"
+                  returnKeyType="done"
+                />
 
-    <TouchableOpacity
-      style={styles.primaryBtn}
-      onPress={handleVerifyCode}
-      disabled={loading}
-    >
-      <StyledText style={styles.primaryBtnText}>
-        Verify and continue
-      </StyledText>
-    </TouchableOpacity>
-  </>
-)}
+                <TouchableOpacity
+                  style={styles.primaryBtn}
+                  onPress={handleVerifyCode}
+                  disabled={loading}
+                >
+                  <StyledText style={styles.primaryBtnText}>Verify and continue</StyledText>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
       </ScrollView>
