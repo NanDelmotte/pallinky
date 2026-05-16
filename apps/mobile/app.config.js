@@ -5,8 +5,8 @@ export default {
     owner: 'nanbowles',
     scheme: 'pallinky',
 
-    version: '1.1.3',
-    runtimeVersion: '1.1.3',
+    version: '1.1.4',
+    runtimeVersion: '1.1.4',
 
     orientation: 'portrait',
     userInterfaceStyle: 'light',
@@ -141,7 +141,7 @@ export default {
         'expo-notifications',
         {
           icon: './assets/icon.png',
-          color: '#ffffff',
+          color: '#f10303ff',
         },
       ],
     ],
