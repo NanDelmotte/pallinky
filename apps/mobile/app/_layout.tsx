@@ -12,6 +12,7 @@ import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { supabase, SessionProvider } from '@pallinky/core';
+import { completeSupabaseAuthFromUrl, isAuthCallbackUrl } from '../lib/authRedirect';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -244,13 +245,8 @@ function AppNavigator() {
           return;
         }
 
-        if (
-          url.startsWith('pallinky://auth-callback') ||
-          url.includes('access_token=') ||
-          url.includes('refresh_token=') ||
-          url.includes('code=')
-        ) {
-          await supabase.auth.exchangeCodeForSession(url);
+        if (isAuthCallbackUrl(url)) {
+          await completeSupabaseAuthFromUrl(url);
           await registerForPushNotifications();
           await syncBadgeWithInbox();
         }
