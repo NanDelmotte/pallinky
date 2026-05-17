@@ -83,6 +83,7 @@ export default function PendingInvites({
             hostEmail={ev.host_email}
             title={ev.title}
             startsAt={ev.starts_at}
+            eventTimeZone={ev.event_time_zone}
             location={ev.location}
             coverImageUrl={ev.cover_image_url}
             gifKey={ev.gif_key}

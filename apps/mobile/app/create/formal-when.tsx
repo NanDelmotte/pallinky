@@ -27,6 +27,7 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker';
 
 import { StyledText } from '@pallinky/ui';
+import { getLocalTimeZone } from '@pallinky/core';
 import { useFormalDraft } from '../../lib/formalDraft';
 
 const COLORS = {
@@ -43,6 +44,7 @@ const COLORS = {
 
 export default function FormalWhenScreen() {
   const { form, updateForm, setForm } = useFormalDraft();
+  const localTimeZone = getLocalTimeZone();
 
   const [showSpecificModal, setShowSpecificModal] = useState(false);
   const [showSeriesModal, setShowSeriesModal] = useState(false);
@@ -317,6 +319,9 @@ export default function FormalWhenScreen() {
               <StyledText style={styles.modeSub}>
                 Choose the date and time for this event.
               </StyledText>
+              <StyledText style={styles.timezoneNote}>
+                Times will be saved in {localTimeZone}.
+              </StyledText>
 
               <StyledText style={styles.label}>START TIME</StyledText>
 
@@ -456,6 +461,9 @@ export default function FormalWhenScreen() {
 
               <StyledText style={styles.modeSub}>
                 Add each session of the same event.
+              </StyledText>
+              <StyledText style={styles.timezoneNote}>
+                Times will be saved in {localTimeZone}.
               </StyledText>
 
               {Platform.OS === 'ios' && showPicker && form.whenMode === 'series' && (
@@ -623,6 +631,9 @@ export default function FormalWhenScreen() {
 
               <StyledText style={styles.modeSub}>
                 Add possible dates so guests can choose what works.
+              </StyledText>
+              <StyledText style={styles.timezoneNote}>
+                Times will be saved in {localTimeZone}.
               </StyledText>
 
               <StyledText style={styles.label}>DATE OPTIONS</StyledText>
@@ -826,6 +837,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: COLORS.textMuted,
+  },
+
+  timezoneNote: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: COLORS.primary,
+    fontWeight: '700',
+    marginTop: 8,
   },
 
   secondaryCard: {

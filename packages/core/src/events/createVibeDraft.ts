@@ -1,5 +1,6 @@
 //packages/core/src/events/createVibeDraft.ts
 
+import { getLocalTimeZone } from '../dateTime';
 import { supabase } from '../supabase';
 
 export type CreateVibeDraftInput = {
@@ -10,6 +11,7 @@ export type CreateVibeDraftInput = {
   keyword: string;
   gifKey?: string;
   eventType?: string;
+  eventTimeZone?: string | null;
   proposedDates?: string[];
   location?: string | null;
   visibility?: 1 | 2 | 3;
@@ -47,6 +49,7 @@ export async function createVibeDraft(
   p_keyword: input.keyword,
   p_gif_key: input.gifKey ?? 'waves',
   p_event_type: input.eventType ?? 'vibe',
+  p_event_time_zone: input.eventTimeZone ?? getLocalTimeZone(),
   p_proposed_dates: input.proposedDates ?? [],
 
   p_visibility: input.visibility ?? 2,

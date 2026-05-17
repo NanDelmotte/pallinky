@@ -27,7 +27,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { supabase, useSession } from '@pallinky/core';
+import { formatInEventTimeZone, supabase, useSession } from '@pallinky/core';
 import { CalendarButton } from '@pallinky/ui';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -341,11 +341,11 @@ export default function FormalRSVP() {
 
           <View style={styles.infoBox}>
             <Text style={[styles.infoText, { color: theme.text }, customFont]}>
-              {new Date(event.starts_at).toLocaleDateString(undefined, {
-                weekday: 'long',
-                month: 'short',
-                day: 'numeric',
-              })}
+              {formatInEventTimeZone(
+                event.starts_at,
+                { weekday: 'long', month: 'short', day: 'numeric' },
+                event
+              )}
             </Text>
 
             {locationText ? (

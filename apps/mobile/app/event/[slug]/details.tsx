@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { supabase, useSession } from '@pallinky/core';
+import { formatInEventTimeZone, supabase, useSession } from '@pallinky/core';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { CalendarButton } from '@pallinky/ui';
 import { getEventAccessDecision } from '../../../lib/visibility/getEventAccessDecision';
@@ -107,23 +107,24 @@ function getInviteName(inv: any) {
   );
 }
 
-function formatEventDate(value: string | null | undefined) {
-  if (!value) return 'Date TBD';
+function formatEventDate(event: any) {
+  if (!event?.starts_at) return 'Date TBD';
 
-  return new Date(value).toLocaleDateString(undefined, {
-    weekday: 'long',
-    month: 'short',
-    day: 'numeric',
-  });
+  return formatInEventTimeZone(
+    event.starts_at,
+    { weekday: 'long', month: 'short', day: 'numeric' },
+    event
+  );
 }
 
-function formatEventTime(value: string | null | undefined) {
-  if (!value) return '';
+function formatEventTime(event: any) {
+  if (!event?.starts_at) return '';
 
-  return new Date(value).toLocaleTimeString(undefined, {
-    hour: 'numeric',
-    minute: '2-digit',
-  });
+  return formatInEventTimeZone(
+    event.starts_at,
+    { hour: 'numeric', minute: '2-digit' },
+    event
+  );
 }
 
 function getRsvpLabel(status: string | null | undefined) {
@@ -579,7 +580,7 @@ setPollResponses([]);
       const seriesPromise = eventData.series_id
         ? supabase
             .from('events')
-            .select('id, slug, title, starts_at, event_type, manage_handle, series_id')
+            .select('id, slug, title, starts_at, event_time_zone, event_type, manage_handle, series_id')
             .eq('series_id', eventData.series_id)
             .order('starts_at', { ascending: true, nullsFirst: false })
         : Promise.resolve({ data: [], error: null });
@@ -869,8 +870,8 @@ setInvites(invitesRes.data || []);
   const seriesTotal = seriesEvents.length;
   const hostEmailLc = normalizeEmail(event.host_email);
   const hostNameFirst = getFirstName(event.host_name);
-  const eventDateText = formatEventDate(event.starts_at);
-  const eventTimeText = formatEventTime(event.starts_at);
+  const eventDateText = formatEventDate(event);
+  const eventTimeText = formatEventTime(event);
 
   const hasRsvpAccess =
     ['yes', 'going', 'interested', 'maybe'].includes(myStatus) ||

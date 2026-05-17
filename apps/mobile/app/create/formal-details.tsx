@@ -29,7 +29,7 @@ import DateTimePicker, {
   DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
 
-import { createVibeDraft, supabase } from '@pallinky/core';
+import { createVibeDraft, getLocalTimeZone, supabase } from '@pallinky/core';
 import { StyledInput, StyledText } from '@pallinky/ui';
 
 import LocationSearch from '../../components/LocationSearch';
@@ -395,6 +395,7 @@ export default function FormalDetailsScreen() {
             p_description:
               fullDescription || null,
             p_event_type: 'formal',
+            p_event_time_zone: getLocalTimeZone(),
 
             p_visible_in_feed:
               form.visible_in_feed ?? true,
