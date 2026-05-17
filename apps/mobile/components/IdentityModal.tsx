@@ -153,6 +153,7 @@ try {
         options: {
           redirectTo: redirectUrl,
           skipBrowserRedirect: true,
+          scopes: provider === 'apple' ? 'name email' : undefined,
           queryParams: provider === 'google' ? { prompt: 'select_account' } : undefined,
         },
       });
@@ -173,7 +174,17 @@ try {
         }
       }
 
-      Alert.alert('Login Incomplete', 'The sign-in flow did not return a session.');
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session) {
+        await clearReturnPath();
+        onClose();
+        return;
+      }
+
+      Alert.alert('Login Incomplete', 'The sign-in flow did not return a session. Please try again.');
     } catch (error: any) {
       Alert.alert('Login Error', error.message ?? 'Could not complete sign-in.');
     } finally {

@@ -21,13 +21,11 @@ export function isDevelopmentVariant() {
   return variant === 'development' || variant === 'dev';
 }
 
-export function getAuthCallbackScheme() {
-  return isDevelopmentVariant() ? 'pallinky-dev' : 'pallinky';
+export function getAuthCallbackUrl() {
+  return 'pallinky://auth-callback';
 }
 
-export function getAuthCallbackUrl() {
-  return `${getAuthCallbackScheme()}://auth-callback`;
-}
+
 
 export function isAuthCallbackUrl(url: string | null | undefined) {
   if (!url) return false;
@@ -36,10 +34,8 @@ export function isAuthCallbackUrl(url: string | null | undefined) {
 
   return (
     normalized.startsWith('pallinky://auth-callback') ||
-    normalized.startsWith('pallinky-dev://auth-callback') ||
-    normalized.startsWith(
-      Linking.createURL('auth-callback', { scheme: getAuthCallbackScheme() }).toLowerCase()
-    ) ||
+    normalized.startsWith('pallinky://auth-callback') ||
+    normalized.startsWith(Linking.createURL('auth-callback').toLowerCase()) ||
     normalized.includes('access_token=') ||
     normalized.includes('refresh_token=') ||
     normalized.includes('code=')

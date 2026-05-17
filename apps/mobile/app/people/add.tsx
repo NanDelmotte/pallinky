@@ -8,7 +8,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { supabase } from '@pallinky/core';
+import { supabase, useSession } from '@pallinky/core';
 import { StyledText } from '@pallinky/ui';
 
 type ProfileRow = {
@@ -25,6 +25,7 @@ function avatarFallback(name: string) {
 }
 
 export default function AddPersonScreen() {
+  const { session } = useSession();
   const { profileId } = useLocalSearchParams<{ profileId: string }>();
 
   const [loading, setLoading] = useState(true);
@@ -59,6 +60,18 @@ export default function AddPersonScreen() {
   }
 
   async function handleAdd() {
+    const currentUserId = session?.user?.id;
+
+    if (!currentUserId) {
+      Alert.alert('Error', 'Please sign in before adding a contact.');
+      return;
+    }
+
+    if (profile?.id === currentUserId) {
+      Alert.alert('Already you', 'This QR code belongs to your own Pallinky profile.');
+      return;
+    }
+
     if (!profile?.email_lc) {
       Alert.alert('Error', 'This profile has no contact email.');
       return;
@@ -77,11 +90,25 @@ export default function AddPersonScreen() {
       );
 
       if (personError) throw personError;
+      if (!personId) throw new Error('Could not resolve this contact.');
 
-      // For now this creates/resolves the person record.
-      // Circle placement can be added separately.
+      const { error: relationshipError } = await supabase
+        .from('relationships')
+        .upsert(
+          {
+            owner_user_id: currentUserId,
+            related_person_id: personId,
+            relationship_type: 'direct',
+            source: 'qr',
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'owner_user_id,related_person_id' },
+        );
+
+      if (relationshipError) throw relationshipError;
+
       Alert.alert('Added', `${profile.full_name || 'Contact'} added to your Pallinky contacts.`);
-      router.replace('/(tabs)');
+      router.replace('/(tabs)/people');
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'Could not add contact.');
     } finally {
