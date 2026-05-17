@@ -5,19 +5,15 @@
  * Android opens the native date picker followed by time picker and adds the result to the poll options.
  */
 
-import React, { useMemo, useState } from 'react';
-import {
-  Platform,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import React, { useMemo, useState } from "react";
+import { Platform, StyleSheet, TouchableOpacity, View } from "react-native";
 import DateTimePicker, {
   AndroidNativeProps,
   DateTimePickerEvent,
-} from '@react-native-community/datetimepicker';
-import { Ionicons } from '@expo/vector-icons';
-import { StyledText } from '@pallinky/ui';
+} from "@react-native-community/datetimepicker";
+import { Ionicons } from "@expo/vector-icons";
+import { StyledText } from "@pallinky/ui";
+import { useI18n } from "@pallinky/i18n/client";
 
 type Props = {
   value: Date[];
@@ -26,14 +22,14 @@ type Props = {
 };
 
 const COLORS = {
-  surface: '#FFFFFF',
-  text: '#1f2a1b',
-  textMuted: '#66715f',
-  primary: '#43691b',
-  primaryBg: '#fbfcfa',
-  border: '#bac9ad',
-  borderSoft: '#e7ede2',
-  danger: '#e63946',
+  surface: "#FFFFFF",
+  text: "#1f2a1b",
+  textMuted: "#66715f",
+  primary: "#43691b",
+  primaryBg: "#fbfcfa",
+  border: "#bac9ad",
+  borderSoft: "#e7ede2",
+  danger: "#e63946",
 };
 
 function roundToNearestQuarterHour(date: Date) {
@@ -52,11 +48,11 @@ function roundToNearestQuarterHour(date: Date) {
 }
 
 function formatDateLabel(date: Date) {
-  return date.toLocaleString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
+  return date.toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -69,11 +65,18 @@ export default function DateOptionPicker({
   onChange,
   accentColor = COLORS.primary,
 }: Props) {
+  const { t } = useI18n();
   const [iosVisible, setIosVisible] = useState(false);
-  const [iosTempDate, setIosTempDate] = useState<Date>(roundToNearestQuarterHour(new Date()));
+  const [iosTempDate, setIosTempDate] = useState<Date>(
+    roundToNearestQuarterHour(new Date()),
+  );
 
-  const [androidStep, setAndroidStep] = useState<'closed' | 'date' | 'time'>('closed');
-  const [androidTempDate, setAndroidTempDate] = useState<Date>(roundToNearestQuarterHour(new Date()));
+  const [androidStep, setAndroidStep] = useState<"closed" | "date" | "time">(
+    "closed",
+  );
+  const [androidTempDate, setAndroidTempDate] = useState<Date>(
+    roundToNearestQuarterHour(new Date()),
+  );
 
   const sortedDates = useMemo(() => sortDatesAsc(value), [value]);
 
@@ -94,14 +97,14 @@ export default function DateOptionPicker({
   const openPicker = () => {
     const initial = roundToNearestQuarterHour(new Date());
 
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === "ios") {
       setIosTempDate(initial);
       setIosVisible(true);
       return;
     }
 
     setAndroidTempDate(initial);
-    setAndroidStep('date');
+    setAndroidStep("date");
   };
 
   const onIosChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
@@ -115,31 +118,41 @@ export default function DateOptionPicker({
     setIosVisible(false);
   };
 
-  const onAndroidDateChange: AndroidNativeProps['onChange'] = (event, selectedDate) => {
-    if (event.type === 'dismissed') {
-      setAndroidStep('closed');
+  const onAndroidDateChange: AndroidNativeProps["onChange"] = (
+    event,
+    selectedDate,
+  ) => {
+    if (event.type === "dismissed") {
+      setAndroidStep("closed");
       return;
     }
 
     if (!selectedDate) {
-      setAndroidStep('closed');
+      setAndroidStep("closed");
       return;
     }
 
     const next = new Date(androidTempDate);
-    next.setFullYear(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+    next.setFullYear(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth(),
+      selectedDate.getDate(),
+    );
     setAndroidTempDate(next);
-    setAndroidStep('time');
+    setAndroidStep("time");
   };
 
-  const onAndroidTimeChange: AndroidNativeProps['onChange'] = (event, selectedDate) => {
-    if (event.type === 'dismissed') {
-      setAndroidStep('closed');
+  const onAndroidTimeChange: AndroidNativeProps["onChange"] = (
+    event,
+    selectedDate,
+  ) => {
+    if (event.type === "dismissed") {
+      setAndroidStep("closed");
       return;
     }
 
     if (!selectedDate) {
-      setAndroidStep('closed');
+      setAndroidStep("closed");
       return;
     }
 
@@ -147,16 +160,19 @@ export default function DateOptionPicker({
     next.setHours(selectedDate.getHours(), selectedDate.getMinutes(), 0, 0);
 
     addDateIfMissing(next);
-    setAndroidStep('closed');
+    setAndroidStep("closed");
   };
 
   return (
     <View>
-      <StyledText style={styles.label}>Suggest some dates</StyledText>
+      <StyledText style={styles.label}>{t("date_picker_label")}</StyledText>
 
       <View style={styles.listWrap}>
         {sortedDates.map((opt, index) => (
-          <View key={`${opt.getTime()}-${index}`} style={[styles.badge, { borderLeftColor: accentColor }]}>
+          <View
+            key={`${opt.getTime()}-${index}`}
+            style={[styles.badge, { borderLeftColor: accentColor }]}
+          >
             <StyledText style={[styles.badgeText, { color: COLORS.text }]}>
               {formatDateLabel(opt)}
             </StyledText>
@@ -173,14 +189,19 @@ export default function DateOptionPicker({
           style={[styles.addButton, { borderColor: accentColor }]}
           onPress={openPicker}
         >
-          <Ionicons name="calendar" size={20} color={accentColor} style={{ marginBottom: 6 }} />
+          <Ionicons
+            name="calendar"
+            size={20}
+            color={accentColor}
+            style={{ marginBottom: 6 }}
+          />
           <StyledText style={[styles.addButtonText, { color: accentColor }]}>
-            + Add Date Option
+            {t("date_picker_add")}
           </StyledText>
         </TouchableOpacity>
       )}
 
-      {Platform.OS === 'ios' && iosVisible && (
+      {Platform.OS === "ios" && iosVisible && (
         <View style={styles.iosPickerContainer}>
           <DateTimePicker
             value={iosTempDate}
@@ -192,21 +213,28 @@ export default function DateOptionPicker({
           />
 
           <View style={styles.iosPickerFooter}>
-            <TouchableOpacity onPress={() => setIosVisible(false)} style={styles.cancelBtn}>
-              <StyledText style={styles.cancelText}>Cancel</StyledText>
+            <TouchableOpacity
+              onPress={() => setIosVisible(false)}
+              style={styles.cancelBtn}
+            >
+              <StyledText style={styles.cancelText}>
+                {t("common_cancel")}
+              </StyledText>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={confirmIosDate}
               style={[styles.confirmBtn, { backgroundColor: accentColor }]}
             >
-              <StyledText style={styles.confirmText}>Add Date</StyledText>
+              <StyledText style={styles.confirmText}>
+                {t("date_picker_add")}
+              </StyledText>
             </TouchableOpacity>
           </View>
         </View>
       )}
 
-      {Platform.OS === 'android' && androidStep === 'date' && (
+      {Platform.OS === "android" && androidStep === "date" && (
         <DateTimePicker
           value={androidTempDate}
           mode="date"
@@ -215,7 +243,7 @@ export default function DateOptionPicker({
         />
       )}
 
-      {Platform.OS === 'android' && androidStep === 'time' && (
+      {Platform.OS === "android" && androidStep === "time" && (
         <DateTimePicker
           value={androidTempDate}
           mode="time"
@@ -232,7 +260,7 @@ export default function DateOptionPicker({
 const styles = StyleSheet.create({
   label: {
     fontSize: 28,
-    fontWeight: '900',
+    fontWeight: "900",
     color: COLORS.text,
     marginBottom: 20,
   },
@@ -247,24 +275,24 @@ const styles = StyleSheet.create({
     borderLeftWidth: 5,
     borderWidth: 1,
     borderColor: COLORS.borderSoft,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   badgeText: {
     flex: 1,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   addButton: {
     padding: 25,
     borderRadius: 15,
-    borderStyle: 'dashed',
+    borderStyle: "dashed",
     borderWidth: 2,
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: COLORS.primaryBg,
     marginBottom: 20,
   },
   addButtonText: {
-    fontWeight: '800',
+    fontWeight: "800",
   },
   iosPickerContainer: {
     backgroundColor: COLORS.surface,
@@ -273,15 +301,15 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderWidth: 1,
     borderColor: COLORS.border,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 10,
     elevation: 4,
   },
   iosPickerFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 10,
     marginTop: 5,
     borderTopWidth: 1,
@@ -292,7 +320,7 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     color: COLORS.textMuted,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   confirmBtn: {
     paddingHorizontal: 20,
@@ -300,7 +328,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   confirmText: {
-    color: '#fff',
-    fontWeight: '800',
+    color: "#fff",
+    fontWeight: "800",
   },
 });

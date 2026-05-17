@@ -1,8 +1,9 @@
-import React from 'react';
-import { Alert, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { StyledText } from '@pallinky/ui';
-import MyPeopleList, { MyPeopleListPerson } from './MyPeopleList';
+import React from "react";
+import { Alert, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { StyledText } from "@pallinky/ui";
+import MyPeopleList, { MyPeopleListPerson } from "./MyPeopleList";
+import { useI18n } from "@pallinky/i18n/client";
 
 type Props = {
   people: MyPeopleListPerson[];
@@ -16,12 +17,12 @@ type Props = {
 };
 
 const COLORS = {
-  surface: '#FFFFFF',
-  text: '#1f2a1b',
-  textMuted: '#66715f',
-  primary: '#43691b',
-  primarySoft: '#eef4e8',
-  borderSoft: '#e7ede2',
+  surface: "#FFFFFF",
+  text: "#1f2a1b",
+  textMuted: "#66715f",
+  primary: "#43691b",
+  primarySoft: "#eef4e8",
+  borderSoft: "#e7ede2",
 };
 
 export default function MyPeopleSection({
@@ -32,19 +33,27 @@ export default function MyPeopleSection({
   onLongPressPerson,
   showCheckboxes = false,
   showHintOnce = false,
-  emptyText = 'No people yet. Tap the add button to choose who to share from your phone.',
+  emptyText,
 }: Props) {
+  const { t } = useI18n();
+  const resolvedEmptyText = emptyText ?? t("people_empty_body");
   return (
     <View style={styles.sectionCard}>
       <View style={styles.headerRow}>
-        <StyledText style={styles.sectionTitle}>My People</StyledText>
+        <StyledText style={styles.sectionTitle}>
+          {t("people_header_title")}
+        </StyledText>
 
         <TouchableOpacity
           style={styles.addPeopleButton}
           onPress={onPressAddPeople}
-          accessibilityLabel="Add people"
+          accessibilityLabel={t("people_add_people")}
         >
-          <Ionicons name="person-add-outline" size={20} color={COLORS.primary} />
+          <Ionicons
+            name="person-add-outline"
+            size={20}
+            color={COLORS.primary}
+          />
         </TouchableOpacity>
       </View>
 
@@ -55,7 +64,7 @@ export default function MyPeopleSection({
         onLongPressPerson={onLongPressPerson}
         showCheckboxes={showCheckboxes}
         showHintOnce={showHintOnce}
-        emptyText={emptyText}
+        emptyText={resolvedEmptyText}
       />
     </View>
   );
@@ -65,14 +74,18 @@ export function defaultMyPeopleLongPressHandler(
   person: MyPeopleListPerson,
   onConfirmRemove: (person: MyPeopleListPerson) => void,
 ) {
-  Alert.alert('Remove from my people', `Remove ${person.name} from your people list?`, [
-    { text: 'Cancel', style: 'cancel' },
-    {
-      text: 'Remove',
-      style: 'destructive',
-      onPress: () => onConfirmRemove(person),
-    },
-  ]);
+  Alert.alert(
+    "Remove from my people",
+    `Remove ${person.name} from your people list?`,
+    [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Remove",
+        style: "destructive",
+        onPress: () => onConfirmRemove(person),
+      },
+    ],
+  );
 }
 
 const styles = StyleSheet.create({
@@ -87,13 +100,13 @@ const styles = StyleSheet.create({
   headerRow: {
     paddingHorizontal: 16,
     marginBottom: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   sectionTitle: {
     fontSize: 19,
-    fontWeight: '900',
+    fontWeight: "900",
     color: COLORS.text,
   },
   addPeopleButton: {
@@ -102,8 +115,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: COLORS.primarySoft,
     borderWidth: 1,
-    borderColor: '#d8e5cc',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: "#d8e5cc",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

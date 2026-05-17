@@ -1,9 +1,10 @@
-import React from 'react';
-import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { StyledText } from '@pallinky/ui';
+import React from "react";
+import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { StyledText } from "@pallinky/ui";
+import { useI18n } from "@pallinky/i18n/client";
 
-type PersonSource = 'pallinky' | 'contact';
+type PersonSource = "pallinky" | "contact";
 
 export type MyPeopleListPerson = {
   key: string;
@@ -24,18 +25,18 @@ type Props = {
 };
 
 const COLORS = {
-  text: '#1f2a1b',
-  textMuted: '#66715f',
-  primary: '#43691b',
-  borderSoft: '#e7ede2',
-  secondary: '#6A4C93',
-  secondaryBg: '#efe9f7',
+  text: "#1f2a1b",
+  textMuted: "#66715f",
+  primary: "#43691b",
+  borderSoft: "#e7ede2",
+  secondary: "#6A4C93",
+  secondaryBg: "#efe9f7",
 };
 
 function avatarFor(name: string, avatarUrl: string | null | undefined) {
   if (avatarUrl) return avatarUrl;
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(
-    name || 'Friend',
+    name || "Friend",
   )}&background=6A4C93&color=fff`;
 }
 
@@ -46,12 +47,16 @@ export default function MyPeopleList({
   onLongPressPerson,
   showCheckboxes = false,
   showHintOnce = false,
-  emptyText = 'No people yet.',
+  emptyText,
 }: Props) {
+  const { t } = useI18n();
+  const resolvedEmptyText = emptyText ?? t("people_no_people");
   const selectedSet = new Set(selectedPersonIds);
 
   if (!people.length) {
-    return <StyledText style={styles.emptyText}>{emptyText}</StyledText>;
+    return (
+      <StyledText style={styles.emptyText}>{resolvedEmptyText}</StyledText>
+    );
   }
 
   return (
@@ -64,8 +69,14 @@ export default function MyPeopleList({
             key={person.key}
             style={styles.row}
             activeOpacity={0.8}
-            onPress={onTogglePerson ? () => onTogglePerson(person.selection_id) : undefined}
-            onLongPress={onLongPressPerson ? () => onLongPressPerson(person) : undefined}
+            onPress={
+              onTogglePerson
+                ? () => onTogglePerson(person.selection_id)
+                : undefined
+            }
+            onLongPress={
+              onLongPressPerson ? () => onLongPressPerson(person) : undefined
+            }
           >
             <Image
               source={{ uri: avatarFor(person.name, person.avatar_url) }}
@@ -78,23 +89,29 @@ export default function MyPeopleList({
                   {person.name}
                 </StyledText>
 
-                {person.source === 'pallinky' ? (
+                {person.source === "pallinky" ? (
                   <View style={styles.pallinkyBadge}>
-                    <Ionicons name="sparkles" size={12} color={COLORS.secondary} />
+                    <Ionicons
+                      name="sparkles"
+                      size={12}
+                      color={COLORS.secondary}
+                    />
                   </View>
                 ) : null}
               </View>
 
               {showHintOnce && index === 0 ? (
-                <StyledText style={styles.hint}>Long press to remove</StyledText>
+                <StyledText style={styles.hint}>
+                  {t("people_long_press_remove")}
+                </StyledText>
               ) : null}
             </View>
 
             {showCheckboxes ? (
               <Ionicons
-                name={isSelected ? 'checkbox' : 'square-outline'}
+                name={isSelected ? "checkbox" : "square-outline"}
                 size={22}
-                color={isSelected ? COLORS.primary : '#b0b7c3'}
+                color={isSelected ? COLORS.primary : "#b0b7c3"}
               />
             ) : null}
           </TouchableOpacity>
@@ -113,8 +130,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.borderSoft,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   avatar: {
     width: 44,
@@ -129,12 +146,12 @@ const styles = StyleSheet.create({
     paddingRight: 10,
   },
   topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   name: {
     fontSize: 15,
-    fontWeight: '900',
+    fontWeight: "900",
     color: COLORS.text,
     flexShrink: 1,
   },
@@ -144,8 +161,8 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 9,
     backgroundColor: COLORS.secondaryBg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   hint: {
     marginTop: 2,

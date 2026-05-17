@@ -1,15 +1,17 @@
-import { Link } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { Link } from "expo-router";
+import { StyleSheet } from "react-native";
 
-import {ThemedText} from '@pallinky/ui';
-import {ThemedView} from '@pallinky/ui';
+import { ThemedText, ThemedView } from "@pallinky/ui";
+import { useI18n } from "@pallinky/i18n/client";
 
 export default function ModalScreen() {
+  const { t } = useI18n();
+
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="title">This is a modal</ThemedText>
+      <ThemedText type="title">{t("modal_title")}</ThemedText>
       <Link href="/" dismissTo style={styles.link}>
-        <ThemedText type="link">Go to home screen</ThemedText>
+        <ThemedText type="link">{t("modal_home")}</ThemedText>
       </Link>
     </ThemedView>
   );
@@ -18,8 +20,8 @@ export default function ModalScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: 20,
   },
   link: {

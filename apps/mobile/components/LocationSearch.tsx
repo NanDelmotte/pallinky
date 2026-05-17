@@ -7,6 +7,7 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { GooglePlacesAutocomplete } from "react-native-google-places-autocomplete";
+import { useI18n } from "@pallinky/i18n/client";
 
 const GOOGLE_MAPS_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -18,12 +19,12 @@ type Props = {
 const DEFAULT_LOCATION = "52.3676,4.9041"; // Amsterdam center
 
 export default function LocationSearch({ value, onChange }: Props) {
+  const { t } = useI18n();
+
   return (
     <View style={styles.wrapper}>
-      
-
       <GooglePlacesAutocomplete
-        placeholder="Search for a bar or venue..."
+        placeholder={t("location_search_placeholder")}
         textInputProps={{
           placeholderTextColor: "#64748b",
         }}
@@ -60,7 +61,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 0,
   },
-  
+
   input: {
     height: 58,
     fontSize: 18,
@@ -73,7 +74,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#bae6fd",
     color: "#003049",
-  },  listView: {
+  },
+  listView: {
     marginTop: 8,
     backgroundColor: "#fff",
     borderRadius: 12,
