@@ -14,7 +14,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { supabase, SessionProvider } from '@pallinky/core';
 import { completeSupabaseAuthFromUrl, isAuthCallbackUrl } from '../lib/authRedirect';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { I18nProvider } from '@pallinky/i18n/client';
+import { I18nProvider } from '@pallinky/i18n';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({

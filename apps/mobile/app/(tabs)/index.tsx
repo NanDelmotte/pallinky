@@ -118,6 +118,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { session } = useSession();
   const { language: lang } = useI18n();
+  
 useEffect(() => {
   if (!session?.user?.email) {
     router.replace('/welcome');

@@ -1,20 +1,45 @@
+<<<<<<< HEAD
 'use client';
 
+=======
+>>>>>>> codex/add-internationalization-support-for-english,-french,-and-du
 /**
  * Path: packages/i18n/provider.tsx
  * Description: App-wide i18n provider with manually selected, locally persisted language.
  */
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+<<<<<<< HEAD
 import { DEFAULT_LANGUAGE, LANGUAGE_STORAGE_KEY, isAppLanguage } from './constants';
 import { t as translate } from './translate';
 import type { AppLanguage, TranslationKey } from './types';
 
+=======
+import { t as translate } from './translate';
+import type { AppLanguage, TranslationKey } from './types';
+
+export const LANGUAGE_STORAGE_KEY = 'pallinky_language_v1';
+export const DEFAULT_LANGUAGE: AppLanguage = 'en';
+
+export const LANGUAGE_OPTIONS: { code: AppLanguage; label: string }[] = [
+  { code: 'en', label: 'English' },
+  { code: 'nl', label: 'Nederlands' },
+  { code: 'fr', label: 'Français' },
+];
+
+>>>>>>> codex/add-internationalization-support-for-english,-french,-and-du
 type I18nStorage = {
   getItem: (key: string) => Promise<string | null>;
   setItem: (key: string, value: string) => Promise<void>;
 };
 
+<<<<<<< HEAD
+=======
+function isAppLanguage(value: unknown): value is AppLanguage {
+  return value === 'en' || value === 'nl' || value === 'fr';
+}
+
+>>>>>>> codex/add-internationalization-support-for-english,-french,-and-du
 type I18nContextValue = {
   language: AppLanguage;
   setLanguage: (language: AppLanguage) => Promise<void>;

@@ -212,6 +212,7 @@ export default function PeopleScreen() {
   const router = useRouter();
   const { session } = useSession();
   const { language: lang } = useI18n();
+  
 
   const [activeTab, setActiveTab] = useState<PeopleTab>('connections');
   const [loading, setLoading] = useState(true);
@@ -641,6 +642,7 @@ export default function PeopleScreen() {
       setLoading(false);
     }
   }, [session, lang]);
+  
 
   useFocusEffect(
     useCallback(() => {
@@ -710,6 +712,7 @@ export default function PeopleScreen() {
       .slice(0, 2)
       .map((item) => buildFriendCardFromSignal(item, profileMap, lang));
   }, [feed.items, profileMap, lang]);
+  
 
   const reconnectEmails = useMemo(() => {
     return new Set(reconnectCards.map((card) => normalizeEmail(card.id)));
@@ -765,6 +768,7 @@ const sharedHistoryEmailSet = useMemo(() => {
   sharedHistoryEmailSet,
   profileMap,
   lang,
+  lang,
 ]);
 
   const socialIntentCards = useMemo(() => {
@@ -807,6 +811,7 @@ const sharedHistoryEmailSet = useMemo(() => {
       })
       .filter((card) => !reconnectEmails.has(normalizeEmail(String(card.id))));
   }, [data.socialIntent, profileMap, reconnectEmails, lang]);
+  
 
   const hasAnyPeopleContent =
     innerCircleSignals.length > 0 ||

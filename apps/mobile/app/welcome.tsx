@@ -7,7 +7,11 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+<<<<<<< HEAD
 import { useI18n } from '@pallinky/i18n/client';
+=======
+import { useI18n } from '@pallinky/i18n';
+>>>>>>> codex/add-internationalization-support-for-english,-french,-and-du
 import LanguageSelector from '../components/LanguageSelector';
 
 const WELCOME_KEY = 'pallinky_welcome_seen_v1';
