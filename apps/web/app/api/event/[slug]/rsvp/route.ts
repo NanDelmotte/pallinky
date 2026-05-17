@@ -70,7 +70,7 @@ export async function POST(
     let guestToken: string | null = null;
 
     if (isFormal) {
-      const { error } = await supabase.rpc('submit_rsvp_enriched', {
+      const { data, error } = await supabase.rpc('submit_rsvp_enriched', {
         p_event_id: event.id,
         p_name: cleanName,
         p_email: cleanEmail,
@@ -86,6 +86,23 @@ export async function POST(
         );
       }
 
+      if (data?.deadline_passed) {
+        return NextResponse.json(
+          {
+            error: 'The RSVP deadline has passed, so responses are now closed.',
+            deadline_passed: true,
+            rsvp_deadline: data.rsvp_deadline ?? null,
+          },
+          { status: 400 }
+        );
+      }
+
+      if (data?.error) {
+        return NextResponse.json({ error: data.error }, { status: 400 });
+      }
+
+      guestToken = data?.guest_token || null;
+
       const { data: rsvpRow } = await supabase
         .from('rsvps')
         .select('guest_token')
@@ -93,7 +110,7 @@ export async function POST(
         .eq('email_lc', cleanEmail)
         .maybeSingle();
 
-      guestToken = rsvpRow?.guest_token || null;
+      guestToken = guestToken || rsvpRow?.guest_token || null;
     } else {
       const { data, error } = await supabase.rpc('submit_vibe_rsvp', {
         p_slug: slug,
@@ -108,6 +125,17 @@ export async function POST(
         return NextResponse.json(
           { error: error.message || 'Failed to save RSVP. contact support.' },
           { status: 500 }
+        );
+      }
+
+      if (data?.deadline_passed) {
+        return NextResponse.json(
+          {
+            error: 'The RSVP deadline has passed, so responses are now closed.',
+            deadline_passed: true,
+            rsvp_deadline: data.rsvp_deadline ?? null,
+          },
+          { status: 400 }
         );
       }
 
@@ -146,6 +174,7 @@ export async function POST(
 
     return NextResponse.json({
       ok: true,
+      deadline_passed: false,
       guest_token: guestToken,
       redirectTo: guestToken
         ? `/event/${event.slug}/thanks?status=${status}&token=${guestToken}`
