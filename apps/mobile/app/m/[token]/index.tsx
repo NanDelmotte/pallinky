@@ -3,7 +3,7 @@
  * Description: Host Management Dashboard.
  */
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -17,11 +17,11 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   TouchableWithoutFeedback,
-} from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { supabase } from '@pallinky/core';
-import { StyledText } from '@pallinky/ui';
-import { Ionicons } from '@expo/vector-icons';
+} from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { supabase } from "@pallinky/core";
+import { StyledText } from "@pallinky/ui";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function ManageEventScreen() {
   const params = useLocalSearchParams<{ token?: string | string[] }>();
@@ -33,18 +33,18 @@ export default function ManageEventScreen() {
   const [loading, setLoading] = useState(true);
 
   const [showMessageModal, setShowMessageModal] = useState(false);
-  const [messageSubject, setMessageSubject] = useState('');
-  const [messageText, setMessageText] = useState('');
+  const [messageSubject, setMessageSubject] = useState("");
+  const [messageText, setMessageText] = useState("");
   const [isSending, setIsSending] = useState(false);
 
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [cancelMessage, setCancelMessage] = useState('');
+  const [cancelMessage, setCancelMessage] = useState("");
   const [isCancelling, setIsCancelling] = useState(false);
 
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
-    if (!token || typeof token !== 'string') return;
+    if (!token || typeof token !== "string") return;
     void fetchData();
   }, [token]);
 
@@ -54,11 +54,11 @@ export default function ManageEventScreen() {
       return;
     }
 
-    const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
+    const showSub = Keyboard.addListener("keyboardDidShow", (e) => {
       setKeyboardHeight(e.endCoordinates?.height || 0);
     });
 
-    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
+    const hideSub = Keyboard.addListener("keyboardDidHide", () => {
       setKeyboardHeight(0);
     });
 
@@ -71,20 +71,23 @@ export default function ManageEventScreen() {
   const modalContentStyle = useMemo(
     () => [
       styles.modalContent,
-      Platform.OS === 'android' && keyboardHeight > 0
+      Platform.OS === "android" && keyboardHeight > 0
         ? { paddingBottom: Math.max(24, keyboardHeight + 12) }
         : null,
     ],
-    [keyboardHeight]
+    [keyboardHeight],
   );
 
   async function fetchData() {
     setLoading(true);
 
     try {
-      const { data: ev, error } = await supabase.rpc('get_event_by_manage_token', {
-        p_manage_token: token,
-      });
+      const { data: ev, error } = await supabase.rpc(
+        "get_event_by_manage_token",
+        {
+          p_manage_token: token,
+        },
+      );
 
       if (error) throw error;
 
@@ -93,31 +96,34 @@ export default function ManageEventScreen() {
         setEvent(current);
 
         const { data: rsvps, error: rsvpError } = await supabase
-          .from('rsvps')
-          .select('*')
-          .eq('event_id', current.id)
-          .order('responded_at', { ascending: false });
+          .from("rsvps")
+          .select("*")
+          .eq("event_id", current.id)
+          .order("responded_at", { ascending: false });
 
         if (rsvpError) throw rsvpError;
         setGuests(rsvps || []);
       }
     } catch (err) {
-      Alert.alert('Error', 'Could not load this event.');
+      Alert.alert("Error", "Could not load this event.");
     } finally {
       setLoading(false);
     }
   }
 
   const handleSendMessage = async () => {
-    const safeToken = typeof token === 'string' ? token.trim() : '';
+    const safeToken = typeof token === "string" ? token.trim() : "";
 
     if (!safeToken) {
-      Alert.alert('Error', 'Missing manage token.');
+      Alert.alert("Error", "Missing manage token.");
       return;
     }
 
     if (!messageSubject.trim() || !messageText.trim()) {
-      Alert.alert('Missing Info', 'Please provide both a subject and a message.');
+      Alert.alert(
+        "Missing Info",
+        "Please provide both a subject and a message.",
+      );
       return;
     }
 
@@ -130,88 +136,93 @@ export default function ManageEventScreen() {
         p_body: messageText.trim(),
       };
 
-      console.log('send_host_message_by_manage_token payload', payload);
+      console.log("send_host_message_by_manage_token payload", payload);
 
-      const { data, error } = await supabase.rpc('send_host_message_by_manage_token', payload);
+      const { data, error } = await supabase.rpc(
+        "send_host_message_by_manage_token",
+        payload,
+      );
 
-      console.log('send_host_message_by_manage_token result', { data, error });
+      console.log("send_host_message_by_manage_token result", { data, error });
 
       if (error) {
         throw error;
       }
 
-      Alert.alert('Sent', 'Your message has been queued for guests.');
-      setMessageText('');
-      setMessageSubject('');
+      Alert.alert("Sent", "Your message has been queued for guests.");
+      setMessageText("");
+      setMessageSubject("");
       setShowMessageModal(false);
     } catch (err: any) {
-      console.log('send_host_message_by_manage_token failed', err);
+      console.log("send_host_message_by_manage_token failed", err);
 
       const message =
         err?.message ||
         err?.details ||
         err?.hint ||
-        (typeof err === 'string' ? err : 'Failed to queue messages.');
+        (typeof err === "string" ? err : "Failed to queue messages.");
 
-      Alert.alert('Error', message);
+      Alert.alert("Error", message);
     } finally {
       setIsSending(false);
     }
   };
 
   const handleCancelEvent = async () => {
-    const safeToken = typeof token === 'string' ? token.trim() : '';
+    const safeToken = typeof token === "string" ? token.trim() : "";
 
     if (!safeToken) {
-      Alert.alert('Error', 'Missing manage token.');
+      Alert.alert("Error", "Missing manage token.");
       return;
     }
-
-
 
     setIsCancelling(true);
 
     try {
-  const payload = {
-  p_manage_token: safeToken,
-  p_message: cancelMessage.trim() || null,
-};
+      const payload = {
+        p_manage_token: safeToken,
+        p_message: cancelMessage.trim() || null,
+      };
 
-      console.log('cancel_event_by_manage_token payload', payload);
+      console.log("cancel_event_by_manage_token payload", payload);
 
       const { data, error } = await supabase.rpc(
-        'cancel_event_by_manage_token',
+        "cancel_event_by_manage_token",
         payload as {
           p_manage_token: string;
           p_message: string;
-        }
+        },
       );
 
-      console.log('cancel_event_by_manage_token result', { data, error });
+      console.log("cancel_event_by_manage_token result", { data, error });
 
       if (error) {
         throw error;
       }
 
       setShowCancelModal(false);
-      setCancelMessage('');
+      setCancelMessage("");
 
-      Alert.alert('Event Cancelled', 'Event cancelled and your guests have been notified.', [
-        {
-          text: 'OK',
-          onPress: () => router.replace('/(tabs)'),
-        },
-      ]);
+      Alert.alert(
+        "Event Cancelled",
+        "Event cancelled and your guests have been notified.",
+        [
+          {
+            text: "OK",
+            onPress: () => router.replace("/(tabs)"),
+          },
+        ],
+      );
     } catch (err: any) {
-      console.log('cancel_event_by_manage_token failed', err);
+      console.log("cancel_event_by_manage_token failed", err);
 
       const message =
         err?.message ||
         err?.details ||
         err?.hint ||
-        (typeof err === 'string' ? err : 'Failed to cancel event.');
+        (typeof err === "string" ? err : "Failed to cancel event.");
 
-      Alert.alert('Error', message);
+      Alert.alert("Error", message);
     } finally {
       setIsCancelling(false);
     }
@@ -219,16 +230,16 @@ export default function ManageEventScreen() {
 
   const openCancelFlow = () => {
     Alert.alert(
-      'Cancel event?',
-      'This will cancel the event and notify all RSVPd guests.',
+      "Cancel event?",
+      "This will cancel the event and notify all RSVPd guests.",
       [
-        { text: 'Keep Event', style: 'cancel' },
+        { text: "Keep Event", style: "cancel" },
         {
-          text: 'Continue',
-          style: 'destructive',
+          text: "Continue",
+          style: "destructive",
           onPress: () => setShowCancelModal(true),
         },
-      ]
+      ],
     );
   };
 
@@ -251,7 +262,10 @@ export default function ManageEventScreen() {
   return (
     <View style={styles.screen}>
       <View style={styles.headerNav}>
-        <TouchableOpacity onPress={() => router.replace('/(tabs)')} style={styles.closeBtn}>
+        <TouchableOpacity
+          onPress={() => router.replace("/(tabs)")}
+          style={styles.closeBtn}
+        >
           <Ionicons name="arrow-back" size={24} color="#1a1a1a" />
           <StyledText style={styles.backText}>My Social Hub</StyledText>
         </TouchableOpacity>
@@ -265,33 +279,37 @@ export default function ManageEventScreen() {
             style={styles.actionItem}
             onPress={() =>
               router.push({
-                pathname: '/m/[token]/edit',
+                pathname: "/m/[token]/edit",
                 params: {
                   token,
-                  title: event.title || '',
-                  description: event.description || '',
-                  location: event.location || '',
-                  host_name: event.host_name || '',
-                  host_email: event.host_email || '',
-                  event_type: event.event_type || 'formal',
-                  starts_at: event.starts_at || '',
-                  ends_at: event.ends_at || '',
+                  title: event.title || "",
+                  description: event.description || "",
+                  location: event.location || "",
+                  host_name: event.host_name || "",
+                  host_email: event.host_email || "",
+                  event_type: event.event_type || "formal",
+                  starts_at: event.starts_at || "",
+                  ends_at: event.ends_at || "",
                   proposed_dates: JSON.stringify(event.proposed_dates || []),
                   visibility: String(event.visibility || 3),
-                  invite_list_visibility: event.invite_list_visibility || 'host_only',
-                  guest_list_visibility: event.guest_list_visibility || 'guests_can_see',
+                  visible_in_feed: String(event.visible_in_feed ?? true),
+                  requires_approval: String(event.requires_approval ?? false),
+                  invite_list_visibility:
+                    event.invite_list_visibility || "host_only",
+                  guest_list_visibility:
+                    event.guest_list_visibility || "guests_can_see",
                   send_rsvp_reminders: String(!!event.send_rsvp_reminders),
                   remind_after_days: String(event.remind_after_days || 3),
-                  rsvp_deadline: event.rsvp_deadline || '',
+                  rsvp_deadline: event.rsvp_deadline || "",
                   send_final_reminder_at_deadline: String(
-                    !!event.send_final_reminder_at_deadline
+                    !!event.send_final_reminder_at_deadline,
                   ),
-                  forwarding_mode: event.forwarding_mode || '',
+                  forwarding_mode: event.forwarding_mode || "",
                 },
               })
             }
           >
-            <View style={[styles.iconCircle, { backgroundColor: '#eef2ff' }]}>
+            <View style={[styles.iconCircle, { backgroundColor: "#eef2ff" }]}>
               <Ionicons name="create" size={24} color="#4338ca" />
             </View>
             <StyledText style={styles.actionLabel}>Edit Info</StyledText>
@@ -301,7 +319,7 @@ export default function ManageEventScreen() {
             style={styles.actionItem}
             onPress={() => router.push(`/m/${token}/studio` as any)}
           >
-            <View style={[styles.iconCircle, { backgroundColor: '#fff1f2' }]}>
+            <View style={[styles.iconCircle, { backgroundColor: "#fff1f2" }]}>
               <Ionicons name="color-palette" size={24} color="#be123c" />
             </View>
             <StyledText style={styles.actionLabel}>Studio</StyledText>
@@ -310,17 +328,21 @@ export default function ManageEventScreen() {
           <TouchableOpacity
             style={styles.actionItem}
             onPress={() =>
-  router.push({
-    pathname: event.event_type === 'formal' ? '/create/success' : '/create/success-vibe',
-    params: {
-      slug: event.slug,
-      manage_handle: event.manage_handle || token,      title: event.title,
-      visibility: String(event.visibility ?? 3),
-    },
-  })
-}
+              router.push({
+                pathname:
+                  event.event_type === "formal"
+                    ? "/create/success"
+                    : "/create/success-vibe",
+                params: {
+                  slug: event.slug,
+                  manage_handle: event.manage_handle || token,
+                  title: event.title,
+                  visibility: String(event.visibility ?? 3),
+                },
+              })
+            }
           >
-            <View style={[styles.iconCircle, { backgroundColor: '#f0fdf4' }]}>
+            <View style={[styles.iconCircle, { backgroundColor: "#f0fdf4" }]}>
               <Ionicons name="send" size={24} color="#15803d" />
             </View>
             <StyledText style={styles.actionLabel}>Invite</StyledText>
@@ -330,65 +352,79 @@ export default function ManageEventScreen() {
             style={styles.actionItem}
             onPress={() =>
               router.push({
-                pathname: '/create/duplicate',
+                pathname: "/create/duplicate",
                 params: {
-                  title: event.title || '',
-                  description: event.description || '',
-                  location: event.location || '',
-                  host_name: event.host_name || '',
-                  host_email: event.host_email || '',
-                  event_type: event.event_type || 'formal',
-                  starts_at: event.starts_at || '',
-                  ends_at: event.ends_at || '',
+                  title: event.title || "",
+                  description: event.description || "",
+                  location: event.location || "",
+                  host_name: event.host_name || "",
+                  host_email: event.host_email || "",
+                  event_type: event.event_type || "formal",
+                  starts_at: event.starts_at || "",
+                  ends_at: event.ends_at || "",
                   proposed_dates: JSON.stringify(event.proposed_dates || []),
                   visibility: String(event.visibility || 3),
-                  invite_list_visibility: event.invite_list_visibility || 'host_only',
-                  guest_list_visibility: event.guest_list_visibility || 'guests_can_see',
+                  visible_in_feed: String(event.visible_in_feed ?? true),
+                  requires_approval: String(event.requires_approval ?? false),
+                  invite_list_visibility:
+                    event.invite_list_visibility || "host_only",
+                  guest_list_visibility:
+                    event.guest_list_visibility || "guests_can_see",
                   send_rsvp_reminders: String(!!event.send_rsvp_reminders),
                   remind_after_days: String(event.remind_after_days || 3),
-                  rsvp_deadline: event.rsvp_deadline || '',
+                  rsvp_deadline: event.rsvp_deadline || "",
                   send_final_reminder_at_deadline: String(
-                    !!event.send_final_reminder_at_deadline
+                    !!event.send_final_reminder_at_deadline,
                   ),
-                  forwarding_mode: event.forwarding_mode || '',
+                  forwarding_mode: event.forwarding_mode || "",
                 },
               })
             }
           >
-            <View style={[styles.iconCircle, { backgroundColor: '#f3e8ff' }]}>
+            <View style={[styles.iconCircle, { backgroundColor: "#f3e8ff" }]}>
               <Ionicons name="copy-outline" size={24} color="#7c3aed" />
             </View>
             <StyledText style={styles.actionLabel}>Duplicate</StyledText>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.cancelActionRow} onPress={openCancelFlow}>
+        <TouchableOpacity
+          style={styles.cancelActionRow}
+          onPress={openCancelFlow}
+        >
           <StyledText style={styles.cancelActionText}>Cancel Event</StyledText>
         </TouchableOpacity>
 
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
             <StyledText style={styles.statNum}>
-              {guests.filter((g) => g.status === 'yes').length}
+              {guests.filter((g) => g.status === "yes").length}
             </StyledText>
             <StyledText style={styles.statLabel}>Going</StyledText>
           </View>
 
           <View style={styles.statCard}>
             <StyledText style={styles.statNum}>
-              {guests.filter((g) => g.status === 'maybe').length}
+              {guests.filter((g) => g.status === "maybe").length}
             </StyledText>
             <StyledText style={styles.statLabel}>Maybe</StyledText>
           </View>
         </View>
 
-        <TouchableOpacity style={styles.messageCard} onPress={() => setShowMessageModal(true)}>
-          <View style={[styles.messageIconCircle, { backgroundColor: '#fefce8' }]}>
+        <TouchableOpacity
+          style={styles.messageCard}
+          onPress={() => setShowMessageModal(true)}
+        >
+          <View
+            style={[styles.messageIconCircle, { backgroundColor: "#fefce8" }]}
+          >
             <Ionicons name="mail" size={24} color="#a16207" />
           </View>
 
           <View style={styles.messageCardCopy}>
-            <StyledText style={styles.messageCardTitle}>Message guests</StyledText>
+            <StyledText style={styles.messageCardTitle}>
+              Message guests
+            </StyledText>
             <StyledText style={styles.messageCardText}>
               Send a quick update to everyone on the guest list.
             </StyledText>
@@ -397,14 +433,18 @@ export default function ManageEventScreen() {
           <Ionicons name="chevron-forward" size={20} color="#999" />
         </TouchableOpacity>
 
-        <StyledText style={styles.sectionTitle}>Guest List ({guests.length})</StyledText>
+        <StyledText style={styles.sectionTitle}>
+          Guest List ({guests.length})
+        </StyledText>
 
         {guests.map((guest, i) => (
           <View key={i} style={styles.guestRow}>
             <View style={styles.guestTextWrap}>
               <StyledText style={styles.guestName}>{guest.name}</StyledText>
               {guest.message ? (
-                <StyledText style={styles.guestMsg}>{`"${guest.message}"`}</StyledText>
+                <StyledText
+                  style={styles.guestMsg}
+                >{`"${guest.message}"`}</StyledText>
               ) : null}
             </View>
 
@@ -412,7 +452,8 @@ export default function ManageEventScreen() {
               style={[
                 styles.statusBadge,
                 {
-                  backgroundColor: guest.status === 'yes' ? '#e8f0e0' : '#f5f5f5',
+                  backgroundColor:
+                    guest.status === "yes" ? "#e8f0e0" : "#f5f5f5",
                 },
               ]}
             >
@@ -433,7 +474,7 @@ export default function ManageEventScreen() {
         }}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={styles.modalRoot}
         >
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -447,7 +488,9 @@ export default function ManageEventScreen() {
                     showsVerticalScrollIndicator={false}
                   >
                     <View style={styles.modalHeader}>
-                      <StyledText style={styles.modalTitle}>Update Guests</StyledText>
+                      <StyledText style={styles.modalTitle}>
+                        Update Guests
+                      </StyledText>
                       <TouchableOpacity
                         onPress={() => {
                           Keyboard.dismiss();
@@ -479,11 +522,17 @@ export default function ManageEventScreen() {
                     <TouchableOpacity
                       style={[
                         styles.sendBtn,
-                        (!messageText.trim() || !messageSubject.trim() || isSending) &&
+                        (!messageText.trim() ||
+                          !messageSubject.trim() ||
+                          isSending) &&
                           styles.disabledBtn,
                       ]}
                       onPress={handleSendMessage}
-                      disabled={!messageText.trim() || !messageSubject.trim() || isSending}
+                      disabled={
+                        !messageText.trim() ||
+                        !messageSubject.trim() ||
+                        isSending
+                      }
                     >
                       {isSending ? (
                         <ActivityIndicator color="#fff" />
@@ -515,7 +564,7 @@ export default function ManageEventScreen() {
         }}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={styles.modalRoot}
         >
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -529,7 +578,9 @@ export default function ManageEventScreen() {
                     showsVerticalScrollIndicator={false}
                   >
                     <View style={styles.modalHeader}>
-                      <StyledText style={styles.modalTitle}>Cancel Event</StyledText>
+                      <StyledText style={styles.modalTitle}>
+                        Cancel Event
+                      </StyledText>
                       <TouchableOpacity
                         onPress={() => {
                           Keyboard.dismiss();
@@ -541,8 +592,8 @@ export default function ManageEventScreen() {
                     </View>
 
                     <StyledText style={styles.cancelBodyText}>
-                      Add a note for your guests. This event will be cancelled and RSVPd guests will
-                      be notified.
+                      Add a note for your guests. This event will be cancelled
+                      and RSVPd guests will be notified.
                     </StyledText>
 
                     <TextInput
@@ -555,19 +606,25 @@ export default function ManageEventScreen() {
                     />
 
                     <TouchableOpacity
-  style={[
-    styles.cancelBtn,
-    isCancelling && styles.disabledBtn,
-  ]}
-  onPress={handleCancelEvent}
-  disabled={isCancelling}
->
+                      style={[
+                        styles.cancelBtn,
+                        isCancelling && styles.disabledBtn,
+                      ]}
+                      onPress={handleCancelEvent}
+                      disabled={isCancelling}
+                    >
                       {isCancelling ? (
                         <ActivityIndicator color="#fff" />
                       ) : (
                         <>
-                         <StyledText style={styles.sendBtnText}>Cancel Event</StyledText>
-                          <Ionicons name="close-circle" size={18} color="#fff" />
+                          <StyledText style={styles.sendBtnText}>
+                            Cancel Event
+                          </StyledText>
+                          <Ionicons
+                            name="close-circle"
+                            size={18}
+                            color="#fff"
+                          />
                         </>
                       )}
                     </TouchableOpacity>
@@ -583,18 +640,18 @@ export default function ManageEventScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#fff' },
+  screen: { flex: 1, backgroundColor: "#fff" },
   headerNav: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 10 },
-  closeBtn: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  backText: { fontSize: 16, fontWeight: '600' },
+  closeBtn: { flexDirection: "row", alignItems: "center", gap: 8 },
+  backText: { fontSize: 16, fontWeight: "600" },
   container: { flex: 1, padding: 24 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
 
   title: {
     fontSize: 32,
-    fontWeight: '900',
+    fontWeight: "900",
     marginBottom: 24,
-    color: '#1a1a1a',
+    color: "#1a1a1a",
   },
 
   modalRoot: {
@@ -607,45 +664,45 @@ const styles = StyleSheet.create({
   },
 
   actionGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 18,
   },
 
   actionItem: {
-    width: '22%',
-    alignItems: 'center',
+    width: "22%",
+    alignItems: "center",
   },
 
   iconCircle: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 8,
   },
 
   actionLabel: {
     fontSize: 11,
-    fontWeight: '700',
-    textAlign: 'center',
+    fontWeight: "700",
+    textAlign: "center",
   },
 
   cancelActionRow: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 20,
   },
 
   cancelActionText: {
     fontSize: 15,
-    fontWeight: '800',
-    color: '#FF3B30',
+    fontWeight: "800",
+    color: "#FF3B30",
   },
 
   statsRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     marginBottom: 20,
   },
@@ -653,34 +710,34 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#f9fbf7',
+    backgroundColor: "#f9fbf7",
     borderRadius: 16,
-    alignItems: 'center',
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: '#e8f0e0',
+    borderColor: "#e8f0e0",
   },
 
   statNum: {
     fontSize: 22,
-    fontWeight: '900',
-    color: '#43691b',
+    fontWeight: "900",
+    color: "#43691b",
   },
 
   statLabel: {
     fontSize: 10,
-    color: '#666',
-    fontWeight: '600',
+    color: "#666",
+    fontWeight: "600",
   },
 
   messageCard: {
     marginBottom: 28,
-    backgroundColor: '#fffdf5',
+    backgroundColor: "#fffdf5",
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#f3e7a4',
+    borderColor: "#f3e7a4",
     padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
   },
 
@@ -688,8 +745,8 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   messageCardCopy: {
@@ -698,32 +755,32 @@ const styles = StyleSheet.create({
 
   messageCardTitle: {
     fontSize: 15,
-    fontWeight: '800',
-    color: '#1a1a1a',
+    fontWeight: "800",
+    color: "#1a1a1a",
     marginBottom: 2,
   },
 
   messageCardText: {
     fontSize: 13,
-    color: '#666',
+    color: "#666",
     lineHeight: 18,
   },
 
   sectionTitle: {
     fontSize: 14,
-    fontWeight: '800',
-    textTransform: 'uppercase',
+    fontWeight: "800",
+    textTransform: "uppercase",
     marginBottom: 16,
-    color: '#43691b',
+    color: "#43691b",
   },
 
   guestRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: "#eee",
   },
 
   guestTextWrap: {
@@ -733,13 +790,13 @@ const styles = StyleSheet.create({
 
   guestName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   guestMsg: {
     fontSize: 13,
-    color: '#666',
-    fontStyle: 'italic',
+    color: "#666",
+    fontStyle: "italic",
     marginTop: 2,
   },
 
@@ -751,7 +808,7 @@ const styles = StyleSheet.create({
 
   statusText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 
   disabledBtn: {
@@ -760,82 +817,82 @@ const styles = StyleSheet.create({
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "flex-end",
   },
 
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     paddingHorizontal: 24,
     paddingTop: 24,
-    maxHeight: '90%',
+    maxHeight: "90%",
   },
 
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
 
   modalTitle: {
     fontSize: 24,
-    fontWeight: '900',
-    color: '#1a1a1a',
+    fontWeight: "900",
+    color: "#1a1a1a",
   },
 
   subjectInput: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
     borderRadius: 12,
     padding: 15,
     fontSize: 16,
     marginBottom: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   messageInput: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
     borderRadius: 16,
     padding: 18,
     minHeight: 140,
     fontSize: 16,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
   },
 
   cancelBodyText: {
     fontSize: 14,
     lineHeight: 20,
-    color: '#555',
+    color: "#555",
     marginBottom: 12,
   },
 
   sendBtn: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: "#1a1a1a",
     padding: 20,
     borderRadius: 20,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 20,
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     gap: 12,
   },
 
   cancelBtn: {
-    backgroundColor: '#b91c1c',
+    backgroundColor: "#b91c1c",
     padding: 20,
     borderRadius: 20,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 20,
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     gap: 12,
   },
 
   sendBtnText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '900',
+    fontWeight: "900",
   },
 });
