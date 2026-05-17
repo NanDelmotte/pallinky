@@ -263,7 +263,9 @@ export const StudioPreview = (props: PreviewProps) => {
             <StyledText style={[styles.thanksPageTitle, { color: theme.text }, fontStyle]}>
               You&apos;re on the list!
             </StyledText>
-
+  <View pointerEvents="none" style={styles.previewWatermark}>
+              <StyledText style={styles.previewWatermarkText}>PREVIEW</StyledText>
+            </View>
             <StyledText style={[styles.thanksPageSubtitle, { color: theme.text, opacity: 0.7 }, fontStyle]}>
               {event?.host_name || 'Host'} has been notified.
             </StyledText>
@@ -315,9 +317,7 @@ export const StudioPreview = (props: PreviewProps) => {
                 </StyledText>
               </View>
 
-              <StyledText style={[styles.thanksHomeLink, { color: theme.text, opacity: 0.6 }]}>
-                Go to Home
-              </StyledText>
+            
             </View>
           </View>
         )}
@@ -380,9 +380,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   previewWatermarkText: {
-    backgroundColor: 'rgba(17,24,39,0.62)',
+    backgroundColor: 'rgba(233, 13, 9, 0.62)',
     color: '#fff',
-    fontSize: 11,
+    fontSize: 20,
     fontWeight: '900',
     letterSpacing: 3,
     paddingHorizontal: 14,

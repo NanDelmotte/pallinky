@@ -445,7 +445,7 @@ export default function DesignStudioScreen() {
                 <View style={styles.controlRowGroup}>
                   <TouchableOpacity style={styles.controlRow} onPress={() => setShowSearch(true)}>
                     <Ionicons name="search-outline" size={20} color="#6b7280" />
-                    <StyledText style={styles.controlText}>Cover Image</StyledText>
+                    <StyledText style={styles.controlText}>Search for a Cover Image</StyledText>
                     <StyledText style={styles.controlValue}>Search</StyledText>
                   </TouchableOpacity>
 
@@ -477,7 +477,7 @@ export default function DesignStudioScreen() {
             ) : (
               <TouchableOpacity style={styles.controlRow} onPress={() => setShowGiphy(true)}>
                 <Ionicons name="happy-outline" size={20} color="#6b7280" />
-                <StyledText style={styles.controlText}>Thank You GIF</StyledText>
+                <StyledText style={styles.controlText}>Click here  to choose a GIPHY</StyledText>
               </TouchableOpacity>
             )}
 
