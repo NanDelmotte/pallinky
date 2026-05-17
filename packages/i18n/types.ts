@@ -3,236 +3,499 @@
  * Description: Central type definitions for localization system (languages + translation keys).
  */
 
-export type AppLanguage = 'en' | 'nl' | 'fr';
+export type AppLanguage = "en" | "nl" | "fr";
 
 export type TranslationKey =
-  | 'formal_yes_headline'
-  | 'formal_yes_event_context'
-  | 'formal_yes_support'
-  | 'formal_yes_subject'
-  | 'formal_maybe_headline'
-  | 'formal_maybe_event_context'
-  | 'formal_maybe_support'
-  | 'formal_maybe_subject'
-  | 'formal_no_headline'
-  | 'formal_no_event_context'
-  | 'formal_no_support'
-  | 'formal_no_subject'
-  | 'poll_submitted_headline'
-  | 'poll_submitted_event_context'
-  | 'poll_submitted_support'
-  | 'poll_submitted_subject'
-  | 'poll_updated_headline'
-  | 'poll_updated_event_context'
-  | 'poll_updated_support'
-  | 'poll_updated_subject'
-  | 'common_manage'
-  | 'common_view_event'
-  | 'common_hide_card_title'
-  | 'common_hide_card_body'
-  | 'common_cancel'
-  | 'common_hide'
-  | 'common_error'
-  | 'common_hide_card_error'
-  | 'common_tbd'
-    | 'event_card_date_tbd'
-  | 'event_card_badge_past'
-  | 'event_card_badge_planned'
-  | 'event_card_badge_pending'
-  | 'event_card_badge_joined'
-  | 'event_card_badge_plan'
-  | 'event_card_badge_series'
-  | 'event_card_you_organized'
-  | 'event_card_host_organized'
-  | 'event_card_you_are_organizing'
-  | 'event_card_host_is_organizing'
-  | 'event_card_badge_planning'  |
-   'people_may_know_someone'
-  | 'people_may_know_this_person'
-  | 'people_may_know_mutual_with_others'
-  | 'people_may_know_mutual_one'
-  | 'people_may_know_friend_of_friend'
-  | 'people_may_know_already_in_contacts'
-  | 'people_may_know_suggested_connection'
-  | 'people_may_know_error_already_in_circle'
-  | 'people_may_know_error_update_circle'
-  | 'people_may_know_error_create_circle'
-  | 'people_may_know_empty_title'
-  | 'people_may_know_empty_subtitle'
-  | 'people_may_know_modal_title'
-  | 'people_may_know_modal_subtitle'
-  | 'people_may_know_search_placeholder'
-  | 'people_may_know_create_placeholder'
-  | 'people_may_know_create_add'
-    | 'common_start'
-  | 'home_title'
-  | 'home_subtitle'
-  | 'home_start_something_title'
-  | 'home_start_something_cold_subtitle'
-  | 'home_start_something_warm_subtitle'
-  | 'home_happening_title'
-  | 'home_happening_cold_subtitle'
-  | 'home_happening_active_subtitle'
-  | 'home_friends_active_title'
-  | 'home_friends_active_subtitle'
-  | 'home_connect_title'
-  | 'home_connect_subtitle'
-  | 'home_idea_make_plan_title'
-  | 'home_idea_make_plan_subtitle'
-  | 'home_idea_coffee_title'
-  | 'home_idea_coffee_subtitle'
-  | 'home_idea_drinks_title'
-  | 'home_idea_drinks_subtitle'
-  | 'home_idea_dinner_title'
-  | 'home_idea_dinner_subtitle'
-  | 'home_idea_walk_title'
-  | 'home_idea_walk_subtitle'
-  | 'home_idea_movie_title'
-  | 'home_idea_movie_subtitle'
-  | 'home_import_coffee_title'
-  | 'home_import_coffee_subtitle'
-  | 'home_empty_activity_title'
-  | 'home_empty_activity_subtitle'
-  | 'people_header_title'
-| 'people_circles_title'
-| 'people_circles_subtitle'
-| 'people_new_circle_title'
-| 'people_new_circle_body'
-| 'people_member_singular'
-| 'people_member_plural'
-| 'people_member_fallback'
-| 'people_person_fallback'
-| 'people_event_fallback'
-| 'people_upcoming_event_fallback'
-| 'people_untitled_circle'
-| 'people_no_members_yet'
-| 'people_manage'
-| 'people_closest_connections_title'
-| 'people_closest_connections_subtitle'
-| 'people_seeing_soon_title'
-| 'people_seeing_soon_subtitle'
-| 'people_recent_connections_title'
-| 'people_recent_connections_subtitle'
-| 'people_reconnect_title'
-| 'people_reconnect_subtitle'
-| 'people_want_to_hear_from_title'
-| 'people_want_to_hear_from_subtitle'
-| 'people_second_degree_title'
-| 'people_second_degree_subtitle'
-| 'people_empty_title'
-| 'people_empty_body'
-| 'people_future_plans'
-| 'people_connected_through_network'
-| 'people_you_both_know'
-| 'people_you_both_know_plus_others'
-| 'common_create'
-| 'people_qr_card_title'
-| 'people_qr_card_subtitle'
-| 'people_qr_card_button'
-| 'people_qr_modal_title'
-| 'people_qr_modal_subtitle'
-| 'event_card_badge_invited'
-| 'home_extended_network_title'
-| 'home_extended_network_subtitle'
-| 'home_idea_coffee_prefill_title'
-| 'home_idea_coffee_prefill_desc'
-| 'home_idea_drinks_prefill_title'
-| 'home_idea_drinks_prefill_desc'
-| 'home_idea_dinner_prefill_title'
-| 'home_idea_dinner_prefill_desc'
-| 'home_idea_walk_prefill_title'
-| 'home_idea_walk_prefill_desc'
-| 'home_idea_movie_prefill_title'
-| 'home_idea_movie_prefill_desc'
-| 'people_tab_connections'
-| 'people_tab_circles'
-| 'people_mutual_connections_count'
-| 'people_shared_events_count'
-| 'people_going_to_event'
-| 'people_last_seen_at_event'
-| 'people_stat_shared_events'
-| 'people_stat_hosted_by_you'
-| 'people_stat_hosted_by_them'
-| 'people_stat_waves'
-| 'people_shared_events_title'
-| 'people_idea_responses_title'
-| 'people_no_shared_events'
-| 'people_no_idea_responses'
-| 'common_tbd'
-| 'people_second_degree_card_hint'
-| 'add_landing_metadata_title'
-| 'add_landing_metadata_description'
-| 'add_landing_fallback_name'
-| 'add_landing_badge'
-| 'add_landing_title'
-| 'add_landing_body'
-| 'add_landing_avatar_alt'
-| 'add_landing_open_app'
-| 'add_landing_download_ios'
-| 'add_landing_download_android'
-| 'add_landing_installed_hint'
-| 'add_landing_learn_more'
-  | 'language_title'
-  | 'language_subtitle'
-  | 'language_english'
-  | 'language_dutch'
-  | 'language_french'
-  | 'welcome_title'
-  | 'welcome_body'
-  | 'welcome_primary'
-  | 'settings_title'
-  | 'settings_admin_tools'
-  | 'settings_manage_tester_photos'
-  | 'settings_review_reports'
-  | 'settings_data_management'
-  | 'settings_restore_hidden_cards'
-  | 'settings_support'
-  | 'settings_contact_support'
-  | 'settings_account'
-  | 'settings_delete_account'
-  | 'settings_sign_out'
-  | 'settings_sign_out_confirm'
-  | 'settings_restore_cards_title'
-  | 'settings_restore_cards_confirm'
-  | 'settings_success'
-  | 'settings_restored'
-  | 'settings_yes'
-  | 'settings_support_subject'
-  | 'settings_support_body'
-  | 'tab_events'
-  | 'tab_share'
-  | 'tab_people'
-  | 'tab_create'
-  | 'tab_inbox'
-  | 'profile_settings'
-  | 'profile_title'
-  | 'profile_name_placeholder'
-  | 'profile_cancel'
-  | 'profile_tap_name_to_edit'
-  | 'profile_show_qr'
-  | 'profile_stat_hosted'
-  | 'profile_stat_rsvpd'
-  | 'profile_recent_activity'
-  | 'profile_no_activity'
-  | 'profile_error_load'
-  | 'profile_name_required_title'
-  | 'profile_name_required_body'
-  | 'profile_error_update_name'
-  | 'profile_permission_needed_title'
-  | 'profile_permission_needed_body'
-  | 'profile_photo_updated'
-  | 'profile_upload_error'
-  | 'profile_error_update_photo'
-  | 'profile_login_required'
-  | 'profile_go_welcome'
-  | 'profile_updating'
-  | 'profile_change_photo'
-  | 'profile_saving'
-  | 'profile_save'
-  | 'profile_joined'
-  | 'profile_badge_hosted'
-  | 'profile_rsvp_status'
-  | 'profile_qr_title'
-  | 'profile_qr_subtitle'
-  | 'profile_event_fallback'
-;
+  | "formal_yes_headline"
+  | "formal_yes_event_context"
+  | "formal_yes_support"
+  | "formal_yes_subject"
+  | "formal_maybe_headline"
+  | "formal_maybe_event_context"
+  | "formal_maybe_support"
+  | "formal_maybe_subject"
+  | "formal_no_headline"
+  | "formal_no_event_context"
+  | "formal_no_support"
+  | "formal_no_subject"
+  | "poll_submitted_headline"
+  | "poll_submitted_event_context"
+  | "poll_submitted_support"
+  | "poll_submitted_subject"
+  | "poll_updated_headline"
+  | "poll_updated_event_context"
+  | "poll_updated_support"
+  | "poll_updated_subject"
+  | "common_manage"
+  | "common_view_event"
+  | "common_hide_card_title"
+  | "common_hide_card_body"
+  | "common_cancel"
+  | "common_hide"
+  | "common_error"
+  | "common_hide_card_error"
+  | "event_card_date_tbd"
+  | "event_card_badge_past"
+  | "event_card_badge_planned"
+  | "event_card_badge_pending"
+  | "event_card_badge_joined"
+  | "event_card_badge_plan"
+  | "event_card_badge_series"
+  | "event_card_you_organized"
+  | "event_card_host_organized"
+  | "event_card_you_are_organizing"
+  | "event_card_host_is_organizing"
+  | "event_card_badge_planning"
+  | "people_may_know_someone"
+  | "people_may_know_this_person"
+  | "people_may_know_mutual_with_others"
+  | "people_may_know_mutual_one"
+  | "people_may_know_friend_of_friend"
+  | "people_may_know_already_in_contacts"
+  | "people_may_know_suggested_connection"
+  | "people_may_know_error_already_in_circle"
+  | "people_may_know_error_update_circle"
+  | "people_may_know_error_create_circle"
+  | "people_may_know_empty_title"
+  | "people_may_know_empty_subtitle"
+  | "people_may_know_modal_title"
+  | "people_may_know_modal_subtitle"
+  | "people_may_know_search_placeholder"
+  | "people_may_know_create_placeholder"
+  | "people_may_know_create_add"
+  | "common_start"
+  | "home_title"
+  | "home_subtitle"
+  | "home_start_something_title"
+  | "home_start_something_cold_subtitle"
+  | "home_start_something_warm_subtitle"
+  | "home_happening_title"
+  | "home_happening_cold_subtitle"
+  | "home_happening_active_subtitle"
+  | "home_friends_active_title"
+  | "home_friends_active_subtitle"
+  | "home_connect_title"
+  | "home_extended_network_title"
+  | "home_extended_network_subtitle"
+  | "home_connect_subtitle"
+  | "home_idea_make_plan_title"
+  | "home_idea_make_plan_subtitle"
+  | "home_idea_coffee_title"
+  | "home_idea_coffee_subtitle"
+  | "home_idea_drinks_title"
+  | "home_idea_drinks_subtitle"
+  | "home_idea_dinner_title"
+  | "home_idea_dinner_subtitle"
+  | "home_idea_walk_title"
+  | "home_idea_walk_subtitle"
+  | "home_idea_movie_title"
+  | "home_idea_movie_subtitle"
+  | "home_import_coffee_title"
+  | "home_import_coffee_subtitle"
+  | "home_empty_activity_title"
+  | "home_empty_activity_subtitle"
+  | "people_header_title"
+  | "people_circles_title"
+  | "people_circles_subtitle"
+  | "people_new_circle_title"
+  | "people_new_circle_body"
+  | "people_member_singular"
+  | "people_member_plural"
+  | "people_member_fallback"
+  | "people_person_fallback"
+  | "people_event_fallback"
+  | "people_upcoming_event_fallback"
+  | "people_untitled_circle"
+  | "people_no_members_yet"
+  | "people_manage"
+  | "people_closest_connections_title"
+  | "people_closest_connections_subtitle"
+  | "people_seeing_soon_title"
+  | "people_seeing_soon_subtitle"
+  | "people_recent_connections_title"
+  | "people_recent_connections_subtitle"
+  | "people_reconnect_title"
+  | "people_reconnect_subtitle"
+  | "people_want_to_hear_from_title"
+  | "people_want_to_hear_from_subtitle"
+  | "people_second_degree_title"
+  | "people_second_degree_subtitle"
+  | "people_empty_title"
+  | "people_empty_body"
+  | "people_future_plans"
+  | "people_connected_through_network"
+  | "people_you_both_know"
+  | "people_you_both_know_plus_others"
+  | "common_create"
+  | "people_qr_card_title"
+  | "people_qr_card_subtitle"
+  | "people_qr_card_button"
+  | "people_qr_modal_title"
+  | "people_qr_modal_subtitle"
+  | "event_card_badge_invited"
+  | "home_idea_coffee_prefill_title"
+  | "home_idea_coffee_prefill_desc"
+  | "home_idea_drinks_prefill_title"
+  | "home_idea_drinks_prefill_desc"
+  | "home_idea_dinner_prefill_title"
+  | "home_idea_dinner_prefill_desc"
+  | "home_idea_walk_prefill_title"
+  | "home_idea_walk_prefill_desc"
+  | "home_idea_movie_prefill_title"
+  | "home_idea_movie_prefill_desc"
+  | "people_tab_connections"
+  | "people_tab_circles"
+  | "people_mutual_connections_count"
+  | "people_shared_events_count"
+  | "people_going_to_event"
+  | "people_last_seen_at_event"
+  | "people_stat_shared_events"
+  | "people_stat_hosted_by_you"
+  | "people_stat_hosted_by_them"
+  | "people_stat_waves"
+  | "people_shared_events_title"
+  | "people_idea_responses_title"
+  | "people_no_shared_events"
+  | "people_no_idea_responses"
+  | "common_tbd"
+  | "add_landing_metadata_title"
+  | "add_landing_metadata_description"
+  | "add_landing_fallback_name"
+  | "add_landing_badge"
+  | "add_landing_title"
+  | "add_landing_body"
+  | "add_landing_avatar_alt"
+  | "add_landing_open_app"
+  | "add_landing_download_ios"
+  | "add_landing_download_android"
+  | "add_landing_installed_hint"
+  | "add_landing_learn_more"
+  | "people_second_degree_card_hint"
+  | "language_title"
+  | "language_subtitle"
+  | "language_english"
+  | "language_dutch"
+  | "language_french"
+  | "welcome_title"
+  | "welcome_body"
+  | "welcome_primary"
+  | "settings_title"
+  | "settings_admin_tools"
+  | "settings_manage_tester_photos"
+  | "settings_review_reports"
+  | "settings_data_management"
+  | "settings_restore_hidden_cards"
+  | "settings_support"
+  | "settings_contact_support"
+  | "settings_account"
+  | "settings_delete_account"
+  | "settings_sign_out"
+  | "settings_sign_out_confirm"
+  | "settings_restore_cards_title"
+  | "settings_restore_cards_confirm"
+  | "settings_success"
+  | "settings_restored"
+  | "settings_yes"
+  | "settings_support_subject"
+  | "settings_support_body"
+  | "tab_events"
+  | "tab_share"
+  | "tab_people"
+  | "tab_create"
+  | "tab_inbox"
+  | "profile_settings"
+  | "profile_title"
+  | "profile_name_placeholder"
+  | "profile_cancel"
+  | "profile_tap_name_to_edit"
+  | "profile_show_qr"
+  | "profile_stat_hosted"
+  | "profile_stat_rsvpd"
+  | "profile_recent_activity"
+  | "profile_no_activity"
+  | "profile_error_load"
+  | "profile_name_required_title"
+  | "profile_name_required_body"
+  | "profile_error_update_name"
+  | "profile_permission_needed_title"
+  | "profile_permission_needed_body"
+  | "profile_photo_updated"
+  | "profile_upload_error"
+  | "profile_error_update_photo"
+  | "profile_login_required"
+  | "profile_go_welcome"
+  | "profile_updating"
+  | "profile_change_photo"
+  | "profile_saving"
+  | "profile_save"
+  | "profile_joined"
+  | "profile_badge_hosted"
+  | "profile_rsvp_status"
+  | "profile_qr_title"
+  | "profile_qr_subtitle"
+  | "profile_event_fallback"
+  | "common_done"
+  | "common_delete"
+  | "common_remove"
+  | "common_close"
+  | "common_back"
+  | "common_save"
+  | "common_confirm"
+  | "common_set"
+  | "common_loading"
+  | "common_guest"
+  | "common_someone"
+  | "common_sign_in"
+  | "common_missing_info"
+  | "common_sent"
+  | "common_success"
+  | "modal_home"
+  | "create_ambient_1"
+  | "create_ambient_2"
+  | "create_ambient_3"
+  | "create_ambient_4"
+  | "create_ambient_5"
+  | "create_ambient_6"
+  | "create_ambient_7"
+  | "create_quick_start"
+  | "create_quick_coffee"
+  | "create_trendy_dinner"
+  | "create_casual_drinks"
+  | "create_take_walk"
+  | "create_visit_museum"
+  | "create_prefill_event"
+  | "create_prefill_details"
+  | "create_prefill_coffee_title"
+  | "create_prefill_coffee_desc"
+  | "create_prefill_dinner_title"
+  | "create_prefill_dinner_desc"
+  | "create_prefill_drinks_title"
+  | "create_prefill_drinks_desc"
+  | "create_prefill_walk_title"
+  | "create_prefill_walk_desc"
+  | "create_prefill_museum_title"
+  | "create_prefill_museum_desc"
+  | "create_title"
+  | "create_add_card"
+  | "create_card_placeholder"
+  | "create_save_card"
+  | "create_delete_card_title"
+  | "create_delete_card_body"
+  | "create_missing_title"
+  | "create_missing_title_body"
+  | "create_limit_reached"
+  | "create_plan_question"
+  | "create_title_placeholder"
+  | "create_when_title"
+  | "create_few_options"
+  | "create_few_options_subtitle"
+  | "create_not_sure"
+  | "create_not_sure_subtitle"
+  | "create_details_title"
+  | "create_select_date"
+  | "create_visibility_public_approval"
+  | "create_visibility_public_open"
+  | "create_visibility_link_approval"
+  | "create_visibility_link_open"
+  | "date_picker_label"
+  | "date_picker_add"
+  | "location_search_placeholder"
+  | "welcome_modal_title"
+  | "welcome_modal_hatchery"
+  | "welcome_modal_connections"
+  | "welcome_discover"
+  | "identity_email_required_title"
+  | "identity_email_required_body"
+  | "identity_code_sent_title"
+  | "identity_code_sent_body"
+  | "identity_send_code_error"
+  | "identity_missing_info_body"
+  | "identity_verify_failed"
+  | "identity_verify_error"
+  | "identity_login_incomplete"
+  | "identity_login_incomplete_body"
+  | "identity_login_error"
+  | "identity_login_error_body"
+  | "identity_claim_plan"
+  | "identity_email_placeholder"
+  | "identity_send_code"
+  | "identity_code_placeholder"
+  | "identity_verify_continue"
+  | "delete_account_title"
+  | "delete_account_intro"
+  | "delete_account_profile"
+  | "delete_account_events"
+  | "delete_account_rsvps"
+  | "delete_account_messages"
+  | "delete_account_warning"
+  | "delete_account_confirm_title"
+  | "delete_account_failed"
+  | "delete_account_generic_error"
+  | "delete_account_deleting"
+  | "share_profile_title"
+  | "share_profile_body"
+  | "share_profile_sign_in"
+  | "inbox_title"
+  | "inbox_empty_title"
+  | "inbox_empty_body"
+  | "inbox_all_caught_up"
+  | "inbox_remove_error"
+  | "inbox_dm_unavailable"
+  | "inbox_dm_missing"
+  | "inbox_just_now"
+  | "inbox_direct_message"
+  | "inbox_new_message"
+  | "inbox_reaching_out"
+  | "inbox_series_invitation"
+  | "inbox_invitation"
+  | "inbox_event_updated"
+  | "inbox_new_rsvp"
+  | "inbox_join_request"
+  | "inbox_request_approved"
+  | "inbox_request_declined"
+  | "inbox_event_cancelled"
+  | "inbox_message_from_host"
+  | "inbox_plan_suggestion"
+  | "inbox_rsvp_reminder"
+  | "inbox_rsvp_recorded"
+  | "inbox_notification"
+  | "inbox_your_event"
+  | "people_add_people"
+  | "people_remove_title"
+  | "people_remove_body"
+  | "people_long_press_remove"
+  | "people_no_people"
+  | "whatsapp_title"
+  | "whatsapp_body_1"
+  | "whatsapp_body_2"
+  | "whatsapp_body_3"
+  | "whatsapp_ios"
+  | "whatsapp_android"
+  | "circle_enter_name"
+  | "circle_create_error"
+  | "circle_rename_error"
+  | "circle_delete_title"
+  | "circle_delete_body"
+  | "circle_delete_error"
+  | "circle_add_member_missing"
+  | "circle_add_member_error"
+  | "circle_remove_member_title"
+  | "circle_remove_member_body"
+  | "circle_remove_member_error"
+  | "circle_sign_in_first"
+  | "circle_load_people_error"
+  | "circle_select_one"
+  | "circle_add_members_error"
+  | "circle_choose_members"
+  | "circle_new"
+  | "circle_manage"
+  | "circle_name"
+  | "circle_rename"
+  | "circle_placeholder"
+  | "circle_create"
+  | "circle_save_name"
+  | "circle_unnamed_member"
+  | "circle_search_people"
+  | "circle_members"
+  | "circle_empty_members"
+  | "circle_add_member"
+  | "peek_unavailable"
+  | "peek_event"
+  | "peek_view_invite"
+  | "peek_share"
+  | "peek_keep_loop"
+  | "peek_no_responses"
+  | "peek_no_responses_body"
+  | "peek_you_came_across"
+  | "peek_label"
+  | "peek_open_friends"
+  | "peek_open_friends_approval"
+  | "peek_open_event"
+  | "event_poll_results"
+  | "event_no_votes"
+  | "event_share"
+  | "event_pending_approval"
+  | "event_request_approved"
+  | "event_request_declined"
+  | "event_unable_message"
+  | "event_unable_open_message"
+  | "event_open_link"
+  | "event_chat"
+  | "event_chat_placeholder"
+  | "event_sign_in_required"
+  | "event_not_found"
+  | "event_dm_load_error"
+  | "event_dm_send_error"
+  | "event_no_messages"
+  | "event_dm_placeholder"
+  | "event_approvals"
+  | "event_no_pending_approvals"
+  | "event_pending_approvals_body"
+  | "event_series"
+  | "event_current"
+  | "event_open_chat"
+  | "event_back_details"
+  | "event_go_home"
+  | "event_not_poll"
+  | "event_not_poll_body"
+  | "event_poll_load_failed"
+  | "event_poll_load_failed_body"
+  | "manage_error_load_event"
+  | "manage_missing_token"
+  | "manage_message_sent"
+  | "manage_event_not_found"
+  | "manage_social_hub"
+  | "manage_edit_info"
+  | "manage_studio"
+  | "manage_invite"
+  | "manage_duplicate"
+  | "manage_cancel_event"
+  | "manage_going"
+  | "manage_maybe"
+  | "manage_subject_placeholder"
+  | "manage_message_placeholder"
+  | "manage_cancel_placeholder"
+  | "manage_missing_token_title"
+  | "manage_missing_token_body"
+  | "manage_required"
+  | "manage_required_title_body"
+  | "manage_saved"
+  | "manage_event_updated"
+  | "manage_save_failed"
+  | "manage_update_error"
+  | "manage_edit_event"
+  | "manage_label_title"
+  | "manage_label_when"
+  | "manage_label_start_time"
+  | "manage_label_duration"
+  | "manage_label_description"
+  | "manage_label_where"
+  | "manage_label_who_can_join"
+  | "manage_note_placeholder"
+  | "manage_name_placeholder"
+  | "manage_email_placeholder"
+  | "manage_save_changes"
+  | "manage_hours"
+  | "manage_mins"
+  | "studio_load_error"
+  | "studio_save_failed"
+  | "studio_save_failed_body"
+  | "studio_discard_title"
+  | "studio_discard_body"
+  | "studio_permission_title"
+  | "studio_permission_body"
+  | "studio_upload_failed"
+  | "studio_upload_failed_body"
+  | "studio_title"
+  | "studio_color_scheme"
+  | "studio_search_cover"
+  | "studio_search"
+  | "studio_font"
+  | "studio_giphy"
+  | "studio_revert"
+  | "welcome_modal_body"
+  | "welcome_modal_go"
+  | "identity_subtitle"
+  | "common_add"
+  | "common_selected_count"
+  | "modal_title";

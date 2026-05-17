@@ -4,7 +4,7 @@
  * Handles "a few options" and "not sure yet" modes using the shared formal draft.
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -13,26 +13,28 @@ import {
   StyleSheet,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { router, Stack, useLocalSearchParams } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
-import { StyledText } from '@pallinky/ui';
+import { StyledText } from "@pallinky/ui";
 
-import DateOptionPicker from '../../components/DateOptionPicker';
-import { useFormalDraft } from '../../lib/formalDraft';
+import DateOptionPicker from "../../components/DateOptionPicker";
+import { useFormalDraft } from "../../lib/formalDraft";
+import { useI18n } from "@pallinky/i18n/client";
 
 const COLORS = {
-  background: '#F6F7F9',
-  surface: '#FFFFFF',
-  text: '#1f2a1b',
-  textMuted: '#66715f',
-  primary: '#43691b',
-  border: '#bac9ad',
+  background: "#F6F7F9",
+  surface: "#FFFFFF",
+  text: "#1f2a1b",
+  textMuted: "#66715f",
+  primary: "#43691b",
+  border: "#bac9ad",
 };
 
 export default function FormalOptionsScreen() {
+  const { t } = useI18n();
   const params = useLocalSearchParams<{
     prefill_title?: string;
     prefill_desc?: string;
@@ -55,15 +57,15 @@ export default function FormalOptionsScreen() {
   ]);
 
   const goBack = () => {
-    router.push('/create/formal-when');
+    router.push("/create/formal-when");
   };
 
   const goForward = () => {
-    router.push('/create/formal-details');
+    router.push("/create/formal-details");
   };
 
   return (
-    <SafeAreaView style={styles.wrapper} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.wrapper} edges={["top", "left", "right"]}>
       <StatusBar barStyle="dark-content" />
       <Stack.Screen options={{ headerShown: false }} />
 
@@ -74,31 +76,38 @@ export default function FormalOptionsScreen() {
       </View>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.flex}
       >
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+        >
           <View>
-            <StyledText style={styles.stepTitle}>When?</StyledText>
+            <StyledText style={styles.stepTitle}>
+              {t("create_when_title")}
+            </StyledText>
 
             <TouchableOpacity
               style={[
                 styles.modeCard,
-                form.whenMode === 'options' && styles.modeCardSelected,
+                form.whenMode === "options" && styles.modeCardSelected,
               ]}
-              onPress={() => updateForm('whenMode', 'options')}
+              onPress={() => updateForm("whenMode", "options")}
             >
-              <StyledText style={styles.modeTitle}>A few options</StyledText>
+              <StyledText style={styles.modeTitle}>
+                {t("create_few_options")}
+              </StyledText>
               <StyledText style={styles.modeSub}>
-                I want to suggest some dates and see.
+                {t("create_few_options_subtitle")}
               </StyledText>
             </TouchableOpacity>
 
-            {form.whenMode === 'options' && (
+            {form.whenMode === "options" && (
               <View style={styles.dateOptionsWrap}>
                 <DateOptionPicker
                   value={form.pollOptions}
-                  onChange={(dates) => updateForm('pollOptions', dates)}
+                  onChange={(dates) => updateForm("pollOptions", dates)}
                 />
               </View>
             )}
@@ -106,13 +115,15 @@ export default function FormalOptionsScreen() {
             <TouchableOpacity
               style={[
                 styles.modeCard,
-                form.whenMode === 'unsure' && styles.modeCardSelected,
+                form.whenMode === "unsure" && styles.modeCardSelected,
               ]}
-              onPress={() => updateForm('whenMode', 'unsure')}
+              onPress={() => updateForm("whenMode", "unsure")}
             >
-              <StyledText style={styles.modeTitle}>Not sure yet</StyledText>
+              <StyledText style={styles.modeTitle}>
+                {t("create_not_sure")}
+              </StyledText>
               <StyledText style={styles.modeSub}>
-                I just want to open the plan for now.
+                {t("create_not_sure_subtitle")}
               </StyledText>
             </TouchableOpacity>
 
@@ -141,9 +152,9 @@ const styles = StyleSheet.create({
   },
 
   topBar: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 10,
@@ -152,8 +163,8 @@ const styles = StyleSheet.create({
   navIconBtn: {
     width: 44,
     height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   container: {
@@ -164,7 +175,7 @@ const styles = StyleSheet.create({
 
   stepTitle: {
     fontSize: 32,
-    fontWeight: '900',
+    fontWeight: "900",
     color: COLORS.text,
     marginBottom: 20,
   },
@@ -181,12 +192,12 @@ const styles = StyleSheet.create({
   modeCardSelected: {
     borderWidth: 2,
     borderColor: COLORS.primary,
-    backgroundColor: '#fbfcfa',
+    backgroundColor: "#fbfcfa",
   },
 
   modeTitle: {
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: "800",
     color: COLORS.text,
     marginBottom: 4,
   },
@@ -202,8 +213,8 @@ const styles = StyleSheet.create({
   },
 
   nav: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: 20,
   },
 
@@ -212,7 +223,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

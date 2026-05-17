@@ -5,7 +5,7 @@
  * member removal, and optional use-circle action.
  */
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -15,17 +15,18 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { StyledText } from '@pallinky/ui';
-import { supabase } from '@pallinky/core';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { StyledText } from "@pallinky/ui";
+import { supabase } from "@pallinky/core";
+import { useI18n } from "@pallinky/i18n/client";
 
 import {
   Circle,
   CircleMemberRow,
   DeviceContactRow,
-} from './circleManagerTypes';
+} from "./circleManagerTypes";
 
 import {
   addMemberToCircle,
@@ -33,22 +34,22 @@ import {
   deleteCircle,
   removeMember,
   renameCircle,
-} from '../../lib/circles/circleManagerHelpers';
+} from "../../lib/circles/circleManagerHelpers";
 
 const COLORS = {
-  background: '#F6F7F9',
-  surface: '#FFFFFF',
-  surfaceAlt: '#F9FBF7',
-  text: '#1f2a1b',
-  textMuted: '#66715f',
-  primary: '#43691b',
-  primarySoft: '#eef4e8',
-  border: '#bac9ad',
-  borderSoft: '#e7ede2',
-  secondary: '#6A4C93',
-  secondaryBg: '#efe9f7',
-  danger: '#e63946',
-  dangerBg: '#fff3f3',
+  background: "#F6F7F9",
+  surface: "#FFFFFF",
+  surfaceAlt: "#F9FBF7",
+  text: "#1f2a1b",
+  textMuted: "#66715f",
+  primary: "#43691b",
+  primarySoft: "#eef4e8",
+  border: "#bac9ad",
+  borderSoft: "#e7ede2",
+  secondary: "#6A4C93",
+  secondaryBg: "#efe9f7",
+  danger: "#e63946",
+  dangerBg: "#fff3f3",
 };
 
 function normalizeEmail(value: string | null | undefined) {
@@ -57,27 +58,30 @@ function normalizeEmail(value: string | null | undefined) {
 
 function normalizePhone(value: string | null | undefined) {
   if (!value) return null;
-  return value.trim().replace(/[\s\-()]/g, '') || null;
+  return value.trim().replace(/[\s\-()]/g, "") || null;
 }
 
 function initialsFor(name: string | null | undefined) {
-  const words = (name || 'Friend')
+  const words = (name || "Friend")
     .trim()
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2);
-  return words.map((w) => w[0]?.toUpperCase() || '').join('') || 'FR';
+  return words.map((w) => w[0]?.toUpperCase() || "").join("") || "FR";
 }
 
 function emailToFallbackName(email: string) {
-  const first = email.split('@')[0].split(/[._-]+/)[0]?.trim();
-  return first || 'Friend';
+  const first = email
+    .split("@")[0]
+    .split(/[._-]+/)[0]
+    ?.trim();
+  return first || "Friend";
 }
 
 function phoneToFallbackName(phone: string) {
-  const digits = phone.replace(/[^\d+]/g, '');
+  const digits = phone.replace(/[^\d+]/g, "");
   const tail = digits.slice(-4);
-  return tail ? `Contact ${tail}` : 'Contact';
+  return tail ? `Contact ${tail}` : "Contact";
 }
 
 function getSelectionId(input: {
@@ -94,7 +98,7 @@ function getSelectionId(input: {
   const email = normalizeEmail(input.email_lc);
   if (email) return `email:${email}`;
 
-  return '';
+  return "";
 }
 
 interface CircleManagerSheetProps {
@@ -102,14 +106,14 @@ interface CircleManagerSheetProps {
   circles: Circle[];
   setCircles: React.Dispatch<React.SetStateAction<Circle[]>>;
   userId: string;
-  initialMode?: 'create' | 'edit';
+  initialMode?: "create" | "edit";
   initialCircle?: Circle | null;
   onClose: () => void;
   onUseCircle?: (circle: Circle) => void;
 }
 
-type InternalScreen = 'manage' | 'chooseMembers';
-type PersonSource = 'pallinky' | 'contact';
+type InternalScreen = "manage" | "chooseMembers";
+type PersonSource = "pallinky" | "contact";
 
 interface PredictedFriend {
   name: string | null;
@@ -149,22 +153,25 @@ export default function CircleManagerSheet({
   circles,
   setCircles,
   userId,
-  initialMode = 'create',
+  initialMode = "create",
   initialCircle = null,
   onClose,
   onUseCircle,
 }: CircleManagerSheetProps) {
-  const [manageMode, setManageMode] = useState<'create' | 'edit'>(initialMode);
-  const [activeCircle, setActiveCircle] = useState<Circle | null>(initialCircle);
+  const { t } = useI18n();
+  const [manageMode, setManageMode] = useState<"create" | "edit">(initialMode);
+  const [activeCircle, setActiveCircle] = useState<Circle | null>(
+    initialCircle,
+  );
   const [circleSaving, setCircleSaving] = useState(false);
-  const [circleNameValue, setCircleNameValue] = useState('');
-  const [newMemberName, setNewMemberName] = useState('');
-  const [newMemberEmail, setNewMemberEmail] = useState('');
-  const [newMemberPhone, setNewMemberPhone] = useState('');
+  const [circleNameValue, setCircleNameValue] = useState("");
+  const [newMemberName, setNewMemberName] = useState("");
+  const [newMemberEmail, setNewMemberEmail] = useState("");
+  const [newMemberPhone, setNewMemberPhone] = useState("");
 
-  const [screen, setScreen] = useState<InternalScreen>('manage');
+  const [screen, setScreen] = useState<InternalScreen>("manage");
   const [peopleLoading, setPeopleLoading] = useState(false);
-  const [peopleSearch, setPeopleSearch] = useState('');
+  const [peopleSearch, setPeopleSearch] = useState("");
   const [availablePeople, setAvailablePeople] = useState<UnifiedPerson[]>([]);
   const [selectedPersonIds, setSelectedPersonIds] = useState<string[]>([]);
 
@@ -173,13 +180,13 @@ export default function CircleManagerSheet({
 
     setManageMode(initialMode);
     setActiveCircle(initialCircle);
-    setCircleNameValue(initialCircle?.circle_name || '');
-    setNewMemberName('');
-    setNewMemberEmail('');
-    setNewMemberPhone('');
-    setScreen('manage');
+    setCircleNameValue(initialCircle?.circle_name || "");
+    setNewMemberName("");
+    setNewMemberEmail("");
+    setNewMemberPhone("");
+    setScreen("manage");
     setPeopleLoading(false);
-    setPeopleSearch('');
+    setPeopleSearch("");
     setAvailablePeople([]);
     setSelectedPersonIds([]);
   }, [visible, initialMode, initialCircle]);
@@ -200,8 +207,8 @@ export default function CircleManagerSheet({
     return availablePeople.filter((person) => {
       return (
         person.name.toLowerCase().includes(q) ||
-        (person.email_lc || '').toLowerCase().includes(q) ||
-        (person.phone_e164 || '').toLowerCase().includes(q)
+        (person.email_lc || "").toLowerCase().includes(q) ||
+        (person.phone_e164 || "").toLowerCase().includes(q)
       );
     });
   }, [availablePeople, peopleSearch]);
@@ -209,7 +216,7 @@ export default function CircleManagerSheet({
   async function handleCreateCircle() {
     const name = circleNameValue.trim();
     if (!name) {
-      Alert.alert('Enter a circle name');
+      Alert.alert(t("circle_enter_name"));
       return;
     }
 
@@ -220,7 +227,7 @@ export default function CircleManagerSheet({
       setCircles((prev) => [createdCircle, ...prev]);
       onClose();
     } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Could not create circle.');
+      Alert.alert(t("common_error"), e?.message || t("circle_create_error"));
     } finally {
       setCircleSaving(false);
     }
@@ -231,7 +238,7 @@ export default function CircleManagerSheet({
 
     const nextName = circleNameValue.trim();
     if (!nextName) {
-      Alert.alert('Enter a circle name');
+      Alert.alert(t("circle_enter_name"));
       return;
     }
 
@@ -246,37 +253,48 @@ export default function CircleManagerSheet({
       };
 
       setCircles((prev) =>
-        prev.map((circle) => (circle.id === activeCircle.id ? nextCircle : circle)),
+        prev.map((circle) =>
+          circle.id === activeCircle.id ? nextCircle : circle,
+        ),
       );
       setActiveCircle(nextCircle);
     } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Could not rename circle.');
+      Alert.alert(t("common_error"), e?.message || t("circle_rename_error"));
     } finally {
       setCircleSaving(false);
     }
   }
 
   function handleDeleteCircle(circle: Circle) {
-    Alert.alert('Delete circle', `Delete "${circle.circle_name}" and all its members?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          setCircleSaving(true);
+    Alert.alert(
+      t("circle_delete_title"),
+      t("circle_delete_body", { name: circle.circle_name }),
+      [
+        { text: t("common_cancel"), style: "cancel" },
+        {
+          text: t("common_delete"),
+          style: "destructive",
+          onPress: async () => {
+            setCircleSaving(true);
 
-          try {
-            await deleteCircle(circle.id);
-            setCircles((prev) => prev.filter((item) => item.id !== circle.id));
-            onClose();
-          } catch (e: any) {
-            Alert.alert('Error', e?.message || 'Could not delete circle.');
-          } finally {
-            setCircleSaving(false);
-          }
+            try {
+              await deleteCircle(circle.id);
+              setCircles((prev) =>
+                prev.filter((item) => item.id !== circle.id),
+              );
+              onClose();
+            } catch (e: any) {
+              Alert.alert(
+                t("common_error"),
+                e?.message || t("circle_delete_error"),
+              );
+            } finally {
+              setCircleSaving(false);
+            }
+          },
         },
-      },
-    ]);
+      ],
+    );
   }
 
   async function handleAddMemberToCircle() {
@@ -287,7 +305,7 @@ export default function CircleManagerSheet({
     const member_phone_e164 = normalizePhone(newMemberPhone);
 
     if (!member_name && !member_email_lc && !member_phone_e164) {
-      Alert.alert('Add at least a name, email, or phone.');
+      Alert.alert(t("circle_add_member_missing"));
       return;
     }
 
@@ -307,14 +325,19 @@ export default function CircleManagerSheet({
       };
 
       setCircles((prev) =>
-        prev.map((circle) => (circle.id === activeCircle.id ? nextCircle : circle)),
+        prev.map((circle) =>
+          circle.id === activeCircle.id ? nextCircle : circle,
+        ),
       );
       setActiveCircle(nextCircle);
-      setNewMemberName('');
-      setNewMemberEmail('');
-      setNewMemberPhone('');
+      setNewMemberName("");
+      setNewMemberEmail("");
+      setNewMemberPhone("");
     } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Could not add member.');
+      Alert.alert(
+        t("common_error"),
+        e?.message || t("circle_add_member_error"),
+      );
     } finally {
       setCircleSaving(false);
     }
@@ -324,13 +347,19 @@ export default function CircleManagerSheet({
     if (!activeCircle) return;
 
     Alert.alert(
-      'Remove member',
-      `Remove ${member.member_name || member.member_email_lc || member.member_phone_e164 || 'this member'} from the circle?`,
+      t("circle_remove_member_title"),
+      t("circle_remove_member_body", {
+        name:
+          member.member_name ||
+          member.member_email_lc ||
+          member.member_phone_e164 ||
+          t("people_member_fallback"),
+      }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t("common_cancel"), style: "cancel" },
         {
-          text: 'Remove',
-          style: 'destructive',
+          text: t("common_remove"),
+          style: "destructive",
           onPress: async () => {
             setCircleSaving(true);
 
@@ -339,15 +368,22 @@ export default function CircleManagerSheet({
 
               const nextCircle = {
                 ...activeCircle,
-                members: activeCircle.members.filter((item) => item.id !== member.id),
+                members: activeCircle.members.filter(
+                  (item) => item.id !== member.id,
+                ),
               };
 
               setCircles((prev) =>
-                prev.map((circle) => (circle.id === activeCircle.id ? nextCircle : circle)),
+                prev.map((circle) =>
+                  circle.id === activeCircle.id ? nextCircle : circle,
+                ),
               );
               setActiveCircle(nextCircle);
             } catch (e: any) {
-              Alert.alert('Error', e?.message || 'Could not remove member.');
+              Alert.alert(
+                t("common_error"),
+                e?.message || t("circle_remove_member_error"),
+              );
             } finally {
               setCircleSaving(false);
             }
@@ -375,12 +411,12 @@ export default function CircleManagerSheet({
       hiddenRows.map((row) => normalizePhone(row.phone_e164)).filter(Boolean),
     );
     const hiddenMatchedUserIdSet = new Set(
-      hiddenRows.map((row) => row.matched_user_id || '').filter(Boolean),
+      hiddenRows.map((row) => row.matched_user_id || "").filter(Boolean),
     );
 
     profileRows.forEach((profile) => {
       const email = normalizeEmail(profile.email_lc);
-      const avatar = profile.avatar_url?.trim() || '';
+      const avatar = profile.avatar_url?.trim() || "";
 
       if (email && avatar) profileAvatarByEmail.set(email, avatar);
       if (profile.id && avatar) profileAvatarById.set(profile.id, avatar);
@@ -389,7 +425,11 @@ export default function CircleManagerSheet({
     predictedFriends
       .filter((friend) => {
         const cleanEmail = normalizeEmail(friend.email_lc);
-        return cleanEmail !== '' && cleanEmail !== userEmail && !hiddenEmailSet.has(cleanEmail);
+        return (
+          cleanEmail !== "" &&
+          cleanEmail !== userEmail &&
+          !hiddenEmailSet.has(cleanEmail)
+        );
       })
       .forEach((friend) => {
         const email = normalizeEmail(friend.email_lc);
@@ -400,8 +440,9 @@ export default function CircleManagerSheet({
           selection_id: getSelectionId({ email_lc: email }),
           email_lc: email,
           name: friend.name?.trim() || emailToFallbackName(email),
-          avatar_url: profileAvatarByEmail.get(email) || friend.avatar_url || null,
-          source: 'pallinky',
+          avatar_url:
+            profileAvatarByEmail.get(email) || friend.avatar_url || null,
+          source: "pallinky",
           total_hangouts: friend.total_hangouts || 0,
           device_contact_id: null,
           phone_e164: null,
@@ -414,8 +455,9 @@ export default function CircleManagerSheet({
       .filter((contact) => {
         const cleanEmail = normalizeEmail(contact.email_lc);
         const cleanPhone = normalizePhone(contact.phone_e164);
-        const matchedId = contact.matched_user_id || contact.matched_profile_id || '';
-        const isSelf = cleanEmail !== '' && cleanEmail === userEmail;
+        const matchedId =
+          contact.matched_user_id || contact.matched_profile_id || "";
+        const isSelf = cleanEmail !== "" && cleanEmail === userEmail;
 
         if (isSelf) return false;
         if (!cleanEmail && !cleanPhone) return false;
@@ -431,13 +473,16 @@ export default function CircleManagerSheet({
         if (!email && !phone) return;
 
         const looksLikeUser = Boolean(
-          contact.is_user || contact.matched_user_id || contact.matched_profile_id,
+          contact.is_user ||
+          contact.matched_user_id ||
+          contact.matched_profile_id,
         );
 
         const existing = email ? personMap.get(`email:${email}`) : null;
 
         if (existing) {
-          const mergedDeviceContactId = contact.device_contact_id || existing.device_contact_id;
+          const mergedDeviceContactId =
+            contact.device_contact_id || existing.device_contact_id;
           const mergedPhone = phone || existing.phone_e164;
           const mergedEmail = existing.email_lc || email;
           const mergedSelectionId = getSelectionId({
@@ -457,20 +502,27 @@ export default function CircleManagerSheet({
               existing.name ||
               (mergedEmail
                 ? emailToFallbackName(mergedEmail)
-                : phoneToFallbackName(mergedPhone || '')),
+                : phoneToFallbackName(mergedPhone || "")),
             avatar_url:
-              profileAvatarById.get(contact.matched_user_id || contact.matched_profile_id || '') ||
+              profileAvatarById.get(
+                contact.matched_user_id || contact.matched_profile_id || "",
+              ) ||
               (mergedEmail ? profileAvatarByEmail.get(mergedEmail) : null) ||
               existing.avatar_url ||
               contact.avatar_url ||
               contact.avatar_uri ||
               null,
-            source: existing.source === 'pallinky' || looksLikeUser ? 'pallinky' : 'contact',
+            source:
+              existing.source === "pallinky" || looksLikeUser
+                ? "pallinky"
+                : "contact",
             total_hangouts: existing.total_hangouts,
             device_contact_id: mergedDeviceContactId,
             phone_e164: mergedPhone,
             matched_user_id:
-              contact.matched_user_id || contact.matched_profile_id || existing.matched_user_id,
+              contact.matched_user_id ||
+              contact.matched_profile_id ||
+              existing.matched_user_id,
             person_id: contact.person_id || existing.person_id,
           });
           return;
@@ -497,25 +549,31 @@ export default function CircleManagerSheet({
           name:
             contact.display_name?.trim() ||
             contact.name?.trim() ||
-            (email ? emailToFallbackName(email) : phoneToFallbackName(phone || '')),
+            (email
+              ? emailToFallbackName(email)
+              : phoneToFallbackName(phone || "")),
           avatar_url:
-            profileAvatarById.get(contact.matched_user_id || contact.matched_profile_id || '') ||
+            profileAvatarById.get(
+              contact.matched_user_id || contact.matched_profile_id || "",
+            ) ||
             (email ? profileAvatarByEmail.get(email) : null) ||
             contact.avatar_url ||
             contact.avatar_uri ||
             null,
-          source: looksLikeUser ? 'pallinky' : 'contact',
+          source: looksLikeUser ? "pallinky" : "contact",
           total_hangouts: 0,
           device_contact_id: contact.device_contact_id || null,
           phone_e164: phone,
-          matched_user_id: contact.matched_user_id || contact.matched_profile_id || null,
+          matched_user_id:
+            contact.matched_user_id || contact.matched_profile_id || null,
           person_id: contact.person_id || null,
         });
       });
 
     return Array.from(personMap.values()).sort((a, b) => {
-      if (a.source !== b.source) return a.source === 'pallinky' ? -1 : 1;
-      if (b.total_hangouts !== a.total_hangouts) return b.total_hangouts - a.total_hangouts;
+      if (a.source !== b.source) return a.source === "pallinky" ? -1 : 1;
+      if (b.total_hangouts !== a.total_hangouts)
+        return b.total_hangouts - a.total_hangouts;
       return a.name.localeCompare(b.name);
     });
   }
@@ -524,9 +582,9 @@ export default function CircleManagerSheet({
     if (!activeCircle) return;
 
     setSelectedPersonIds([]);
-    setPeopleSearch('');
+    setPeopleSearch("");
     setAvailablePeople([]);
-    setScreen('chooseMembers');
+    setScreen("chooseMembers");
     setPeopleLoading(true);
 
     try {
@@ -535,19 +593,19 @@ export default function CircleManagerSheet({
       } = await supabase.auth.getSession();
 
       const userEmail = normalizeEmail(session?.user?.email);
-      if (!userEmail) throw new Error('Please sign in first.');
+      if (!userEmail) throw new Error("Please sign in first.");
 
       const [predictedRes, deviceContactsRes, hiddenRes] = await Promise.all([
         supabase
-          .from('predicted_circles')
-          .select('name, email_lc, total_hangouts, avatar_url')
-          .neq('email_lc', userEmail)
-          .order('total_hangouts', { ascending: false }),
-        supabase.rpc('get_my_device_contacts'),
+          .from("predicted_circles")
+          .select("name, email_lc, total_hangouts, avatar_url")
+          .neq("email_lc", userEmail)
+          .order("total_hangouts", { ascending: false }),
+        supabase.rpc("get_my_device_contacts"),
         supabase
-          .from('hidden_people')
-          .select('email_lc, phone_e164, matched_user_id')
-          .eq('user_id', userId),
+          .from("hidden_people")
+          .select("email_lc, phone_e164, matched_user_id")
+          .eq("user_id", userId),
       ]);
 
       if (predictedRes.error) throw predictedRes.error;
@@ -555,7 +613,8 @@ export default function CircleManagerSheet({
       if (hiddenRes.error) throw hiddenRes.error;
 
       const predictedFriends = (predictedRes.data as PredictedFriend[]) || [];
-      const deviceContacts = (deviceContactsRes.data as DeviceContactRow[]) || [];
+      const deviceContacts =
+        (deviceContactsRes.data as DeviceContactRow[]) || [];
       const hiddenRows = (hiddenRes.data as HiddenPersonRow[]) || [];
 
       const profileEmailSet = new Set<string>();
@@ -568,23 +627,29 @@ export default function CircleManagerSheet({
 
       deviceContacts.forEach((contact) => {
         const email = normalizeEmail(contact.email_lc);
-        const matchedId = contact.matched_user_id || contact.matched_profile_id || '';
+        const matchedId =
+          contact.matched_user_id || contact.matched_profile_id || "";
         if (email) profileEmailSet.add(email);
         if (matchedId) profileIdSet.add(matchedId);
       });
 
       let profileRows: ProfileAvatarRow[] = [];
       if (profileEmailSet.size || profileIdSet.size) {
-        let profileQuery = supabase.from('profiles').select('id, email_lc, avatar_url');
+        let profileQuery = supabase
+          .from("profiles")
+          .select("id, email_lc, avatar_url");
 
         if (profileEmailSet.size && profileIdSet.size) {
           profileQuery = profileQuery.or(
-            `email_lc.in.(${Array.from(profileEmailSet).join(',')}),id.in.(${Array.from(profileIdSet).join(',')})`,
+            `email_lc.in.(${Array.from(profileEmailSet).join(",")}),id.in.(${Array.from(profileIdSet).join(",")})`,
           );
         } else if (profileEmailSet.size) {
-          profileQuery = profileQuery.in('email_lc', Array.from(profileEmailSet));
+          profileQuery = profileQuery.in(
+            "email_lc",
+            Array.from(profileEmailSet),
+          );
         } else {
-          profileQuery = profileQuery.in('id', Array.from(profileIdSet));
+          profileQuery = profileQuery.in("id", Array.from(profileIdSet));
         }
 
         const { data: profilesRes, error: profilesError } = await profileQuery;
@@ -604,27 +669,36 @@ export default function CircleManagerSheet({
         activeCircle.members.flatMap((member) => {
           const email = normalizeEmail(member.member_email_lc);
           const phone = normalizePhone(member.member_phone_e164);
-          const personId = member.person_id || '';
+          const personId = member.person_id || "";
 
           return [
-            email ? `email:${email}` : '',
-            phone ? `phone:${phone}` : '',
-            personId ? `person:${personId}` : '',
+            email ? `email:${email}` : "",
+            phone ? `phone:${phone}` : "",
+            personId ? `person:${personId}` : "",
           ].filter(Boolean);
         }),
       );
 
       const available = mergedPeople.filter((person) => {
-        const emailKey = person.email_lc ? `email:${normalizeEmail(person.email_lc)}` : '';
-        const phoneKey = person.phone_e164 ? `phone:${normalizePhone(person.phone_e164)}` : '';
-        const personKey = person.person_id ? `person:${person.person_id}` : '';
+        const emailKey = person.email_lc
+          ? `email:${normalizeEmail(person.email_lc)}`
+          : "";
+        const phoneKey = person.phone_e164
+          ? `phone:${normalizePhone(person.phone_e164)}`
+          : "";
+        const personKey = person.person_id ? `person:${person.person_id}` : "";
 
-        return ![emailKey, phoneKey, personKey].some((key) => key && existingMemberKeys.has(key));
+        return ![emailKey, phoneKey, personKey].some(
+          (key) => key && existingMemberKeys.has(key),
+        );
       });
 
       setAvailablePeople(available);
     } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Could not load people.');
+      Alert.alert(
+        t("common_error"),
+        e?.message || t("circle_load_people_error"),
+      );
       setAvailablePeople([]);
     } finally {
       setPeopleLoading(false);
@@ -642,7 +716,7 @@ export default function CircleManagerSheet({
   async function handleAddSelectedPeopleToCircle() {
     if (!activeCircle) return;
     if (!selectedPersonIds.length) {
-      Alert.alert('Select at least one person.');
+      Alert.alert(t("circle_select_one"));
       return;
     }
 
@@ -670,36 +744,42 @@ export default function CircleManagerSheet({
       }
 
       setCircles((prev) =>
-        prev.map((circle) => (circle.id === activeCircle.id ? nextCircle : circle)),
+        prev.map((circle) =>
+          circle.id === activeCircle.id ? nextCircle : circle,
+        ),
       );
       setActiveCircle(nextCircle);
       setSelectedPersonIds([]);
-      setPeopleSearch('');
+      setPeopleSearch("");
       setAvailablePeople([]);
-      setScreen('manage');
+      setScreen("manage");
     } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Could not add members.');
+      Alert.alert(
+        t("common_error"),
+        e?.message || t("circle_add_members_error"),
+      );
     } finally {
       setCircleSaving(false);
     }
   }
 
   function handleRequestClose() {
-    if (screen === 'chooseMembers') {
-      setScreen('manage');
+    if (screen === "chooseMembers") {
+      setScreen("manage");
       return;
     }
     onClose();
   }
 
   const headerTitle =
-    screen === 'chooseMembers'
-      ? 'Choose members'
-      : manageMode === 'create'
-        ? 'New Circle'
-        : 'Manage Circle';
+    screen === "chooseMembers"
+      ? t("circle_choose_members")
+      : manageMode === "create"
+        ? t("circle_new")
+        : t("circle_manage");
 
-  const leftActionLabel = screen === 'chooseMembers' ? 'Back' : 'Close';
+  const leftActionLabel =
+    screen === "chooseMembers" ? t("common_back") : t("common_close");
 
   return (
     <Modal
@@ -711,12 +791,14 @@ export default function CircleManagerSheet({
       <SafeAreaView style={styles.modalWrap}>
         <View style={styles.modalHeader}>
           <TouchableOpacity onPress={handleRequestClose}>
-            <StyledText style={styles.modalHeaderAction}>{leftActionLabel}</StyledText>
+            <StyledText style={styles.modalHeaderAction}>
+              {leftActionLabel}
+            </StyledText>
           </TouchableOpacity>
 
           <StyledText style={styles.modalTitle}>{headerTitle}</StyledText>
 
-          {screen === 'chooseMembers' ? (
+          {screen === "chooseMembers" ? (
             <TouchableOpacity
               onPress={handleAddSelectedPeopleToCircle}
               disabled={circleSaving || !selectedPersonIds.length}
@@ -724,10 +806,11 @@ export default function CircleManagerSheet({
               <StyledText
                 style={[
                   styles.modalHeaderAction,
-                  (!selectedPersonIds.length || circleSaving) && styles.headerActionDisabled,
+                  (!selectedPersonIds.length || circleSaving) &&
+                    styles.headerActionDisabled,
                 ]}
               >
-                Add
+                {t("common_add")}
               </StyledText>
             </TouchableOpacity>
           ) : (
@@ -735,44 +818,59 @@ export default function CircleManagerSheet({
           )}
         </View>
 
-        {screen === 'manage' ? (
+        {screen === "manage" ? (
           <ScrollView contentContainerStyle={styles.manageContent}>
             <View style={styles.manageCard}>
               <StyledText style={styles.manageLabel}>
-                {manageMode === 'create' ? 'Circle name' : 'Rename circle'}
+                {manageMode === "create"
+                  ? t("circle_name")
+                  : t("circle_rename")}
               </StyledText>
 
               <TextInput
                 value={circleNameValue}
                 onChangeText={setCircleNameValue}
-                placeholder="Besties, Book Club, Work Crew"
+                placeholder={t("circle_placeholder")}
                 placeholderTextColor={COLORS.textMuted}
                 style={styles.manageInput}
               />
 
               <TouchableOpacity
-                style={[styles.primaryButton, circleSaving && styles.buttonDisabled]}
-                onPress={manageMode === 'create' ? handleCreateCircle : handleRenameCircle}
+                style={[
+                  styles.primaryButton,
+                  circleSaving && styles.buttonDisabled,
+                ]}
+                onPress={
+                  manageMode === "create"
+                    ? handleCreateCircle
+                    : handleRenameCircle
+                }
                 disabled={circleSaving}
               >
                 <StyledText style={styles.primaryButtonText}>
-                  {manageMode === 'create' ? 'Create circle' : 'Save name'}
+                  {manageMode === "create"
+                    ? t("circle_create")
+                    : t("circle_save_name")}
                 </StyledText>
               </TouchableOpacity>
             </View>
 
-            {manageMode === 'edit' && activeCircle && (
+            {manageMode === "edit" && activeCircle && (
               <>
                 <View style={styles.manageCard}>
                   <View style={styles.manageCardHeaderRow}>
-                    <StyledText style={styles.manageLabel}>Members</StyledText>
+                    <StyledText style={styles.manageLabel}>
+                      {t("circle_members")}
+                    </StyledText>
                     <StyledText style={styles.manageMetaCount}>
                       {activeCircle.members.length}
                     </StyledText>
                   </View>
 
                   {activeCircle.members.length === 0 ? (
-                    <StyledText style={styles.emptyText}>No members in this circle yet.</StyledText>
+                    <StyledText style={styles.emptyText}>
+                      {t("circle_empty_members")}
+                    </StyledText>
                   ) : (
                     activeCircle.members.map((member) => (
                       <View key={member.id} style={styles.memberRow}>
@@ -791,7 +889,7 @@ export default function CircleManagerSheet({
                             {member.member_name ||
                               member.member_email_lc ||
                               member.member_phone_e164 ||
-                              'Unnamed member'}
+                              t("circle_unnamed_member")}
                           </StyledText>
 
                           {!!member.member_email_lc && (
@@ -811,7 +909,11 @@ export default function CircleManagerSheet({
                           style={styles.memberRemoveButton}
                           onPress={() => handleRemoveCircleMember(member)}
                         >
-                          <Ionicons name="trash-outline" size={18} color={COLORS.danger} />
+                          <Ionicons
+                            name="trash-outline"
+                            size={18}
+                            color={COLORS.danger}
+                          />
                         </TouchableOpacity>
                       </View>
                     ))
@@ -819,7 +921,9 @@ export default function CircleManagerSheet({
                 </View>
 
                 <View style={styles.manageCard}>
-                  <StyledText style={styles.manageLabel}>Add member</StyledText>
+                  <StyledText style={styles.manageLabel}>
+                    {t("circle_add_member")}
+                  </StyledText>
 
                   <TouchableOpacity
                     style={styles.secondaryButtonFull}
@@ -829,13 +933,9 @@ export default function CircleManagerSheet({
                       Choose members
                     </StyledText>
                   </TouchableOpacity>
-
-                  
                 </View>
 
-                <View style={styles.manageCard}>
-                  
-                </View>
+                <View style={styles.manageCard}></View>
               </>
             )}
           </ScrollView>
@@ -846,14 +946,16 @@ export default function CircleManagerSheet({
               <TextInput
                 value={peopleSearch}
                 onChangeText={setPeopleSearch}
-                placeholder="Search people"
+                placeholder={t("circle_search_people")}
                 placeholderTextColor={COLORS.textMuted}
                 style={styles.searchInput}
               />
             </View>
 
             <StyledText style={styles.modalSummary}>
-              {selectedPersonIds.length} selected
+              {t("common_selected_count", {
+                count: String(selectedPersonIds.length),
+              })}
             </StyledText>
 
             {peopleLoading ? (
@@ -863,7 +965,9 @@ export default function CircleManagerSheet({
             ) : (
               <ScrollView contentContainerStyle={styles.modalListContent}>
                 {filteredPeople.map((person) => {
-                  const isSelected = selectedPersonIds.includes(person.selection_id);
+                  const isSelected = selectedPersonIds.includes(
+                    person.selection_id,
+                  );
 
                   return (
                     <TouchableOpacity
@@ -878,19 +982,25 @@ export default function CircleManagerSheet({
                       </View>
 
                       <View style={styles.contactMain}>
-                        <StyledText style={styles.contactName}>{person.name}</StyledText>
+                        <StyledText style={styles.contactName}>
+                          {person.name}
+                        </StyledText>
                         {!!person.email_lc && (
-                          <StyledText style={styles.contactMeta}>{person.email_lc}</StyledText>
+                          <StyledText style={styles.contactMeta}>
+                            {person.email_lc}
+                          </StyledText>
                         )}
                         {!!person.phone_e164 && (
-                          <StyledText style={styles.contactMeta}>{person.phone_e164}</StyledText>
+                          <StyledText style={styles.contactMeta}>
+                            {person.phone_e164}
+                          </StyledText>
                         )}
                       </View>
 
                       <Ionicons
-                        name={isSelected ? 'checkbox' : 'square-outline'}
+                        name={isSelected ? "checkbox" : "square-outline"}
                         size={22}
-                        color={isSelected ? COLORS.primary : '#b0b7c3'}
+                        color={isSelected ? COLORS.primary : "#b0b7c3"}
                       />
                     </TouchableOpacity>
                   );
@@ -913,18 +1023,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 6,
     paddingBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   modalHeaderAction: {
     fontSize: 15,
-    fontWeight: '800',
+    fontWeight: "800",
     color: COLORS.primary,
   },
   modalTitle: {
     fontSize: 17,
-    fontWeight: '900',
+    fontWeight: "900",
     color: COLORS.text,
   },
   headerSpacer: {
@@ -944,7 +1054,7 @@ const styles = StyleSheet.create({
   },
   manageLabel: {
     fontSize: 15,
-    fontWeight: '900',
+    fontWeight: "900",
     color: COLORS.text,
     marginBottom: 10,
   },
@@ -963,14 +1073,14 @@ const styles = StyleSheet.create({
     minHeight: 46,
     borderRadius: 14,
     backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 14,
     marginTop: 2,
   },
   primaryButtonText: {
-    color: '#ffffff',
-    fontWeight: '900',
+    color: "#ffffff",
+    fontWeight: "900",
     fontSize: 15,
   },
   secondaryButtonFull: {
@@ -979,31 +1089,31 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
     backgroundColor: COLORS.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 14,
     marginTop: 10,
     marginBottom: 10,
   },
   secondaryButtonText: {
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: "800",
     color: COLORS.text,
   },
   secondaryDangerButtonFull: {
     minHeight: 46,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#efc9c9',
+    borderColor: "#efc9c9",
     backgroundColor: COLORS.dangerBg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 14,
     marginTop: 10,
   },
   secondaryDangerButtonText: {
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: "800",
     color: COLORS.danger,
   },
   buttonDisabled: {
@@ -1011,18 +1121,18 @@ const styles = StyleSheet.create({
   },
   manageCardHeaderRow: {
     marginBottom: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   manageMetaCount: {
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: "800",
     color: COLORS.textMuted,
   },
   memberRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 10,
     borderTopWidth: 1,
     borderTopColor: COLORS.borderSoft,
@@ -1032,13 +1142,13 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: 19,
     backgroundColor: COLORS.secondaryBg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 12,
   },
   memberAvatarText: {
     fontSize: 12,
-    fontWeight: '900',
+    fontWeight: "900",
     color: COLORS.secondary,
   },
   memberTextWrap: {
@@ -1047,7 +1157,7 @@ const styles = StyleSheet.create({
   },
   memberName: {
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: "800",
     color: COLORS.text,
   },
   memberMeta: {
@@ -1060,8 +1170,8 @@ const styles = StyleSheet.create({
     height: 34,
     borderRadius: 17,
     backgroundColor: COLORS.dangerBg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   modalContent: {
     flex: 1,
@@ -1074,8 +1184,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 14,
     height: 52,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
     borderWidth: 1,
     borderColor: COLORS.borderSoft,
@@ -1088,13 +1198,13 @@ const styles = StyleSheet.create({
   modalSummary: {
     marginBottom: 10,
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: "800",
     color: COLORS.textMuted,
   },
   stateWrap: {
     paddingVertical: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   modalListContent: {
     paddingBottom: 24,
@@ -1107,8 +1217,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 13,
     marginBottom: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
   },
   contactAvatar: {
@@ -1116,12 +1226,12 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: COLORS.secondaryBg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   contactAvatarText: {
     fontSize: 13,
-    fontWeight: '900',
+    fontWeight: "900",
     color: COLORS.secondary,
   },
   contactMain: {
@@ -1130,7 +1240,7 @@ const styles = StyleSheet.create({
   },
   contactName: {
     fontSize: 15,
-    fontWeight: '900',
+    fontWeight: "900",
     color: COLORS.text,
   },
   contactMeta: {
