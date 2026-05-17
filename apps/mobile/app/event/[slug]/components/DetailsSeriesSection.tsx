@@ -3,6 +3,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { formatInEventTimeZone } from '@pallinky/core';
 
 type Theme = {
   bg: string;
@@ -11,15 +12,20 @@ type Theme = {
   isDark: boolean;
 };
 
-function formatSeriesDateTime(value: string | null) {
-  if (!value) return 'Date TBD';
-  return new Date(value).toLocaleDateString(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+function formatSeriesDateTime(event: any) {
+  if (!event?.starts_at) return 'Date TBD';
+
+  return formatInEventTimeZone(
+    event.starts_at,
+    {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    },
+    event
+  );
 }
 
 const SYSTEM = {
@@ -61,7 +67,7 @@ export default function DetailsSeriesSection({
               {event.title || 'This event'}
             </Text>
             <Text style={[styles.seriesRowMeta, { color: theme.text }]}>
-              {formatSeriesDateTime(event.starts_at)}
+              {formatSeriesDateTime(event)}
             </Text>
           </View>
 
@@ -85,7 +91,7 @@ export default function DetailsSeriesSection({
                 {item.title || 'Untitled event'}
               </Text>
               <Text style={[styles.seriesRowMeta, { color: theme.text }]}>
-                {formatSeriesDateTime(item.starts_at)}
+                {formatSeriesDateTime(item)}
               </Text>
             </View>
 

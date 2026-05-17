@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { supabase, useSession } from '@pallinky/core';
+import { formatInEventTimeZone, supabase, useSession } from '@pallinky/core';
 import { Ionicons } from '@expo/vector-icons';
 
 const SYSTEM = {
@@ -62,26 +62,30 @@ function getFirstName(value: string | null | undefined) {
   return (value || '').trim().split(' ')[0] || 'Guest';
 }
 
-function formatDateTime(value: string | null | undefined) {
+function formatDateTime(value: string | null | undefined, event: any) {
   if (!value) return 'Date TBD';
 
-  return new Date(value).toLocaleString(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
+  return formatInEventTimeZone(
+    value,
+    {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    },
+    event
+  );
 }
 
-function formatDateOnly(value: string | null | undefined) {
+function formatDateOnly(value: string | null | undefined, event: any) {
   if (!value) return 'Date TBD';
 
-  return new Date(value).toLocaleDateString(undefined, {
-    weekday: 'long',
-    month: 'short',
-    day: 'numeric',
-  });
+  return formatInEventTimeZone(
+    value,
+    { weekday: 'long', month: 'short', day: 'numeric' },
+    event
+  );
 }
 
 export default function PollPage() {
@@ -302,7 +306,7 @@ export default function PollPage() {
     (dateToDelete: string) => {
       Alert.alert(
         'Delete date?',
-        `Remove ${formatDateOnly(dateToDelete)} from this poll?`,
+        `Remove ${formatDateOnly(dateToDelete, event)} from this poll?`,
         [
           { text: 'Cancel', style: 'cancel' },
           {
@@ -394,10 +398,10 @@ export default function PollPage() {
                     <View style={styles.dateHeaderRow}>
                       <View style={styles.dateTextWrap}>
                         <Text style={[styles.dateTitle, { color: theme.text }]}>
-                          {formatDateOnly(date)}
+                          {formatDateOnly(date, event)}
                         </Text>
                         <Text style={styles.dateMeta}>
-                          {formatDateTime(date)} • {tally.count} vote{tally.count === 1 ? '' : 's'}
+                          {formatDateTime(date, event)} • {tally.count} vote{tally.count === 1 ? '' : 's'}
                         </Text>
                       </View>
 
@@ -476,7 +480,7 @@ export default function PollPage() {
                       <View style={styles.voteSelections}>
                         {(vote.selected_dates || []).map((date) => (
                           <View key={`${voterName}-${date}`} style={styles.selectionChip}>
-                            <Text style={styles.selectionChipText}>{formatDateOnly(date)}</Text>
+                            <Text style={styles.selectionChipText}>{formatDateOnly(date, event)}</Text>
                           </View>
                         ))}
                       </View>

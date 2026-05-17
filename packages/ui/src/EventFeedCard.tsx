@@ -40,6 +40,7 @@ export interface EventFeedCardProps {
   eventType?: string | null;
   title: string;
   startsAt: string;
+  eventTimeZone?: string | null;
   location?: string | null;
   coverImageUrl?: string | null;
   gifKey?: string | null;
@@ -61,33 +62,47 @@ export interface EventFeedCardProps {
   onDismiss?: () => void;
 }
 
-function formatDateTime(startsAt: string, lang: AppLanguage) {
+function formatDateTime(
+  startsAt: string,
+  lang: AppLanguage,
+  eventTimeZone?: string | null
+) {
   if (!startsAt) return t(lang, 'event_card_date_tbd');
 
   const date = new Date(startsAt);
+  const timeZone = eventTimeZone || undefined;
 
   const weekday = date.toLocaleDateString(undefined, {
     weekday: 'short',
+    ...(timeZone ? { timeZone } : {}),
   });
 
   const month = date.toLocaleDateString(undefined, {
     month: 'short',
+    ...(timeZone ? { timeZone } : {}),
   });
 
-  const dayNumber = date.getDate();
+  const dayPart = new Intl.DateTimeFormat(undefined, {
+    day: 'numeric',
+    ...(timeZone ? { timeZone } : {}),
+  })
+    .formatToParts(date)
+    .find((part) => part.type === 'day')?.value;
 
   const time = date.toLocaleTimeString(undefined, {
     hour: 'numeric',
     minute: '2-digit',
+    ...(timeZone ? { timeZone } : {}),
   });
 
-  return `${weekday}. ${month} ${dayNumber} ${time}`;
+  return `${weekday}. ${month} ${dayPart || date.getDate()} ${time}`;
 }
 
 const EventFeedCard = ({
   eventType,
   title,
   startsAt,
+  eventTimeZone,
   location,
   coverImageUrl,
   gifKey,
@@ -284,7 +299,7 @@ const baseBadgeLabel =
             <View style={styles.metaBlock}>
               <View style={styles.metaRow}>
                 <StyledText style={styles.metaText}>
-                  {formatDateTime(startsAt, lang)}
+                  {formatDateTime(startsAt, lang, eventTimeZone)}
                 </StyledText>
               </View>
 

@@ -3,6 +3,7 @@
  * Description: Web event details page with token-aware returning guest recognition, change RSVP, and ICS download for formal events.
  */
 
+import { formatInEventTimeZone } from '@pallinky/core/src/dateTime';
 import { createClient } from '../../../lib/supabase/server';
 import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
@@ -41,18 +42,19 @@ type Props = {
   searchParams: Promise<{ token?: string }>;
 };
 
-function formatEventDate(isoString?: string | null) {
-  if (!isoString) return '';
-  return new Date(isoString).toLocaleDateString(undefined, {
-    weekday: 'long',
-    month: 'short',
-    day: 'numeric',
-  });
+function formatEventDate(event: any) {
+  if (!event?.starts_at) return '';
+
+  return formatInEventTimeZone(
+    event.starts_at,
+    { weekday: 'long', month: 'short', day: 'numeric' },
+    event
+  );
 }
 
 function formatEventDateTime(isoString?: string | null) {
   if (!isoString) return '';
-  return new Date(isoString).toLocaleString(undefined, {
+  return formatInEventTimeZone(isoString, {
     weekday: 'long',
     month: 'short',
     day: 'numeric',
@@ -289,7 +291,7 @@ if (guestToken) {
                       marginBottom: locationText ? '8px' : '0',
                     }}
                   >
-                    {formatEventDate(event.starts_at)}
+                    {formatEventDate(event)}
                   </div>
                 ) : null}
 

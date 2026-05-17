@@ -6,7 +6,7 @@ import React from 'react';
 import { View, Image, StyleSheet, Pressable, Platform, Alert } from 'react-native';
 import { StyledText } from './BaseComponents';
 import { Ionicons } from '@expo/vector-icons';
-import { supabase } from '@pallinky/core';
+import { formatInEventTimeZone, supabase } from '@pallinky/core';
 
 const PALETTES: Record<string, { bg: string; accent: string; text: string; isDark: boolean }> = {
   "zen": { bg: "#F6F7F9", accent: "#43691b", text: "#1f2a1b", isDark: false },
@@ -29,6 +29,7 @@ interface PlanCardProps {
   hostEmail?: string;
   title: string;
   startsAt: string;
+  eventTimeZone?: string | null;
   location: string | null;
   coverImageUrl: string | null;
   gifKey: string | null;
@@ -53,7 +54,8 @@ const PlanCard = ({
   currentUserEmail,
   hostEmail,
   title, 
-  startsAt, 
+  startsAt,
+  eventTimeZone,
   location, 
   coverImageUrl, 
   gifKey, 
@@ -89,7 +91,13 @@ const PlanCard = ({
         
         <View style={styles.infoContainer}>
           <StyledText style={[styles.dateText, { color: theme.accent }, customFont]}>
-            {startsAt ? new Date(startsAt).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) : 'Date TBD'}
+            {startsAt
+              ? formatInEventTimeZone(
+                  startsAt,
+                  { weekday: 'short', month: 'short', day: 'numeric' },
+                  eventTimeZone
+                )
+              : 'Date TBD'}
           </StyledText>
           <StyledText style={[styles.titleText, { color: theme.text }, customFont]} numberOfLines={1}>{title}</StyledText>
           

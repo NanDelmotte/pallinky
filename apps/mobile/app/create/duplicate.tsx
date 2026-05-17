@@ -26,7 +26,7 @@ import DateTimePicker, {
   DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
 
-import { createVibeDraft, supabase } from '@pallinky/core';
+import { createVibeDraft, getLocalTimeZone, supabase } from '@pallinky/core';
 import { StyledInput, StyledText } from '@pallinky/ui';
 
 import DateOptionPicker from '../../components/DateOptionPicker';
@@ -169,6 +169,8 @@ const forwardingModeParam =
   
     .map((value) => new Date(value))
     .filter((d) => !Number.isNaN(d.getTime()));
+
+  const localTimeZone = getLocalTimeZone();
 
   const initialWhenMode: WhenMode =
     eventTypeParam === 'formal'
@@ -442,6 +444,7 @@ const initialEndsAt = endsAtParam ? new Date(endsAtParam) : null;
           p_location: location,
           p_description: fullDescription || null,
           p_event_type: 'formal',
+          p_event_time_zone: getLocalTimeZone(),
           p_visibility: form.visibility,
           p_expires_in_days: 14,
           p_invite_list_visibility: form.invite_list_visibility,
@@ -568,6 +571,12 @@ const initialEndsAt = endsAtParam ? new Date(endsAtParam) : null;
             <StyledText style={styles.modeTitle}>Not sure yet</StyledText>
             <StyledText style={styles.modeSub}>I just want to open the plan for now.</StyledText>
           </TouchableOpacity>
+
+          {form.whenMode !== 'unsure' && (
+            <StyledText style={styles.timezoneNote}>
+              Times will be saved in {localTimeZone}.
+            </StyledText>
+          )}
 
           {form.whenMode === 'specific' && (
             <>
@@ -1175,6 +1184,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: COLORS.textMuted,
+  },
+
+  timezoneNote: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: COLORS.primary,
+    fontWeight: '700',
+    marginTop: 2,
+    marginBottom: 10,
   },
 
   dateOptionsWrap: {

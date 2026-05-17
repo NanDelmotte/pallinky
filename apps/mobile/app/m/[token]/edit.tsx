@@ -26,7 +26,7 @@ import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 
-import { supabase } from "@pallinky/core";
+import { getLocalTimeZone, supabase } from "@pallinky/core";
 import { StyledInput, StyledText } from "@pallinky/ui";
 
 import DateOptionPicker from "../../../components/DateOptionPicker";
@@ -357,6 +357,7 @@ export default function EditCreateScreen() {
         p_rsvp_deadline: form.rsvp_deadline,
         p_send_final_reminder_at_deadline: form.send_final_reminder_at_deadline,
         p_forwarding_mode: null,
+        p_event_time_zone: startsAt ? getLocalTimeZone() : null,
       });
 
       if (error) throw error;
