@@ -16,7 +16,7 @@ import * as Contacts from 'expo-contacts';
 
 import { StyledText } from '@pallinky/ui';
 import { supabase, useSession } from '@pallinky/core';
-import { t } from '@pallinky/i18n';
+import { t, useI18n } from '@pallinky/i18n';
 import type { AppLanguage } from '@pallinky/i18n/types';
 
 import FriendCard, { FriendCardData } from '../../components/people/FriendCard';
@@ -210,7 +210,7 @@ function sortByLastSeenDesc(items: FeedItem[]) {
 export default function PeopleScreen() {
   const router = useRouter();
   const { session } = useSession();
-  const lang: AppLanguage = 'en';
+  const { language: lang } = useI18n();
 
   const [activeTab, setActiveTab] = useState<PeopleTab>('connections');
   const [loading, setLoading] = useState(true);
@@ -639,7 +639,7 @@ export default function PeopleScreen() {
     } finally {
       setLoading(false);
     }
-  }, [session]);
+  }, [session, lang]);
 
   useFocusEffect(
     useCallback(() => {
@@ -708,7 +708,7 @@ export default function PeopleScreen() {
     )
       .slice(0, 2)
       .map((item) => buildFriendCardFromSignal(item, profileMap, lang));
-  }, [feed.items, profileMap]);
+  }, [feed.items, profileMap, lang]);
 
   const reconnectEmails = useMemo(() => {
     return new Set(reconnectCards.map((card) => normalizeEmail(card.id)));
@@ -763,6 +763,7 @@ const sharedHistoryEmailSet = useMemo(() => {
   activeConnectionEmails,
   sharedHistoryEmailSet,
   profileMap,
+  lang,
 ]);
 
   const socialIntentCards = useMemo(() => {
@@ -804,7 +805,7 @@ const sharedHistoryEmailSet = useMemo(() => {
         } satisfies FriendCardData;
       })
       .filter((card) => !reconnectEmails.has(normalizeEmail(String(card.id))));
-  }, [data.socialIntent, profileMap, reconnectEmails]);
+  }, [data.socialIntent, profileMap, reconnectEmails, lang]);
 
   const hasAnyPeopleContent =
     innerCircleSignals.length > 0 ||

@@ -23,6 +23,7 @@ import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
+import { useI18n } from '@pallinky/i18n';
 interface ProfileRow {
   id: string;
   email_lc: string | null;
@@ -88,6 +89,7 @@ function formatActivityDate(value: string | null | undefined) {
 }
 
 export default function ProfileScreen() {
+  const { t } = useI18n();
   const { session } = useSession();
   const router = useRouter();
 
@@ -208,7 +210,7 @@ export default function ProfileScreen() {
               return {
                 id: `rsvped:${row.event_id}`,
                 kind: 'rsvped' as const,
-                title: event.title || 'Event',
+                title: event.title || t('profile_event_fallback'),
                 slug: event.slug,
                 happenedAt: row.responded_at || event.starts_at,
                 status: row.status,
@@ -221,7 +223,7 @@ export default function ProfileScreen() {
       const hostedActivity: ActivityItem[] = hostedEvents.slice(0, 10).map((event) => ({
         id: `hosted:${event.id}`,
         kind: 'hosted',
-        title: event.title || 'Event',
+        title: event.title || t('profile_event_fallback'),
         slug: event.slug,
         happenedAt: event.starts_at,
       }));
@@ -237,7 +239,7 @@ export default function ProfileScreen() {
       setRecentActivity(merged);
     } catch (error) {
       console.error('Profile load failed', error);
-      Alert.alert('Error', 'Could not load your profile.');
+      Alert.alert(t('common_error'), t('profile_error_load'));
     } finally {
       setLoading(false);
     }
@@ -248,7 +250,7 @@ export default function ProfileScreen() {
 
     const clean = draftName.trim();
     if (!clean) {
-      Alert.alert('Name required', 'Please enter a name.');
+      Alert.alert(t('profile_name_required_title'), t('profile_name_required_body'));
       return;
     }
 
@@ -275,7 +277,7 @@ export default function ProfileScreen() {
 
       setEditingName(false);
     } catch (error: any) {
-      Alert.alert('Error', error?.message || 'Could not update name.');
+      Alert.alert(t('common_error'), error?.message || t('profile_error_update_name'));
     } finally {
       setSavingName(false);
     }
@@ -284,7 +286,7 @@ export default function ProfileScreen() {
   async function pickImage() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Permission needed', 'Please allow photo library access.');
+      Alert.alert(t('profile_permission_needed_title'), t('profile_permission_needed_body'));
       return;
     }
 
@@ -342,9 +344,9 @@ export default function ProfileScreen() {
         avatar_url: publicUrl,
       }));
 
-      Alert.alert('Success', 'Photo updated.');
+      Alert.alert(t('settings_success'), t('profile_photo_updated'));
     } catch (error: any) {
-      Alert.alert('Upload Error', error?.message || 'Could not update photo.');
+      Alert.alert(t('profile_upload_error'), error?.message || t('profile_error_update_photo'));
     } finally {
       setUploading(false);
     }
@@ -362,7 +364,7 @@ export default function ProfileScreen() {
     return (
       <View style={styles.centered}>
         <StyledText style={{ color: '#1f2a1b', fontSize: 16, fontWeight: '700' }}>
-          Please log in to view your profile.
+          {t('profile_login_required')}
         </StyledText>
 
         <TouchableOpacity
@@ -376,7 +378,7 @@ export default function ProfileScreen() {
           }}
         >
           <StyledText style={{ color: '#fff', fontWeight: '800' }}>
-            Go to welcome
+            {t('profile_go_welcome')}
           </StyledText>
         </TouchableOpacity>
       </View>
@@ -392,18 +394,18 @@ export default function ProfileScreen() {
 
         <TouchableOpacity style={styles.settingsLink} onPress={() => router.push('/settings')}>
           <Ionicons name="settings-outline" size={18} color="#43691b" />
-          <StyledText style={styles.settingsLinkText}>Settings</StyledText>
+          <StyledText style={styles.settingsLinkText}>{t('profile_settings')}</StyledText>
         </TouchableOpacity>
       </View>
 
-      <StyledText style={styles.headerTitle}>Profile</StyledText>
+      <StyledText style={styles.headerTitle}>{t('profile_title')}</StyledText>
 
       <View style={styles.heroCard}>
         <Image source={{ uri: avatarUrl }} style={styles.avatar} />
 
         <TouchableOpacity style={styles.avatarButton} onPress={pickImage} disabled={uploading}>
           <StyledText style={styles.avatarButtonText}>
-            {uploading ? 'Updating...' : 'Change Photo'}
+            {uploading ? t('profile_updating') : t('profile_change_photo')}
           </StyledText>
         </TouchableOpacity>
 
@@ -413,7 +415,7 @@ export default function ProfileScreen() {
               value={draftName}
               onChangeText={setDraftName}
               style={styles.nameInput}
-              placeholder="Your name"
+              placeholder={t('profile_name_placeholder')}
               placeholderTextColor="#8b9487"
               autoCapitalize="words"
               autoCorrect={false}
@@ -428,12 +430,12 @@ export default function ProfileScreen() {
                 style={styles.cancelNameBtn}
                 disabled={savingName}
               >
-                <StyledText style={styles.cancelNameText}>Cancel</StyledText>
+                <StyledText style={styles.cancelNameText}>{t('profile_cancel')}</StyledText>
               </TouchableOpacity>
 
               <TouchableOpacity onPress={saveName} style={styles.saveNameBtn} disabled={savingName}>
                 <StyledText style={styles.saveNameText}>
-                  {savingName ? 'Saving...' : 'Save'}
+                  {savingName ? t('profile_saving') : t('profile_save')}
                 </StyledText>
               </TouchableOpacity>
             </View>
@@ -441,15 +443,15 @@ export default function ProfileScreen() {
         ) : (
           <TouchableOpacity onPress={() => setEditingName(true)}>
             <StyledText style={styles.name}>{displayName}</StyledText>
-            <StyledText style={styles.editHint}>Tap name to edit</StyledText>
+            <StyledText style={styles.editHint}>{t('profile_tap_name_to_edit')}</StyledText>
           </TouchableOpacity>
         )}
 
-        {joinedDate ? <StyledText style={styles.joined}>Joined {joinedDate}</StyledText> : null}
+        {joinedDate ? <StyledText style={styles.joined}>{t('profile_joined', { date: joinedDate })}</StyledText> : null}
         {qrValue ? (
           <TouchableOpacity style={styles.qrButton} onPress={() => setQrVisible(true)}>
             <Ionicons name="qr-code-outline" size={18} color="#43691b" />
-            <StyledText style={styles.qrButtonText}>Show my Pallinky QR</StyledText>
+            <StyledText style={styles.qrButtonText}>{t('profile_show_qr')}</StyledText>
           </TouchableOpacity>
         ) : null}
       </View>
@@ -457,21 +459,21 @@ export default function ProfileScreen() {
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
           <StyledText style={styles.statValue}>{hostedCount}</StyledText>
-          <StyledText style={styles.statLabel}>Hosted</StyledText>
+          <StyledText style={styles.statLabel}>{t('profile_stat_hosted')}</StyledText>
         </View>
 
         <View style={styles.statCard}>
           <StyledText style={styles.statValue}>{rsvpedCount}</StyledText>
-          <StyledText style={styles.statLabel}>RSVP’d</StyledText>
+          <StyledText style={styles.statLabel}>{t('profile_stat_rsvpd')}</StyledText>
         </View>
       </View>
 
       <View style={styles.section}>
-        <StyledText style={styles.sectionTitle}>Recent Activity</StyledText>
+        <StyledText style={styles.sectionTitle}>{t('profile_recent_activity')}</StyledText>
 
         {recentActivity.length === 0 ? (
           <View style={styles.emptyCard}>
-            <StyledText style={styles.emptyText}>No activity yet.</StyledText>
+            <StyledText style={styles.emptyText}>{t('profile_no_activity')}</StyledText>
           </View>
         ) : (
           recentActivity.map((item) => (
@@ -485,7 +487,7 @@ export default function ProfileScreen() {
                 {item.kind === 'hosted' ? (
                   <View style={[styles.badge, styles.hostedBadge]}>
                     <StyledText style={[styles.badgeText, styles.hostedBadgeText]}>
-                      Hosted
+                      {t('profile_badge_hosted')}
                     </StyledText>
                   </View>
                 ) : null}
@@ -498,7 +500,7 @@ export default function ProfileScreen() {
               ) : null}
 
               {item.kind === 'rsvped' && item.status ? (
-                <StyledText style={styles.activityMeta}>RSVP: {item.status}</StyledText>
+                <StyledText style={styles.activityMeta}>{t('profile_rsvp_status', { status: item.status })}</StyledText>
               ) : null}
             </TouchableOpacity>
           ))
@@ -513,9 +515,9 @@ export default function ProfileScreen() {
 
             <Image source={{ uri: avatarUrl }} style={styles.qrAvatar} />
 
-            <StyledText style={styles.qrTitle}>Add {displayName}</StyledText>
+            <StyledText style={styles.qrTitle}>{t('profile_qr_title', { name: displayName })}</StyledText>
             <StyledText style={styles.qrSubtitle}>
-              Scan this QR code to add me to Pallinky contacts.
+              {t('profile_qr_subtitle')}
             </StyledText>
 
             <View style={styles.qrBox}>

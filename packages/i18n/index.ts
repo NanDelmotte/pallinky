@@ -1,31 +1,14 @@
 /**
  * Path: packages/i18n/index.ts
- * Description: Translation helper (t function) to resolve localized strings with variables.
+ * Description: Central exports for translations, language types, and the app-wide i18n provider.
  */
 
-import { en } from './en';
-import { nl } from './nl';
-import { fr } from './fr';
-import type { AppLanguage, TranslationKey } from './types';
-
-const dictionaries: Record<AppLanguage, Record<TranslationKey, string>> = {
-  en,
-  nl,
-  fr,
-};
-
-export function t(
-  lang: AppLanguage,
-  key: TranslationKey,
-  vars: Record<string, string> = {}
-) {
-  const dict = dictionaries[lang] ?? dictionaries.en;
-  let text = dict[key] ?? dictionaries.en[key];
-
-  Object.entries(vars).forEach(([k, v]) => {
-    text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), v);
-  });
-
-  return text;
-}
+export { t } from './translate';
 export type { AppLanguage, TranslationKey } from './types';
+export {
+  DEFAULT_LANGUAGE,
+  I18nProvider,
+  LANGUAGE_OPTIONS,
+  LANGUAGE_STORAGE_KEY,
+  useI18n,
+} from './provider';
