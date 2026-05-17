@@ -74,9 +74,30 @@ drop function if exists public.create_event_draft(
   text
 );
 
+create or replace function public.is_valid_event_time_zone(p_time_zone text)
+returns boolean
+language sql
+stable
+set search_path = public
+as $$
+  select p_time_zone is null
+    or (
+      length(trim(p_time_zone)) > 0
+      and (trim(p_time_zone) = 'UTC' or trim(p_time_zone) like '%/%')
+      and exists (
+        select 1
+        from pg_catalog.pg_timezone_names
+        where name = trim(p_time_zone)
+      )
+    );
+$$;
+
 alter table public.events
-  add constraint events_event_time_zone_not_blank
-  check (event_time_zone is null or length(trim(event_time_zone)) > 0)
+  drop constraint if exists events_event_time_zone_not_blank;
+
+alter table public.events
+  add constraint events_event_time_zone_valid
+  check (public.is_valid_event_time_zone(event_time_zone))
   not valid;
 
 create or replace function public.create_event_draft(
@@ -457,7 +478,18 @@ begin
    and lower(trim(r.email)) = ei.invitee_email_lc
   where e.send_final_reminder_at_deadline is true
     and e.rsvp_deadline is not null
-    and e.rsvp_deadline = (now() at time zone coalesce(nullif(trim(e.event_time_zone), ''), 'UTC'))::date
+    and e.rsvp_deadline = (
+      now() at time zone coalesce(
+        (
+          select tz.name
+          from pg_catalog.pg_timezone_names tz
+          where tz.name = nullif(trim(e.event_time_zone), '')
+            and (tz.name = 'UTC' or tz.name like '%/%')
+          limit 1
+        ),
+        'UTC'
+      )
+    )::date
     and ei.invitee_email_lc is not null
     and ei.revoked_at is null
     and r.id is null
