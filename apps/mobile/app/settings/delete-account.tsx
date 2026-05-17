@@ -9,7 +9,6 @@ import { StyledText } from '@pallinky/ui';
 import { supabase } from '@pallinky/core';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-const APP_URL = process.env.EXPO_PUBLIC_APP_URL || 'https://pallinky.com';
 
 export default function DeleteAccountScreen() {
   const router = useRouter();
@@ -19,54 +18,47 @@ export default function DeleteAccountScreen() {
     try {
       setLoading(true);
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-    const token = session?.access_token;
-
-      if (!token) {
-        Alert.alert('Error', 'Not authenticated');
-        setLoading(false);
-        return;
-      }
-console.log('APP_URL', process.env.EXPO_PUBLIC_APP_URL);
-console.log('MOBILE_SUPABASE_URL', process.env.EXPO_PUBLIC_SUPABASE_URL);
-      const res = await fetch(`${APP_URL}/api/account/delete`, {
+      const { data, error } = await supabase.functions.invoke('delete-account', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       });
 
-      const rawText = await res.text();
+      if (error || !data?.ok) {
+        let details = error?.message;
 
-      let json: any = null;
-     try {
-  json = rawText ? JSON.parse(rawText) : null;
-} catch (err: any) {
-  console.log('DELETE_ACCOUNT_PARSE_ERROR', err);
-  console.log('DELETE_ACCOUNT_RAW_RESPONSE', rawText);
+        const context = (error as { context?: { json?: () => Promise<unknown> } } | null)
+          ?.context;
 
-  throw new Error(`Non-JSON response: ${rawText || 'empty response'}`);
-}
-      if (!res.ok || !json?.ok) {
-        throw new Error(
-          json?.details || json?.error || 'Delete failed'
-        );
+        if (context?.json) {
+          try {
+            const body = await context.json();
+
+            if (body && typeof body === 'object') {
+              const { details: responseDetails, error: responseError } = body as {
+                details?: string;
+                error?: string;
+              };
+
+              details = responseDetails || responseError || details;
+            }
+          } catch (parseError) {
+            console.log('DELETE_ACCOUNT_ERROR_PARSE_WARNING', parseError);
+          }
+        }
+
+        throw new Error(details || 'Delete failed');
       }
 
       const { error: signOutError } = await supabase.auth.signOut({ scope: 'local' });
 
-// If the server already deleted the auth user, the session can be stale.
-// We still want to continue to the signed-out screen.
-if (signOutError) {
-  console.log('Local sign-out warning:', signOutError.message);
-}
+      // If the server already deleted the auth user, the session can be stale.
+      // We still want to continue to the signed-out screen.
+      if (signOutError) {
+        console.log('Local sign-out warning:', signOutError.message);
+      }
 
-router.replace('/auth/verify');
+      router.replace('/auth/verify');
     } catch (err: any) {
       console.log('DELETE_ACCOUNT_ERROR', err);
-  console.log('DELETE_ACCOUNT_ERROR_MESSAGE', err?.message);
       Alert.alert('Error', err?.message || 'Something went wrong');
       setLoading(false);
     }
