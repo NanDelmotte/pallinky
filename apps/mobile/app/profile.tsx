@@ -23,7 +23,7 @@ import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
-import { useI18n } from '@pallinky/i18n';
+import { useI18n } from '@pallinky/i18n/client';
 interface ProfileRow {
   id: string;
   email_lc: string | null;

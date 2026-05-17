@@ -8,7 +8,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { StyledText } from '@pallinky/ui';
 import { Ionicons } from '@expo/vector-icons';
 import type { AppLanguage } from '@pallinky/i18n/types';
-import { LANGUAGE_OPTIONS, useI18n } from '@pallinky/i18n';
+import { LANGUAGE_OPTIONS, useI18n } from '@pallinky/i18n/client';
 
 type LanguageSelectorProps = {
   compact?: boolean;

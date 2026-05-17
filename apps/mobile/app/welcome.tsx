@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useI18n } from '@pallinky/i18n';
+import { useI18n } from '@pallinky/i18n/client';
 import LanguageSelector from '../components/LanguageSelector';
 
 const WELCOME_KEY = 'pallinky_welcome_seen_v1';

@@ -24,7 +24,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { supabase, useSession } from '@pallinky/core';
 import { StyledText, DASHBOARD_THEMES } from '@pallinky/ui';
-import { t, useI18n } from '@pallinky/i18n';
+import { t } from '@pallinky/i18n';
+import { useI18n } from '@pallinky/i18n/client';
 import type { AppLanguage, TranslationKey } from '@pallinky/i18n/types';
 
 import MyPlansList from '../../components/dashboard/MyPlansList';
