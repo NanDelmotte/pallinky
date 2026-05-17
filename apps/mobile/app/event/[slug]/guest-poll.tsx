@@ -789,6 +789,14 @@ p_status: notThisTime ? 'no' : 'interested',
       });
 
       if (error) throw error;
+
+      if ((data as any)?.deadline_passed) {
+        return Alert.alert(
+          'RSVP closed',
+          'The RSVP deadline has passed, so responses are now closed.'
+        );
+      }
+
       if ((data as any)?.error) throw new Error((data as any).error);
 
       const pendingApproval = (data as any)?.pending_approval === true;

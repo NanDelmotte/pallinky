@@ -212,7 +212,16 @@ export default function RSVPButton({
       const result = await response.json();
 
       if (!response.ok) {
-        setError(result?.error || 'Failed to save your response. Please try again.');
+        setError(
+          result?.deadline_passed
+            ? 'The RSVP deadline has passed, so responses are now closed.'
+            : result?.error || 'Failed to save your response. Please try again.'
+        );
+        return;
+      }
+
+      if (result?.deadline_passed) {
+        setError('The RSVP deadline has passed, so responses are now closed.');
         return;
       }
 

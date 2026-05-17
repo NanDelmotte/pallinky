@@ -73,6 +73,7 @@ export default function FormalRSVP() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [existingStatus, setExistingStatus] = useState<string | null>(null);
   const [hasPendingRequest, setHasPendingRequest] = useState(false);
+  const [deadlineMessage, setDeadlineMessage] = useState('');
 
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<'yes' | 'maybe' | 'no' | null>(null);
@@ -120,6 +121,7 @@ export default function FormalRSVP() {
 
   const fetchData = async () => {
     setLoading(true);
+    setDeadlineMessage('');
 
     try {
       const { data: eventData, error: eventError } = await supabase
@@ -228,6 +230,8 @@ export default function FormalRSVP() {
     const cleanGuestEmail = normalizeEmail(guestEmail);
     const cleanConfirmEmail = normalizeEmail(confirmEmail);
 
+    setDeadlineMessage('');
+
     if (!selectedStatus) {
       return Alert.alert(
         'Wait',
@@ -255,6 +259,14 @@ export default function FormalRSVP() {
       });
 
       if (error) throw error;
+
+      if (data?.deadline_passed) {
+        const message = 'The RSVP deadline has passed, so responses are now closed.';
+        setModalVisible(false);
+        setDeadlineMessage(message);
+        return Alert.alert('RSVP closed', message);
+      }
+
       if (data?.error) throw new Error(data.error);
 
       if (!isSignedInMember) {
@@ -349,6 +361,13 @@ export default function FormalRSVP() {
               <CalendarButton event={event} theme={theme} />
             </View>
           </View>
+
+          {deadlineMessage ? (
+            <View style={styles.deadlineNotice}>
+              <Text style={[styles.deadlineNoticeTitle, customFont]}>RSVP closed</Text>
+              <Text style={styles.deadlineNoticeText}>{deadlineMessage}</Text>
+            </View>
+          ) : null}
 
           {displayDescription ? (
             <View style={styles.descriptionContainer}>
@@ -714,6 +733,26 @@ const styles = StyleSheet.create({
   },
   descriptionContainer: { marginBottom: 35, padding: 5 },
   descriptionText: { fontSize: 17, lineHeight: 26 },
+  deadlineNotice: {
+    marginBottom: 24,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: 'rgba(193, 18, 31, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(193, 18, 31, 0.35)',
+  },
+  deadlineNoticeTitle: {
+    color: '#c1121f',
+    fontSize: 16,
+    fontWeight: '900',
+    marginBottom: 4,
+  },
+  deadlineNoticeText: {
+    color: '#7f1d1d',
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '600',
+  },
   btnStack: { gap: 10, marginBottom: 50 },
   primaryBtn: {
     height: 60,
