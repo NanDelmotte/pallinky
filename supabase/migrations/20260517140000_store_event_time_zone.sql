@@ -447,19 +447,15 @@ declare
   v_inserted integer := 0;
 begin
   insert into public.notifications_outbox (
-    user_id,
     event_id,
     recipient_email,
-    channel,
     type,
     template,
     payload
   )
   select
-    null,
     e.id,
     ei.invitee_email_lc,
-    'push',
     'rsvp_deadline_reminder',
     'rsvp_deadline_reminder',
     jsonb_build_object(
