@@ -7,11 +7,14 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useI18n } from '@pallinky/i18n';
+import LanguageSelector from '../components/LanguageSelector';
 
 const WELCOME_KEY = 'pallinky_welcome_seen_v1';
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const { t } = useI18n();
 
   const complete = async (destination: string) => {
     await AsyncStorage.setItem(WELCOME_KEY, 'true');
@@ -20,24 +23,18 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Pallinky</Text>
+      <Text style={styles.title}>{t('welcome_title')}</Text>
 
-      <Text style={styles.body}>
-        {"Let's make group planning easier."}
-        {'\n'} {'\n'}
-       Pallinky is kind of like social media but for real life and helps us grow our social circles in a human way. 
-        {'\n'}{'\n'}
-        Life is better when we do interesting things, go out and have fun.
-      </Text>
+      <Text style={styles.body}>{t('welcome_body')}</Text>
+
+      <LanguageSelector />
 
       <View style={styles.buttons}>
         <TouchableOpacity
           style={styles.primary}
           onPress={() => complete('/auth/verify')}
         >
-          <Text style={styles.primaryText}>
-            Come on in!
-          </Text>
+<Text style={styles.primaryText}>{t('welcome_primary')}</Text>
         </TouchableOpacity>
  {/*         <TouchableOpacity
           style={styles.secondary}

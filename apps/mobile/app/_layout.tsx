@@ -13,6 +13,8 @@ import Constants from 'expo-constants';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { supabase, SessionProvider } from '@pallinky/core';
 import { completeSupabaseAuthFromUrl, isAuthCallbackUrl } from '../lib/authRedirect';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { I18nProvider } from '@pallinky/i18n';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -324,9 +326,11 @@ function AppNavigator() {
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SessionProvider>
-        <AppNavigator />
-      </SessionProvider>
+      <I18nProvider storage={AsyncStorage}>
+        <SessionProvider>
+          <AppNavigator />
+        </SessionProvider>
+      </I18nProvider>
     </GestureHandlerRootView>
   );
 }

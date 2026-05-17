@@ -24,7 +24,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { supabase, useSession } from '@pallinky/core';
 import { StyledText, DASHBOARD_THEMES } from '@pallinky/ui';
-import { t } from '@pallinky/i18n';
+import { t, useI18n } from '@pallinky/i18n';
 import type { AppLanguage, TranslationKey } from '@pallinky/i18n/types';
 
 import MyPlansList from '../../components/dashboard/MyPlansList';
@@ -116,7 +116,7 @@ function normalizeId(value: unknown) {
 export default function HomeScreen() {
   const router = useRouter();
   const { session } = useSession();
-  const lang: AppLanguage = 'en';
+  const { language: lang } = useI18n();
 useEffect(() => {
   if (!session?.user?.email) {
     router.replace('/welcome');

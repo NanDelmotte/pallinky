@@ -7,10 +7,12 @@ import { Tabs } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { HapticTab } from '@pallinky/ui';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@pallinky/core';
+import { useI18n } from '@pallinky/i18n';
 
 export default function TabLayout() {
+  const { t } = useI18n();
   const [inboxBadgeCount, setInboxBadgeCount] = useState(0);
 
   const loadInboxBadgeCount = useCallback(async () => {
@@ -75,7 +77,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Events',
+          title: t('tab_events'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'calendar' : 'calendar-outline'}
@@ -94,7 +96,7 @@ export default function TabLayout() {
       <Tabs.Screen
   name="share-profile"
   options={{
-    title: 'Share',
+    title: t('tab_share'),
     tabBarIcon: ({ color, focused }) => (
       <Ionicons
         name={focused ? 'qr-code' : 'qr-code-outline'}
@@ -108,7 +110,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="people"
         options={{
-          title: 'People',
+          title: t('tab_people'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'people' : 'people-outline'}
@@ -122,7 +124,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="create"
         options={{
-          title: 'Create',
+          title: t('tab_create'),
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'rocket' : 'rocket-outline'}
@@ -136,7 +138,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="inbox"
         options={{
-          title: 'Inbox',
+          title: t('tab_inbox'),
           tabBarBadge: inboxBadgeCount > 0 ? inboxBadgeCount : undefined,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
