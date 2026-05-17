@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Alert, ScrollView, Linking } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { StyledText } from '@pallinky/ui';
 import { supabase, useSession } from '@pallinky/core';
@@ -41,33 +41,42 @@ export default function SettingsScreen() {
   }
 
   async function clearDismissedCardState() {
-  await SecureStore.deleteItemAsync('dismissed_vibes');
-}
+    await SecureStore.deleteItemAsync('dismissed_vibes');
+  }
 
-function resetDismissedCards() {
-  Alert.alert('Restore Cards', 'Bring back all hidden cards?', [
-    { text: 'Cancel', style: 'cancel' },
-    {
-      text: 'Yes',
-      onPress: async () => {
-        const emailLc = email.toLowerCase().trim();
+  function contactSupport() {
+    const subject = encodeURIComponent('Pallinky support request');
+    const body = encodeURIComponent(
+      `Hi Pallinky Support,\n\nI need help with my account or a safety issue.\n\nAccount email: ${email || ''}\n\nIssue:\n`
+    );
 
-        const { error } = await supabase
-          .from('closed_cards')
-          .delete()
-          .eq('user_email_lc', emailLc);
+    Linking.openURL(`mailto:uitnod84@gmail.com?subject=${subject}&body=${body}`);
+  }
 
-        if (error) {
-          Alert.alert('Error', error.message);
-          return;
-        }
+  function resetDismissedCards() {
+    Alert.alert('Restore Cards', 'Bring back all hidden cards?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Yes',
+        onPress: async () => {
+          const emailLc = email.toLowerCase().trim();
 
-        await clearDismissedCardState();
-        Alert.alert('Success', 'Restored.');
+          const { error } = await supabase
+            .from('closed_cards')
+            .delete()
+            .eq('user_email_lc', emailLc);
+
+          if (error) {
+            Alert.alert('Error', error.message);
+            return;
+          }
+
+          await clearDismissedCardState();
+          Alert.alert('Success', 'Restored.');
+        },
       },
-    },
-  ]);
-}
+    ]);
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -84,7 +93,15 @@ function resetDismissedCards() {
             <Ionicons name="people-circle-outline" size={24} color="#43691b" />
             <StyledText style={styles.dataBtnText}>Manage Tester Photos</StyledText>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.dataBtn} onPress={() => router.push('/admin/seed-confirmed')}>
+
+          <TouchableOpacity style={styles.dataBtn} onPress={() => router.push('/admin/reports')}>
+            <Ionicons name="shield-checkmark-outline" size={24} color="#43691b" />
+            <StyledText style={styles.dataBtnText}>Review Reports</StyledText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.dataBtn}
+            onPress={() => router.push('/admin/seed-confirmed')}
+          >
             <Ionicons name="people-circle-outline" size={24} color="#43691b" />
             <StyledText style={styles.dataBtnText}>seed date </StyledText>
           </TouchableOpacity>
@@ -96,6 +113,27 @@ function resetDismissedCards() {
         <TouchableOpacity style={styles.dataBtn} onPress={resetDismissedCards}>
           <Ionicons name="refresh-circle-outline" size={24} color="#43691b" />
           <StyledText style={styles.dataBtnText}>Restore Hidden Cards</StyledText>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.section}>
+        <StyledText style={styles.sectionLabel}>Support</StyledText>
+
+        <TouchableOpacity style={styles.dataBtn} onPress={contactSupport}>
+          <Ionicons name="mail-outline" size={22} color="#43691b" />
+          <StyledText style={styles.dataBtnText}>Contact Support</StyledText>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.section}>
+        <StyledText style={styles.sectionLabel}>Account</StyledText>
+
+        <TouchableOpacity
+          style={styles.deleteAccountBtn}
+          onPress={() => router.push('/settings/delete-account')}
+        >
+          <Ionicons name="trash-outline" size={20} color="#e63946" />
+          <StyledText style={styles.deleteAccountBtnText}>Delete Account</StyledText>
         </TouchableOpacity>
       </View>
 
@@ -177,6 +215,21 @@ const styles = StyleSheet.create({
   },
   dataBtnText: {
     color: '#43691b',
+    fontWeight: 'bold',
+  },
+  deleteAccountBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ffd6d6',
+    marginBottom: 10,
+  },
+  deleteAccountBtnText: {
+    color: '#e63946',
     fontWeight: 'bold',
   },
   signOutBtn: {
