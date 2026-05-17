@@ -16,7 +16,8 @@ import * as Contacts from 'expo-contacts';
 
 import { StyledText } from '@pallinky/ui';
 import { supabase, useSession } from '@pallinky/core';
-import { t, useI18n } from '@pallinky/i18n';
+import { t } from '@pallinky/i18n';
+import { useI18n } from '@pallinky/i18n/client';
 import type { AppLanguage } from '@pallinky/i18n/types';
 
 import FriendCard, { FriendCardData } from '../../components/people/FriendCard';

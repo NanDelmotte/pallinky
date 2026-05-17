@@ -9,7 +9,7 @@ import { Platform } from 'react-native';
 import { HapticTab } from '@pallinky/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@pallinky/core';
-import { useI18n } from '@pallinky/i18n';
+import { useI18n } from '@pallinky/i18n/client';
 
 export default function TabLayout() {
   const { t } = useI18n();
