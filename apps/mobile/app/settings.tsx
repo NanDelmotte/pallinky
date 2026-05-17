@@ -12,11 +12,7 @@ import { supabase, useSession } from '@pallinky/core';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import LanguageSelector from '../components/LanguageSelector';
-<<<<<<< HEAD
 import { useI18n } from '@pallinky/i18n/client';
-=======
-import { useI18n } from '@pallinky/i18n';
->>>>>>> codex/add-internationalization-support-for-english,-french,-and-du
 
 export default function SettingsScreen() {
   const { session } = useSession();

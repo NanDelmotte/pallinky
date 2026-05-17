@@ -23,11 +23,7 @@ import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
-<<<<<<< HEAD
 import { useI18n } from '@pallinky/i18n/client';
-=======
-import { useI18n } from '@pallinky/i18n';
->>>>>>> codex/add-internationalization-support-for-english,-french,-and-du
 interface ProfileRow {
   id: string;
   email_lc: string | null;

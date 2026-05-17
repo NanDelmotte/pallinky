@@ -8,11 +8,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { StyledText } from '@pallinky/ui';
 import { Ionicons } from '@expo/vector-icons';
 import type { AppLanguage } from '@pallinky/i18n/types';
-<<<<<<< HEAD
 import { LANGUAGE_OPTIONS, useI18n } from '@pallinky/i18n/client';
-=======
-import { LANGUAGE_OPTIONS, useI18n } from '@pallinky/i18n';
->>>>>>> codex/add-internationalization-support-for-english,-french,-and-du
 
 type LanguageSelectorProps = {
   compact?: boolean;
