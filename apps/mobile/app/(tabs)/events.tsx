@@ -333,6 +333,7 @@ function FormalEventCard({
         hostEmail={item.host_email}
         title={item.title}
         startsAt={item.starts_at || ''}
+                endsAt={item.ends_at}
         location={item.location}
         coverImageUrl={item.cover_image_url || FALLBACK_IMAGE}
         gifKey={item.gif_key}

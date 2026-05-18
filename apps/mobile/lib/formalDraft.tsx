@@ -19,7 +19,7 @@ export type FormalDraftState = {
   specificDate: Date;
   seriesDates: Date[];
   pollOptions: Date[];
-  durationMins: number | null;
+  endDate: Date | null;
   description: string;
   location: string;
   host_name: string;
@@ -66,7 +66,7 @@ function buildInitialFormalDraft(
   specificDate: initialDate,
   seriesDates: prefill?.prefill_date ? [initialDate] : [],
   pollOptions: prefill?.prefill_date ? [] : [new Date()],
-  durationMins: null,
+  endDate: null,
   description: prefill?.prefill_desc || '',
   location: '',
   host_name: '',
@@ -121,7 +121,7 @@ export function FormalDraftProvider({
         prev.host_email ||
         prev.seriesDates.length > 0 ||
         prev.pollOptions.length > 0 ||
-        prev.durationMins !== null
+        prev.endDate !== null
         ? prev
         : next;
     });

@@ -40,6 +40,7 @@ export interface EventFeedCardProps {
   eventType?: string | null;
   title: string;
   startsAt: string;
+  endsAt?: string | null;
   eventTimeZone?: string | null;
   location?: string | null;
   coverImageUrl?: string | null;
@@ -65,7 +66,8 @@ export interface EventFeedCardProps {
 function formatDateTime(
   startsAt: string,
   lang: AppLanguage,
-  eventTimeZone?: string | null
+  eventTimeZone?: string | null,
+  endsAt?: string | null
 ) {
   if (!startsAt) return t(lang, 'event_card_date_tbd');
 
@@ -96,13 +98,27 @@ function formatDateTime(
     ...(timeZone ? { timeZone } : {}),
   });
 
-  return `${weekday}. ${month} ${dayPart || date.getDate()} ${time}`;
+  let timeRange = time;
+  if (endsAt) {
+    const endDate = new Date(endsAt);
+    if (!Number.isNaN(endDate.getTime())) {
+      const endTime = endDate.toLocaleTimeString(locale, {
+        hour: 'numeric',
+        minute: '2-digit',
+        ...(timeZone ? { timeZone } : {}),
+      });
+      timeRange = `${time}–${endTime}`;
+    }
+  }
+
+  return `${weekday}. ${month} ${dayPart || date.getDate()} ${timeRange}`;
 }
 
 const EventFeedCard = ({
   eventType,
   title,
   startsAt,
+  endsAt,
   eventTimeZone,
   location,
   coverImageUrl,
@@ -300,7 +316,7 @@ const baseBadgeLabel =
             <View style={styles.metaBlock}>
               <View style={styles.metaRow}>
                 <StyledText style={styles.metaText}>
-                  {formatDateTime(startsAt, lang, eventTimeZone)}
+                  {formatDateTime(startsAt, lang, eventTimeZone, endsAt)}
                 </StyledText>
               </View>
 

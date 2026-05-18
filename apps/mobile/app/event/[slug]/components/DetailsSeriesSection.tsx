@@ -16,7 +16,7 @@ type Theme = {
 function formatSeriesDateTime(event: any, fallback: string) {
   if (!event?.starts_at) return fallback;
 
-  return formatInEventTimeZone(
+  const start = formatInEventTimeZone(
     event.starts_at,
     {
       weekday: 'short',
@@ -27,6 +27,19 @@ function formatSeriesDateTime(event: any, fallback: string) {
     },
     event
   );
+
+  if (!event?.ends_at) return start;
+
+  const end = formatInEventTimeZone(
+    event.ends_at,
+    {
+      hour: '2-digit',
+      minute: '2-digit',
+    },
+    event
+  );
+
+  return end ? `${start}–${end}` : start;
 }
 
 const SYSTEM = {
