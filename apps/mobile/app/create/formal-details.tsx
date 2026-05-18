@@ -383,6 +383,12 @@ export default function FormalDetailsScreen() {
               fullDescription || null,
             p_event_type: 'formal',
             p_event_time_zone: getLocalTimeZone(),
+            p_visibility: form.visibility,
+            p_invite_list_visibility:
+              form.invite_list_visibility,
+            p_guest_list_visibility:
+              form.guest_list_visibility,
+            p_forwarding_mode: form.forwarding_mode,
 
             p_visible_in_feed:
               form.visible_in_feed ?? true,
