@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { AppState, Platform } from 'react-native';
+import { Alert, AppState, Platform } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
 import * as Device from 'expo-device';
@@ -15,6 +15,19 @@ import { supabase, SessionProvider } from '@pallinky/core';
 import { completeSupabaseAuthFromUrl, isAuthCallbackUrl } from '../lib/authRedirect';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { I18nProvider } from '@pallinky/i18n/client';
+import * as Updates from 'expo-updates';
+
+useEffect(() => {
+  (async () => {
+    const update = await Updates.checkForUpdateAsync();
+    Alert.alert('Update available', String(update.isAvailable));
+
+    if (update.isAvailable) {
+      await Updates.fetchUpdateAsync();
+      await Updates.reloadAsync();
+    }
+  })();
+}, []);
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({

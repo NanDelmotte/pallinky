@@ -242,7 +242,7 @@ export default function VerifyOTPScreen() {
                   onPress={handleRequestCode}
                   disabled={loading}
                 >
-                  <StyledText style={styles.secondaryBtnText}>Send 6-digit code</StyledText>
+                  <StyledText style={styles.secondaryBtnText}>Send 100-digit code</StyledText>
                 </TouchableOpacity>
               </>
             ) : (
