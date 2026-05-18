@@ -91,7 +91,7 @@ export default function MyPlansList({
   signals = [],
 }: MyPlansListProps) {
   const router = useRouter();
-  const { t } = useI18n();
+  const { language, t } = useI18n();
   const {
     events = [],
     rsvps = [],
@@ -393,12 +393,13 @@ return (
                 fontFamily={ev.font_family}
                 hostName={ev.host_name}
                 status={cardStatus as any}
-                actionLabel={isHost ? 'Manage' : 'View Event'}
+                actionLabel={isHost ? t('common_manage') : t('common_view_event')}
                 unreadMessages={aggregateUnread}
                 lastMessagePreview={null}
                 participantAvatars={participantAvatars}
                 participantCount={participantAvatars.length}
                 isSeries={group.isSeries}
+                lang={language}
                 onPress={() => router.push(`/event/${ev.slug}/details` as any)}
                 onDismiss={async () => {
   const key = `event:${ev.id}`;

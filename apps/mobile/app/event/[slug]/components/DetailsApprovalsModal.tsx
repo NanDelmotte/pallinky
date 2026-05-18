@@ -23,6 +23,7 @@ export default function DetailsApprovalsModal({
   profileNamesByEmail,
   resolvingRequestId,
   handleResolveApproval,
+  t,
 }: {
   approvalsOpen: boolean;
   setApprovalsOpen: (value: boolean) => void;
@@ -30,6 +31,7 @@ export default function DetailsApprovalsModal({
   profileNamesByEmail: Record<string, string>;
   resolvingRequestId: string | null;
   handleResolveApproval: (requestId: string, decision: 'approved' | 'denied') => void;
+  t: any;
 }) {
   return (
     <Modal
@@ -41,7 +43,7 @@ export default function DetailsApprovalsModal({
       <View style={styles.modalBackdrop}>
         <View style={styles.modalCard}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Approvals</Text>
+            <Text style={styles.modalTitle}>{t('event_approvals')}</Text>
             <TouchableOpacity onPress={() => setApprovalsOpen(false)}>
               <Ionicons name="close" size={22} color={SYSTEM.text} />
             </TouchableOpacity>
@@ -49,8 +51,8 @@ export default function DetailsApprovalsModal({
 
           {pendingApprovals.length === 0 ? (
             <View style={styles.emptyApprovalsState}>
-              <Text style={styles.emptyApprovalsTitle}>No pending approvals</Text>
-              <Text style={styles.emptyApprovalsText}>New requests will appear here.</Text>
+              <Text style={styles.emptyApprovalsTitle}>{t('event_no_pending_approvals')}</Text>
+              <Text style={styles.emptyApprovalsText}>{t('event_pending_approvals_body')}</Text>
             </View>
           ) : (
             <ScrollView showsVerticalScrollIndicator={false}>
@@ -61,7 +63,7 @@ export default function DetailsApprovalsModal({
                   req.requester_name ||
                   req.requester_email ||
                   req.email ||
-                  'Guest';
+                  t('event_guest_fallback');
 
                 const requestId = String(req.id);
                 const busy = resolvingRequestId === requestId;
@@ -75,7 +77,7 @@ export default function DetailsApprovalsModal({
                       )}
                       {!!req.requested_status && (
                         <Text style={styles.approvalMeta}>
-                          Wants to respond: {req.requested_status}
+                          {t('event_wants_to_respond', { status: String(req.requested_status) })}
                         </Text>
                       )}
                     </View>
@@ -91,7 +93,7 @@ export default function DetailsApprovalsModal({
                         onPress={() => handleResolveApproval(requestId, 'denied')}
                       >
                         <Text style={styles.declineBtnText}>
-                          {busy ? 'Working...' : 'Decline'}
+                          {busy ? t('event_working') : t('event_decline')}
                         </Text>
                       </TouchableOpacity>
 
@@ -105,7 +107,7 @@ export default function DetailsApprovalsModal({
                         onPress={() => handleResolveApproval(requestId, 'approved')}
                       >
                         <Text style={styles.approveBtnText}>
-                          {busy ? 'Working...' : 'Approve'}
+                          {busy ? t('event_working') : t('event_approve')}
                         </Text>
                       </TouchableOpacity>
                     </View>

@@ -92,7 +92,7 @@ export default function FriendsActivities({
   signals = [],
 }: FriendsActivitiesProps) {
   const router = useRouter();
-  const { t } = useI18n();
+  const { language, t } = useI18n();
   const {
     events = [],
     rsvps = [],
@@ -271,6 +271,7 @@ export default function FriendsActivities({
               signalType={item.signalType}
               actorName={item.actorName}
               event={item.event}
+              lang={language}
               onPress={() =>
   router.push({
     pathname: '/peek/[id]',

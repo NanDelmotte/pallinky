@@ -2,6 +2,8 @@ import React from 'react';
 import { View, StyleSheet, Pressable, ImageBackground } from 'react-native';
 import { StyledText } from './BaseComponents';
 import { Ionicons } from '@expo/vector-icons';
+import { t } from '@pallinky/i18n';
+import type { AppLanguage } from '@pallinky/i18n/types';
 
 export interface ActivityFeedCardProps {
   signalType: 'friend_created_event' | 'friend_attending_event';
@@ -9,6 +11,7 @@ export interface ActivityFeedCardProps {
   actorName?: string;
   onPress?: () => void;
   onDismiss?: () => void;
+  lang?: AppLanguage;
 }
 
 const COLORS = {
@@ -27,15 +30,21 @@ function getAccent(signalType: ActivityFeedCardProps['signalType']) {
     : COLORS.primary;
 }
 
-function getChipLabel(signalType: ActivityFeedCardProps['signalType']) {
-  return signalType === 'friend_created_event' ? 'IDEA' : 'ACTIVITY';
+function getChipLabel(signalType: ActivityFeedCardProps['signalType'], lang: AppLanguage) {
+  return signalType === 'friend_created_event'
+    ? t(lang, 'activity_card_badge_idea')
+    : t(lang, 'activity_card_badge_activity');
 }
 
-function getSentence(signalType: ActivityFeedCardProps['signalType'], actorName?: string) {
-  const name = actorName || 'Someone';
+function getSentence(
+  signalType: ActivityFeedCardProps['signalType'],
+  lang: AppLanguage,
+  actorName?: string
+) {
+  const name = actorName || t(lang, 'activity_card_someone');
   return signalType === 'friend_created_event'
-    ? `${name} started this`
-    : `${name} is going`;
+    ? t(lang, 'activity_card_started_this', { name })
+    : t(lang, 'activity_card_is_going', { name });
 }
 
 const ActivityFeedCard = ({
@@ -44,6 +53,7 @@ const ActivityFeedCard = ({
   actorName,
   onPress,
   onDismiss,
+  lang = 'en',
 }: ActivityFeedCardProps) => {
   const accent = getAccent(signalType);
 
@@ -66,7 +76,7 @@ const ActivityFeedCard = ({
         <View style={styles.topRow}>
           <View style={[styles.badge, { backgroundColor: accent }]}>
             <StyledText style={styles.badgeText}>
-              {getChipLabel(signalType)}
+              {getChipLabel(signalType, lang)}
             </StyledText>
           </View>
 
@@ -79,11 +89,11 @@ const ActivityFeedCard = ({
 
         <View style={styles.content}>
           <StyledText style={styles.titleText} numberOfLines={2}>
-            {event?.title || 'Untitled event'}
+            {event?.title || t(lang, 'activity_card_untitled_event')}
           </StyledText>
 
           <StyledText style={styles.subtitleText} numberOfLines={1}>
-            {getSentence(signalType, actorName)}
+            {getSentence(signalType, lang, actorName)}
           </StyledText>
 
           {!!event?.location && (
@@ -98,11 +108,11 @@ const ActivityFeedCard = ({
           <View style={styles.footerRow}>
             <View style={styles.peopleHint}>
               <Ionicons name="sparkles-outline" size={14} color="#fff" />
-              <StyledText style={styles.peopleHintText}>Peekable</StyledText>
+              <StyledText style={styles.peopleHintText}>{t(lang, 'activity_card_peekable')}</StyledText>
             </View>
 
             <View style={styles.ctaButton}>
-              <StyledText style={styles.ctaText}>Peek</StyledText>
+              <StyledText style={styles.ctaText}>{t(lang, 'activity_card_peek')}</StyledText>
               <Ionicons name="chevron-forward" size={14} color="#fff" />
             </View>
           </View>

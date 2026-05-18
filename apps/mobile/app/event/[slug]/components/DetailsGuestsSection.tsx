@@ -25,8 +25,8 @@ function normalizeStatus(value: string | null | undefined) {
   return value?.toLowerCase().trim() || '';
 }
 
-function getFirstName(value: string | null | undefined) {
-  return (value || '').trim().split(' ')[0] || 'Guest';
+function getFirstName(value: string | null | undefined, fallback = 'Guest') {
+  return (value || '').trim().split(' ')[0] || fallback;
 }
 
 function getInviteName(inv: any) {
@@ -73,6 +73,7 @@ function Section({
   canDmTarget,
   handleOpenOrCreateDm,
   openingDmForEmail,
+  guestFallback,
 }: {
   title: string;
   rows: any[];
@@ -81,6 +82,7 @@ function Section({
   canDmTarget: (email: string | null | undefined) => boolean;
   handleOpenOrCreateDm: (email: string | null | undefined) => void;
   openingDmForEmail: string | null;
+  guestFallback: string;
 }) {
   if (!rows.length) return null;
 
@@ -92,7 +94,7 @@ function Section({
 
       <View style={styles.list}>
         {rows.map((row: any, i: number) => {
-          const firstName = getFirstName(row.label);
+          const firstName = getFirstName(row.label, guestFallback);
           const canMessageThisGuest = isHost && !!row.emailLc && canDmTarget(row.emailLc);
 
           return (
@@ -168,6 +170,7 @@ export default function DetailsGuestsSection({
   openingDmForEmail,
   profileNamesByEmail,
   profileAvatarsByEmail,
+  t,
 }: {
   theme: Theme;
   guests: any[];
@@ -179,6 +182,7 @@ export default function DetailsGuestsSection({
   openingDmForEmail: string | null;
   profileNamesByEmail: Record<string, string>;
   profileAvatarsByEmail: Record<string, string>;
+  t: any;
 }) {
   const { votedRows, goingRows, interestedRows, notGoingRows, invitedRows, totalVisible } =
     useMemo(() => {
@@ -196,7 +200,7 @@ export default function DetailsGuestsSection({
           );
 
         const emailLc = normalizeEmail(matchingRsvp?.email_lc || matchingRsvp?.email || guest.email);
-        const label = profileNamesByEmail[emailLc] || guest.name || guest.email || 'Guest';
+        const label = profileNamesByEmail[emailLc] || guest.name || guest.email || t('event_guest_fallback');
         const avatarUrl = guest.avatar_url || profileAvatarsByEmail[emailLc] || null;
 
         if (emailLc) guestEmailSet.add(emailLc);
@@ -246,62 +250,67 @@ export default function DetailsGuestsSection({
         invitedRows: allRows.filter((row) => row.section === 'invited'),
         totalVisible: allRows.length,
       };
-    }, [guests, allRsvps, invites, profileNamesByEmail, profileAvatarsByEmail]);
+    }, [guests, allRsvps, invites, profileNamesByEmail, profileAvatarsByEmail, t]);
 
   if (totalVisible === 0) return null;
 
   return (
     <View style={styles.wrapper}>
-      <Text style={[styles.sectionTitle, { color: theme.text }]}>People ({totalVisible})</Text>
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('event_people')} ({totalVisible})</Text>
 
       <Section
-        title="Voted"
+        title={t('event_voted')}
         rows={votedRows}
         theme={theme}
         isHost={isHost}
         canDmTarget={canDmTarget}
         handleOpenOrCreateDm={handleOpenOrCreateDm}
         openingDmForEmail={openingDmForEmail}
+        guestFallback={t('event_guest_fallback')}
       />
 
       <Section
-        title="Going"
+        title={t('event_status_going')}
         rows={goingRows}
         theme={theme}
         isHost={isHost}
         canDmTarget={canDmTarget}
         handleOpenOrCreateDm={handleOpenOrCreateDm}
         openingDmForEmail={openingDmForEmail}
+        guestFallback={t('event_guest_fallback')}
       />
 
       <Section
-        title="Interested"
+        title={t('event_interested')}
         rows={interestedRows}
         theme={theme}
         isHost={isHost}
         canDmTarget={canDmTarget}
         handleOpenOrCreateDm={handleOpenOrCreateDm}
         openingDmForEmail={openingDmForEmail}
+        guestFallback={t('event_guest_fallback')}
       />
 
       <Section
-        title="Not going"
+        title={t('event_status_not_going')}
         rows={notGoingRows}
         theme={theme}
         isHost={isHost}
         canDmTarget={canDmTarget}
         handleOpenOrCreateDm={handleOpenOrCreateDm}
         openingDmForEmail={openingDmForEmail}
+        guestFallback={t('event_guest_fallback')}
       />
 
       <Section
-        title="Invited"
+        title={t('event_status_invited')}
         rows={invitedRows}
         theme={theme}
         isHost={isHost}
         canDmTarget={canDmTarget}
         handleOpenOrCreateDm={handleOpenOrCreateDm}
         openingDmForEmail={openingDmForEmail}
+        guestFallback={t('event_guest_fallback')}
       />
     </View>
   );
