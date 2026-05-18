@@ -33,6 +33,7 @@ import type { TranslationKey } from "@pallinky/i18n";
 
 import DateOptionPicker from "../../../components/DateOptionPicker";
 import LocationSearch from "../../../components/LocationSearch";
+import { isValidExternalUrl, normalizeExternalUrl } from "../../../lib/externalUrl";
 
 type ReminderDays = 1 | 2 | 3 | 5 | 7;
 type WhenMode = "specific" | "options" | "unsure";
@@ -45,6 +46,7 @@ type FormState = {
   durationMins: number | null;
   description: string;
   location: string;
+  external_url: string;
   host_name: string;
   host_email: string;
   visible_in_feed: boolean;
@@ -115,6 +117,8 @@ export default function EditCreateScreen() {
     typeof params.host_name === "string" ? params.host_name : "";
   const hostEmailParam =
     typeof params.host_email === "string" ? params.host_email : "";
+  const externalUrlParam =
+    typeof params.external_url === "string" ? params.external_url : "";
   const eventTypeParam =
     typeof params.event_type === "string" ? params.event_type : "";
   const startsAtParam =
@@ -190,6 +194,7 @@ export default function EditCreateScreen() {
     durationMins: initialDurationMins,
     description: descriptionParam,
     location: locationParam,
+    external_url: externalUrlParam,
     host_name: hostNameParam,
     host_email: hostEmailParam,
     visible_in_feed: parseBool(visibleInFeedParam),
@@ -311,6 +316,13 @@ export default function EditCreateScreen() {
 
     try {
       const description = form.description.trim() || null;
+
+      if (!isValidExternalUrl(form.external_url)) {
+        Alert.alert(t("external_link_invalid_title"), t("external_link_invalid_body"));
+        return;
+      }
+
+      const externalUrl = normalizeExternalUrl(form.external_url);
       const location = form.location || null;
 
       const eventType = form.whenMode === "specific" ? "formal" : "vibe";
@@ -357,6 +369,7 @@ export default function EditCreateScreen() {
         p_send_final_reminder_at_deadline: form.send_final_reminder_at_deadline,
         p_forwarding_mode: null,
         p_event_time_zone: startsAt ? getLocalTimeZone() : null,
+        p_external_url: externalUrl,
       });
 
       if (error) throw error;
@@ -539,6 +552,20 @@ export default function EditCreateScreen() {
               onChange={(nextValue) => updateForm("location", nextValue)}
             />
           </View>
+
+          <StyledText style={styles.sectionLabel}>{t("external_link_label")}</StyledText>
+          <StyledInput
+            placeholder={t("external_link_placeholder")}
+            value={form.external_url}
+            onChangeText={(text: string) => updateForm("external_url", text)}
+            keyboardType="url"
+            autoCapitalize="none"
+            autoCorrect={false}
+            style={styles.inputStyle}
+          />
+          <StyledText style={styles.helperText}>
+            {t("external_link_helper")}
+          </StyledText>
 
           <TouchableOpacity
             style={styles.pwaInput}
@@ -796,6 +823,14 @@ const styles = StyleSheet.create({
 
   detailsInput: {
     height: 120,
+  },
+
+  helperText: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: -8,
+    marginBottom: 16,
   },
 
   pwaInput: {

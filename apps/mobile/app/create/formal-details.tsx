@@ -35,6 +35,7 @@ import { useI18n } from '@pallinky/i18n/client';
 import type { TranslationKey } from '@pallinky/i18n';
 
 import LocationSearch from '../../components/LocationSearch';
+import { isValidExternalUrl, normalizeExternalUrl } from '../../lib/externalUrl';
 
 import {
   ReminderDays,
@@ -297,6 +298,17 @@ export default function FormalDetailsScreen() {
       const description =
         form.description.trim() || null;
 
+      if (!isValidExternalUrl(form.external_url)) {
+        Alert.alert(
+          t('external_link_invalid_title'),
+          t('external_link_invalid_body')
+        );
+
+        return;
+      }
+
+      const externalUrl = normalizeExternalUrl(form.external_url);
+
       const location = form.location || null;
 
       if (
@@ -355,11 +367,11 @@ export default function FormalDetailsScreen() {
             ? makeSeriesId()
             : null;
 
-        const createdRows: Array<{
+        const createdRows: {
           id: string;
           slug: string;
           manage_handle: string;
-        }> = [];
+        }[] = [];
 
         for (const startDate of datesToCreate) {
           const endsAt = form.durationMins
@@ -383,6 +395,7 @@ export default function FormalDetailsScreen() {
               fullDescription || null,
             p_event_type: 'formal',
             p_event_time_zone: getLocalTimeZone(),
+            p_external_url: externalUrl,
 
             p_visible_in_feed:
               form.visible_in_feed ?? true,
@@ -531,6 +544,7 @@ export default function FormalDetailsScreen() {
 
         sendFinalReminderAtDeadline:
           form.send_final_reminder_at_deadline,
+        externalUrl,
       });
 
       router.push({
@@ -632,6 +646,33 @@ export default function FormalDetailsScreen() {
                 }
               />
             </View>
+
+            <StyledText
+              style={styles.sectionLabel}
+            >
+              {t('external_link_label')}
+            </StyledText>
+
+            <StyledInput
+              placeholder={t('external_link_placeholder')}
+              value={form.external_url}
+              onChangeText={(text: string) =>
+                updateForm(
+                  'external_url',
+                  text
+                )
+              }
+              keyboardType="url"
+              autoCapitalize="none"
+              autoCorrect={false}
+              style={styles.inputStyle}
+            />
+
+            <StyledText
+              style={styles.helperText}
+            >
+              {t('external_link_helper')}
+            </StyledText>
 
             <TouchableOpacity
               style={styles.pwaInput}
@@ -1033,6 +1074,14 @@ const styles = StyleSheet.create({
 
   detailsInput: {
     height: 120,
+  },
+
+  helperText: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: -8,
+    marginBottom: 16,
   },
 
   locationWrap: {
