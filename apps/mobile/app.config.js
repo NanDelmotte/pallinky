@@ -22,7 +22,9 @@ export default {
 
     assetBundlePatterns: ['**/*'],
 
-    
+    updates: {
+  url: 'https://u.expo.dev/3a13b9ce-13b3-48f4-88b4-e4945d9698dc',
+},
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.nancy.pallinky',
