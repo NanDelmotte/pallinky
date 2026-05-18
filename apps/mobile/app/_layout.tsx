@@ -5,7 +5,7 @@
 
 import React, { useEffect } from 'react';
 import { Alert, AppState, Platform } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useGlobalSearchParams, useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
@@ -14,20 +14,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { supabase, SessionProvider } from '@pallinky/core';
 import { completeSupabaseAuthFromUrl, isAuthCallbackUrl } from '../lib/authRedirect';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { I18nProvider } from '@pallinky/i18n/client';
+import { I18nProvider, useI18n } from '@pallinky/i18n/client';
+import { isAppLanguage } from '@pallinky/i18n';
 import * as Updates from 'expo-updates';
-
-useEffect(() => {
-  (async () => {
-    const update = await Updates.checkForUpdateAsync();
-    Alert.alert('Update available', String(update.isAvailable));
-
-    if (update.isAvailable) {
-      await Updates.fetchUpdateAsync();
-      await Updates.reloadAsync();
-    }
-  })();
-}, []);
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -148,6 +137,17 @@ async function syncBadgeWithInbox() {
 
 function AppNavigator() {
   const router = useRouter();
+  const params = useGlobalSearchParams<{ lang?: string; locale?: string; language?: string }>();
+  const { language, setLanguage } = useI18n();
+
+  useEffect(() => {
+    const rawLanguage = params.lang || params.locale || params.language;
+    const requestedLanguage = Array.isArray(rawLanguage) ? rawLanguage[0] : rawLanguage;
+
+    if (isAppLanguage(requestedLanguage) && requestedLanguage !== language) {
+      void setLanguage(requestedLanguage);
+    }
+  }, [language, params.lang, params.locale, params.language, setLanguage]);
 
   useEffect(() => {
     const openNotificationTarget = async (
@@ -337,6 +337,18 @@ function AppNavigator() {
 }
 
 export default function RootLayout() {
+  useEffect(() => {
+    (async () => {
+      const update = await Updates.checkForUpdateAsync();
+      Alert.alert('Update available', String(update.isAvailable));
+
+      if (update.isAvailable) {
+        await Updates.fetchUpdateAsync();
+        await Updates.reloadAsync();
+      }
+    })();
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <I18nProvider storage={AsyncStorage}>

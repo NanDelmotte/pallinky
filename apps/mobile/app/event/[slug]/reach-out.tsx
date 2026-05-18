@@ -20,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase, useSession } from '@pallinky/core';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useI18n } from '@pallinky/i18n/client';
 
 import DateOptionPicker from '../../../components/DateOptionPicker';
 import LocationSearch from '../../../components/LocationSearch';
@@ -89,6 +90,7 @@ function buildSuggestionText(dates: Date[], location: string) {
 export default function ReachOutPage() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
+  const { t } = useI18n();
   const { session } = useSession();
 
   const viewerEmail = normalizeEmail(session?.user?.email);
@@ -503,8 +505,7 @@ template: 'reach_out_suggestion',
           </View>
 
           <Text style={styles.organizerText}>
-            <Text style={styles.organizerMuted}>Organized by </Text>
-            <Text style={styles.organizerName}>{event.host_name}</Text>
+            {t('event_organized_by', { host: event.host_name })}
           </Text>
         </TouchableOpacity>
 

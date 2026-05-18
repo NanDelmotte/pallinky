@@ -19,13 +19,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { formatInEventTimeZone, supabase, useSession } from '@pallinky/core';
+import { supabase, useSession } from '@pallinky/core';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { CalendarButton } from '@pallinky/ui';
 import { getEventAccessDecision } from '../../../lib/visibility/getEventAccessDecision';
 import DetailsGuestsSection from './components/DetailsGuestsSection';
 import DetailsApprovalsModal from './components/DetailsApprovalsModal';
 import DetailsSeriesSection from './components/DetailsSeriesSection';
+import { useI18n } from '@pallinky/i18n/client';
+import type { AppLanguage } from '@pallinky/i18n/types';
 
 const SYSTEM = {
   background: '#F6F7F9',
@@ -94,8 +96,8 @@ function normalizeStatus(value: string | null | undefined) {
   return value?.toLowerCase().trim() || '';
 }
 
-function getFirstName(value: string | null | undefined) {
-  return (value || '').trim().split(' ')[0] || 'Guest';
+function getFirstName(value: string | null | undefined, fallback = 'Guest') {
+  return (value || '').trim().split(' ')[0] || fallback;
 }
 
 function getInviteName(inv: any) {
@@ -107,36 +109,44 @@ function getInviteName(inv: any) {
   );
 }
 
-function formatEventDate(event: any) {
-  if (!event?.starts_at) return 'Date TBD';
-
-  return formatInEventTimeZone(
-    event.starts_at,
-    { weekday: 'long', month: 'short', day: 'numeric' },
-    event
-  );
+function localeForLanguage(language: AppLanguage) {
+  return language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US';
 }
 
-function formatEventTime(event: any) {
+function formatEventDate(event: any, language: AppLanguage, t: any) {
+  if (!event?.starts_at) return t('event_card_date_tbd');
+
+  const date = new Date(event.starts_at);
+  return date.toLocaleDateString(localeForLanguage(language), {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+    ...(event?.event_time_zone ? { timeZone: event.event_time_zone } : {}),
+  });
+}
+
+function formatEventTime(event: any, language: AppLanguage) {
   if (!event?.starts_at) return '';
 
-  return formatInEventTimeZone(
-    event.starts_at,
-    { hour: 'numeric', minute: '2-digit' },
-    event
-  );
+  const date = new Date(event.starts_at);
+
+  return date.toLocaleTimeString(localeForLanguage(language), {
+    hour: 'numeric',
+    minute: '2-digit',
+    ...(event?.event_time_zone ? { timeZone: event.event_time_zone } : {}),
+  });
 }
 
-function getRsvpLabel(status: string | null | undefined) {
+function getRsvpLabel(status: string | null | undefined, t: any) {
   const normalized = normalizeStatus(status);
 
-  if (normalized === 'yes' || normalized === 'going') return 'Going';
-  if (normalized === 'maybe' || normalized === 'interested') return 'Maybe';
+  if (normalized === 'yes' || normalized === 'going') return t('event_status_going');
+  if (normalized === 'maybe' || normalized === 'interested') return t('event_status_maybe');
   if (normalized === 'no' || normalized === 'not_going' || normalized === 'declined') {
-    return 'Not going';
+    return t('event_status_not_going');
   }
 
-  return 'Invited';
+  return t('event_status_invited');
 }
 function getSeriesIndex(seriesEvents: any[], currentEventId: string) {
   const sorted = [...seriesEvents]
@@ -155,6 +165,7 @@ function HostHeaderSection({
   openingDmForEmail,
   hostEmailLc,
   onOpenHostDm,
+  t,
 }: {
   theme: Theme;
   hostAvatarUrl: string | null;
@@ -164,6 +175,7 @@ function HostHeaderSection({
   openingDmForEmail: string | null;
   hostEmailLc: string;
   onOpenHostDm: () => void;
+  t: any;
 }) {
   return (
     <View style={styles.hostHeaderWrap}>
@@ -193,8 +205,7 @@ function HostHeaderSection({
 
         <View style={styles.hostHeaderTextWrap}>
           <Text style={[styles.hostHeaderText, { color: theme.text }]}>
-            <Text style={styles.hostHeaderMuted}>Organized by </Text>
-            <Text style={styles.hostHeaderName}>{hostName}</Text>
+            {t('event_organized_by', { host: hostName })}
           </Text>
 
           {canOpenHostDm && openingDmForEmail === hostEmailLc ? (
@@ -282,10 +293,14 @@ function PollDatesSection({
   theme,
   proposedDates,
   pollResponses,
+  t,
+  language,
 }: {
   theme: Theme;
   proposedDates: string[];
   pollResponses: any[];
+  t: any;
+  language: AppLanguage;
 }) {
   if (!proposedDates?.length) return null;
 
@@ -308,7 +323,7 @@ function PollDatesSection({
 
   return (
     <View style={styles.pollContainer}>
-      <Text style={[styles.sectionTitle, { color: theme.text }]}>Poll results</Text>
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('event_poll_results')}</Text>
 
       <View style={styles.pollResultsList}>
         {results.map((result) => {
@@ -328,7 +343,7 @@ function PollDatesSection({
               <View style={styles.pollResultHeader}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.pollResultDate, { color: theme.text }]}>
-                    {new Date(result.dateValue).toLocaleDateString(undefined, {
+                    {new Date(result.dateValue).toLocaleDateString(localeForLanguage(language), {
                       weekday: 'short',
                       month: 'short',
                       day: 'numeric',
@@ -336,7 +351,7 @@ function PollDatesSection({
                   </Text>
 
                   <Text style={[styles.pollResultTime, { color: theme.text }]}>
-                    {new Date(result.dateValue).toLocaleTimeString(undefined, {
+                    {new Date(result.dateValue).toLocaleTimeString(localeForLanguage(language), {
                       hour: 'numeric',
                       minute: '2-digit',
                     })}
@@ -362,7 +377,7 @@ function PollDatesSection({
 
               {isMostPopular ? (
                 <Text style={[styles.pollPopularLabel, { color: theme.accent }]}>
-                  Most popular
+                  {t('event_most_popular')}
                 </Text>
               ) : null}
 
@@ -373,11 +388,11 @@ function PollDatesSection({
                       key={`${result.dateValue}-${voter.id || voter.user_email || index}`}
                       style={[styles.pollVoterName, { color: theme.text }]}
                     >
-                      {voter.guest_name || voter.user_email?.split('@')[0] || 'Guest'}
+                      {voter.guest_name || voter.user_email?.split('@')[0] || t('event_guest_fallback')}
                     </Text>
                   ))
                 ) : (
-                  <Text style={[styles.pollNoVotes, { color: theme.text }]}>No votes yet</Text>
+                  <Text style={[styles.pollNoVotes, { color: theme.text }]}>{t('event_no_votes')}</Text>
                 )}
               </View>
             </View>
@@ -393,11 +408,13 @@ function HostActionsSection({
   pendingApprovals,
   onInvite,
   onOpenRequests,
+  t,
 }: {
   theme: Theme;
   pendingApprovals: any[];
   onInvite: () => void;
   onOpenRequests: () => void;
+  t: any;
 }) {
   return (
     <View style={styles.hostActionsRow}>
@@ -411,7 +428,7 @@ function HostActionsSection({
         ]}
         onPress={onInvite}
       >
-        <Text style={[styles.hostActionText, { color: theme.text }]}>Share</Text>
+        <Text style={[styles.hostActionText, { color: theme.text }]}>{t('event_share')}</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -425,7 +442,7 @@ function HostActionsSection({
         onPress={onOpenRequests}
       >
         <Text style={[styles.hostActionText, { color: theme.text }]}>
-          Requests{pendingApprovals.length > 0 ? ` (${pendingApprovals.length})` : ''}
+          {t('event_requests')}{pendingApprovals.length > 0 ? ` (${pendingApprovals.length})` : ''}
         </Text>
       </TouchableOpacity>
     </View>
@@ -436,17 +453,19 @@ function PendingApprovalsPreviewSection({
   theme,
   pendingApprovals,
   profileNamesByEmail,
+  t,
 }: {
   theme: Theme;
   pendingApprovals: any[];
   profileNamesByEmail: Record<string, string>;
+  t: any;
 }) {
   if (!pendingApprovals.length) return null;
 
   return (
     <>
       <Text style={[styles.sectionTitle, { color: theme.text }]}>
-        Pending approvals ({pendingApprovals.length})
+        {t('event_pending_approvals')} ({pendingApprovals.length})
       </Text>
 
       <View style={styles.peopleList}>
@@ -471,9 +490,9 @@ function PendingApprovalsPreviewSection({
               ]}
             >
               <Text style={[styles.personName, { color: theme.text }]}>
-                {getFirstName(label)}
+                {getFirstName(label, t('event_guest_fallback'))}
               </Text>
-              <Text style={[styles.personStatus, { color: theme.text }]}>Pending approval</Text>
+              <Text style={[styles.personStatus, { color: theme.text }]}>{t('event_pending_approval')}</Text>
             </View>
           );
         })}
@@ -483,6 +502,7 @@ function PendingApprovalsPreviewSection({
 }
 
 export default function EventDetailsPage() {
+  const { language, t } = useI18n();
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
   const { session } = useSession();
@@ -774,7 +794,7 @@ setInvites(invitesRes.data || []);
             message.includes('recipient_cannot_see_event') ||
             message.includes('sender_cannot_see_event')
           ) {
-            Alert.alert('Unable to message this person');
+            Alert.alert(t('event_unable_message'));
             return;
           }
 
@@ -801,19 +821,19 @@ setInvites(invitesRes.data || []);
 
         if (message.includes('blocked_user_interaction')) {
           Alert.alert(
-            'Messaging unavailable',
-            'You can no longer message this user.'
+            t('event_messaging_unavailable'),
+            t('event_messaging_unavailable_body')
           );
           return;
         }
 
         console.log('Unable to open message', err);
-        Alert.alert('Unable to open message');
+        Alert.alert(t('event_unable_open_message'));
       } finally {
         setOpeningDmForEmail(null);
       }
     },
-    [event?.id, slug, viewerEmail, router]
+    [event?.id, slug, viewerEmail, router, t]
   );
 
   useEffect(() => {
@@ -863,15 +883,15 @@ setInvites(invitesRes.data || []);
   const isReachOut = eventModel.baseKind === 'reach_out';
   const isHost = viewerEmail !== '' && normalizeEmail(event.host_email) === viewerEmail;
   const myStatus = normalizeStatus(myRsvp?.status);
-  const myStatusLabel = getRsvpLabel(myStatus);
+  const myStatusLabel = getRsvpLabel(myStatus, t);
   const isSeries = eventModel.kind === 'series';
   const visibleSeriesEvents = seriesEvents.filter((item) => item?.id !== event?.id);
   const seriesIndex = getSeriesIndex(seriesEvents, event.id);
   const seriesTotal = seriesEvents.length;
   const hostEmailLc = normalizeEmail(event.host_email);
   const hostNameFirst = getFirstName(event.host_name);
-  const eventDateText = formatEventDate(event);
-  const eventTimeText = formatEventTime(event);
+  const eventDateText = formatEventDate(event, language, t);
+  const eventTimeText = formatEventTime(event, language);
 
   const hasRsvpAccess =
     ['yes', 'going', 'interested', 'maybe'].includes(myStatus) ||
@@ -902,14 +922,14 @@ setInvites(invitesRes.data || []);
   const cta = (() => {
     if (isPoll && isHost) {
       return {
-        label: 'Manage poll',
+        label: t('event_manage_poll'),
         onPress: () => router.push(`/event/${slug}/poll` as any),
       };
     }
 
     if (isHost && isReachOut) {
       return {
-        label: 'Manage reach-out',
+        label: t('event_manage_reach_out'),
         onPress: () => router.push(`/event/${slug}/reach-out` as any),
       };
     }
@@ -920,20 +940,20 @@ setInvites(invitesRes.data || []);
 
     if (isReachOut) {
       return {
-        label: 'Help make a plan',
+        label: t('event_help_make_plan'),
         onPress: () => router.push(`/event/${slug}/reach-out` as any),
       };
     }
 
     if (isPoll) {
       return {
-        label: myRsvp ? 'Edit vote' : 'Vote on dates',
+        label: myRsvp ? t('event_edit_vote') : t('event_vote_on_dates'),
         onPress: () => router.push(`/event/${slug}/guest-poll` as any),
       };
     }
 
     return {
-      label: myStatus ? 'Edit RSVP' : 'RSVP',
+      label: myStatus ? t('event_edit_rsvp') : t('event_rsvp'),
       onPress: () => router.push(`/event/${slug}/formalRSVP` as any),
     };
   })();
@@ -1038,6 +1058,7 @@ setInvites(invitesRes.data || []);
             openingDmForEmail={openingDmForEmail}
             hostEmailLc={hostEmailLc}
             onOpenHostDm={() => handleOpenOrCreateDm(hostEmailLc)}
+            t={t}
           />
 
           {isFixedDate && event.starts_at ? (
@@ -1101,6 +1122,8 @@ setInvites(invitesRes.data || []);
   theme={theme}
   proposedDates={event.proposed_dates || []}
   pollResponses={pollResponses}
+              t={t}
+  language={language}
 />
           ) : null}
 
@@ -1128,7 +1151,7 @@ setInvites(invitesRes.data || []);
                     { color: theme.isDark ? theme.bg : 'rgba(255,255,255,0.92)' },
                   ]}
                 >
-                  Currently: {myStatusLabel}
+                  {t('event_currently', { status: myStatusLabel })}
                 </Text>
               ) : null}
             </TouchableOpacity>
@@ -1147,7 +1170,7 @@ setInvites(invitesRes.data || []);
                 onPress={() => router.push(`/event/${slug}/chat` as any)}
               >
                 <MaterialCommunityIcons name="chat-outline" size={18} color={theme.accent} />
-                <Text style={[styles.chatLabel, { color: theme.text }]}>Event Chat</Text>
+                <Text style={[styles.chatLabel, { color: theme.text }]}>{t('event_chat')}</Text>
 
                 {chatSummary?.unread_count > 0 ? (
                   <View style={[styles.chatBadge, { backgroundColor: theme.accent }]}>
@@ -1165,12 +1188,14 @@ setInvites(invitesRes.data || []);
                 pendingApprovals={pendingApprovals}
                 onInvite={handleInvitePress}
                 onOpenRequests={() => setApprovalsOpen(true)}
+                t={t}
               />
 
               <PendingApprovalsPreviewSection
                 theme={theme}
                 pendingApprovals={pendingApprovals}
                 profileNamesByEmail={profileNamesByEmail}
+                t={t}
               />
             </>
           ) : null}
@@ -1187,6 +1212,7 @@ setInvites(invitesRes.data || []);
     openingDmForEmail={openingDmForEmail}
     profileNamesByEmail={profileNamesByEmail}
     profileAvatarsByEmail={profileAvatarsByEmail}
+    t={t}
   />
 ) : null}
         </View>
@@ -1201,6 +1227,7 @@ setInvites(invitesRes.data || []);
         profileNamesByEmail={profileNamesByEmail}
         resolvingRequestId={resolvingRequestId}
         handleResolveApproval={handleResolveApproval}
+        t={t}
       />
     </SafeAreaView>
   );
