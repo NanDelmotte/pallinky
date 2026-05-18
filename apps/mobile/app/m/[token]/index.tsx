@@ -22,11 +22,13 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { supabase } from "@pallinky/core";
 import { StyledText } from "@pallinky/ui";
 import { Ionicons } from "@expo/vector-icons";
+import { useI18n } from "@pallinky/i18n/client";
 
 export default function ManageEventScreen() {
   const params = useLocalSearchParams<{ token?: string | string[] }>();
   const token = Array.isArray(params.token) ? params.token[0] : params.token;
   const router = useRouter();
+  const { t } = useI18n();
 
   const [event, setEvent] = useState<any>(null);
   const [guests, setGuests] = useState<any[]>([]);
@@ -105,7 +107,7 @@ export default function ManageEventScreen() {
         setGuests(rsvps || []);
       }
     } catch (err) {
-      Alert.alert("Error", "Could not load this event.");
+      Alert.alert(t("common_error"), t("manage_error_load_event"));
     } finally {
       setLoading(false);
     }
@@ -115,14 +117,14 @@ export default function ManageEventScreen() {
     const safeToken = typeof token === "string" ? token.trim() : "";
 
     if (!safeToken) {
-      Alert.alert("Error", "Missing manage token.");
+      Alert.alert(t("common_error"), t("manage_missing_token"));
       return;
     }
 
     if (!messageSubject.trim() || !messageText.trim()) {
       Alert.alert(
-        "Missing Info",
-        "Please provide both a subject and a message.",
+        t("common_missing_info"),
+        t("manage_missing_message_fields"),
       );
       return;
     }
@@ -149,7 +151,7 @@ export default function ManageEventScreen() {
         throw error;
       }
 
-      Alert.alert("Sent", "Your message has been queued for guests.");
+      Alert.alert(t("common_sent"), t("manage_message_sent"));
       setMessageText("");
       setMessageSubject("");
       setShowMessageModal(false);
@@ -160,9 +162,9 @@ export default function ManageEventScreen() {
         err?.message ||
         err?.details ||
         err?.hint ||
-        (typeof err === "string" ? err : "Failed to queue messages.");
+        (typeof err === "string" ? err : t("manage_queue_failed"));
 
-      Alert.alert("Error", message);
+      Alert.alert(t("common_error"), message);
     } finally {
       setIsSending(false);
     }
@@ -172,7 +174,7 @@ export default function ManageEventScreen() {
     const safeToken = typeof token === "string" ? token.trim() : "";
 
     if (!safeToken) {
-      Alert.alert("Error", "Missing manage token.");
+      Alert.alert(t("common_error"), t("manage_missing_token"));
       return;
     }
 
@@ -204,11 +206,11 @@ export default function ManageEventScreen() {
       setCancelMessage("");
 
       Alert.alert(
-        "Event Cancelled",
-        "Event cancelled and your guests have been notified.",
+        t("manage_event_cancelled"),
+        t("manage_event_cancelled_body"),
         [
           {
-            text: "OK",
+            text: t("manage_ok"),
             onPress: () => router.replace("/(tabs)"),
           },
         ],
@@ -220,9 +222,9 @@ export default function ManageEventScreen() {
         err?.message ||
         err?.details ||
         err?.hint ||
-        (typeof err === "string" ? err : "Failed to cancel event.");
+        (typeof err === "string" ? err : t("manage_cancel_failed"));
 
-      Alert.alert("Error", message);
+      Alert.alert(t("common_error"), message);
     } finally {
       setIsCancelling(false);
     }
@@ -230,12 +232,12 @@ export default function ManageEventScreen() {
 
   const openCancelFlow = () => {
     Alert.alert(
-      "Cancel event?",
-      "This will cancel the event and notify all RSVPd guests.",
+      t("manage_cancel_title"),
+      t("manage_cancel_body"),
       [
-        { text: "Keep Event", style: "cancel" },
+        { text: t("manage_keep_event"), style: "cancel" },
         {
-          text: "Continue",
+          text: t("manage_continue"),
           style: "destructive",
           onPress: () => setShowCancelModal(true),
         },
@@ -254,7 +256,7 @@ export default function ManageEventScreen() {
   if (!event) {
     return (
       <View style={styles.centered}>
-        <StyledText>Event not found.</StyledText>
+        <StyledText>{t("manage_event_not_found")}</StyledText>
       </View>
     );
   }
@@ -267,7 +269,7 @@ export default function ManageEventScreen() {
           style={styles.closeBtn}
         >
           <Ionicons name="arrow-back" size={24} color="#1a1a1a" />
-          <StyledText style={styles.backText}>My Social Hub</StyledText>
+          <StyledText style={styles.backText}>{t("manage_social_hub")}</StyledText>
         </TouchableOpacity>
       </View>
 
@@ -312,7 +314,7 @@ export default function ManageEventScreen() {
             <View style={[styles.iconCircle, { backgroundColor: "#eef2ff" }]}>
               <Ionicons name="create" size={24} color="#4338ca" />
             </View>
-            <StyledText style={styles.actionLabel}>Edit Info</StyledText>
+            <StyledText style={styles.actionLabel}>{t("manage_edit_info")}</StyledText>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -322,7 +324,7 @@ export default function ManageEventScreen() {
             <View style={[styles.iconCircle, { backgroundColor: "#fff1f2" }]}>
               <Ionicons name="color-palette" size={24} color="#be123c" />
             </View>
-            <StyledText style={styles.actionLabel}>Studio</StyledText>
+            <StyledText style={styles.actionLabel}>{t("manage_studio")}</StyledText>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -345,7 +347,7 @@ export default function ManageEventScreen() {
             <View style={[styles.iconCircle, { backgroundColor: "#f0fdf4" }]}>
               <Ionicons name="send" size={24} color="#15803d" />
             </View>
-            <StyledText style={styles.actionLabel}>Invite</StyledText>
+            <StyledText style={styles.actionLabel}>{t("manage_invite")}</StyledText>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -384,7 +386,7 @@ export default function ManageEventScreen() {
             <View style={[styles.iconCircle, { backgroundColor: "#f3e8ff" }]}>
               <Ionicons name="copy-outline" size={24} color="#7c3aed" />
             </View>
-            <StyledText style={styles.actionLabel}>Duplicate</StyledText>
+            <StyledText style={styles.actionLabel}>{t("manage_duplicate")}</StyledText>
           </TouchableOpacity>
         </View>
 
@@ -392,7 +394,7 @@ export default function ManageEventScreen() {
           style={styles.cancelActionRow}
           onPress={openCancelFlow}
         >
-          <StyledText style={styles.cancelActionText}>Cancel Event</StyledText>
+          <StyledText style={styles.cancelActionText}>{t("manage_cancel_event")}</StyledText>
         </TouchableOpacity>
 
         <View style={styles.statsRow}>
@@ -400,14 +402,14 @@ export default function ManageEventScreen() {
             <StyledText style={styles.statNum}>
               {guests.filter((g) => g.status === "yes").length}
             </StyledText>
-            <StyledText style={styles.statLabel}>Going</StyledText>
+            <StyledText style={styles.statLabel}>{t("manage_going")}</StyledText>
           </View>
 
           <View style={styles.statCard}>
             <StyledText style={styles.statNum}>
               {guests.filter((g) => g.status === "maybe").length}
             </StyledText>
-            <StyledText style={styles.statLabel}>Maybe</StyledText>
+            <StyledText style={styles.statLabel}>{t("manage_maybe")}</StyledText>
           </View>
         </View>
 
@@ -423,10 +425,10 @@ export default function ManageEventScreen() {
 
           <View style={styles.messageCardCopy}>
             <StyledText style={styles.messageCardTitle}>
-              Message guests
+              {t("manage_message_guests")}
             </StyledText>
             <StyledText style={styles.messageCardText}>
-              Send a quick update to everyone on the guest list.
+              {t("manage_message_guests_body")}
             </StyledText>
           </View>
 
@@ -434,7 +436,7 @@ export default function ManageEventScreen() {
         </TouchableOpacity>
 
         <StyledText style={styles.sectionTitle}>
-          Guest List ({guests.length})
+          {t("manage_guest_list", { count: String(guests.length) })}
         </StyledText>
 
         {guests.map((guest, i) => (
@@ -489,7 +491,7 @@ export default function ManageEventScreen() {
                   >
                     <View style={styles.modalHeader}>
                       <StyledText style={styles.modalTitle}>
-                        Update Guests
+                        {t("manage_update_guests")}
                       </StyledText>
                       <TouchableOpacity
                         onPress={() => {
@@ -503,7 +505,7 @@ export default function ManageEventScreen() {
 
                     <TextInput
                       style={styles.subjectInput}
-                      placeholder="Subject (e.g. Quick Update)"
+                      placeholder={t("manage_subject_placeholder")}
                       value={messageSubject}
                       onChangeText={setMessageSubject}
                       returnKeyType="next"
@@ -512,7 +514,7 @@ export default function ManageEventScreen() {
 
                     <TextInput
                       style={styles.messageInput}
-                      placeholder="Your message to guests..."
+                      placeholder={t("manage_message_placeholder")}
                       multiline
                       value={messageText}
                       onChangeText={setMessageText}
@@ -539,7 +541,7 @@ export default function ManageEventScreen() {
                       ) : (
                         <>
                           <StyledText style={styles.sendBtnText}>
-                            Send to {guests.length} Guests
+                            {t("manage_send_to_guests", { count: String(guests.length) })}
                           </StyledText>
                           <Ionicons name="paper-plane" size={18} color="#fff" />
                         </>
@@ -579,7 +581,7 @@ export default function ManageEventScreen() {
                   >
                     <View style={styles.modalHeader}>
                       <StyledText style={styles.modalTitle}>
-                        Cancel Event
+                        {t("manage_cancel_event")}
                       </StyledText>
                       <TouchableOpacity
                         onPress={() => {
@@ -592,13 +594,12 @@ export default function ManageEventScreen() {
                     </View>
 
                     <StyledText style={styles.cancelBodyText}>
-                      Add a note for your guests. This event will be cancelled
-                      and RSVPd guests will be notified.
+                      {t("manage_cancel_note_body")}
                     </StyledText>
 
                     <TextInput
                       style={styles.messageInput}
-                      placeholder="Write a short cancellation message..."
+                      placeholder={t("manage_cancel_placeholder")}
                       multiline
                       value={cancelMessage}
                       onChangeText={setCancelMessage}
@@ -618,7 +619,7 @@ export default function ManageEventScreen() {
                       ) : (
                         <>
                           <StyledText style={styles.sendBtnText}>
-                            Cancel Event
+                            {t("manage_cancel_event")}
                           </StyledText>
                           <Ionicons
                             name="close-circle"

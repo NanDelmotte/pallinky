@@ -27,6 +27,7 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker';
 
 import { StyledText } from '@pallinky/ui';
+import { useI18n } from '@pallinky/i18n/client';
 import { getLocalTimeZone } from '@pallinky/core';
 import { useFormalDraft } from '../../lib/formalDraft';
 
@@ -44,7 +45,9 @@ const COLORS = {
 
 export default function FormalWhenScreen() {
   const { form, updateForm, setForm } = useFormalDraft();
+  const { t, language } = useI18n();
   const localTimeZone = getLocalTimeZone();
+  const dateLocale = language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-GB';
 
   const [showSpecificModal, setShowSpecificModal] = useState(false);
   const [showSeriesModal, setShowSeriesModal] = useState(false);
@@ -251,7 +254,7 @@ export default function FormalWhenScreen() {
       >
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <View>
-            <StyledText style={styles.stepTitle}>When?</StyledText>
+            <StyledText style={styles.stepTitle}>{t('create_when_title')}</StyledText>
 
             <TouchableOpacity
               style={[
@@ -260,9 +263,9 @@ export default function FormalWhenScreen() {
               ]}
               onPress={openSpecific}
             >
-              <StyledText style={styles.modeTitle}>A specific time</StyledText>
+              <StyledText style={styles.modeTitle}>{t('create_when_specific_title')}</StyledText>
               <StyledText style={styles.modeSub}>
-                I already know when this is happening.
+                {t('create_when_specific_subtitle')}
               </StyledText>
             </TouchableOpacity>
 
@@ -273,9 +276,9 @@ export default function FormalWhenScreen() {
               ]}
               onPress={openOptions}
             >
-              <StyledText style={styles.modeTitle}>A few options</StyledText>
+              <StyledText style={styles.modeTitle}>{t('create_when_options_title')}</StyledText>
               <StyledText style={styles.modeSub}>
-                I want to suggest some dates and let people choose.
+                {t('create_when_options_subtitle')}
               </StyledText>
             </TouchableOpacity>
 
@@ -289,9 +292,9 @@ export default function FormalWhenScreen() {
                 router.push('/create/formal-details');
               }}
             >
-              <StyledText style={styles.modeTitle}>Not sure yet</StyledText>
+              <StyledText style={styles.modeTitle}>{t('create_when_unsure_title')}</StyledText>
               <StyledText style={styles.modeSub}>
-                I just want to open the plan for now.
+                {t('create_when_unsure_subtitle')}
               </StyledText>
             </TouchableOpacity>
           </View>
@@ -314,16 +317,16 @@ export default function FormalWhenScreen() {
             </View>
 
             <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-              <StyledText style={styles.stepTitle}>A specific time</StyledText>
+              <StyledText style={styles.stepTitle}>{t('create_when_specific_title')}</StyledText>
 
               <StyledText style={styles.modeSub}>
-                Choose the date and time for this event.
+                {t('create_when_specific_help')}
               </StyledText>
               <StyledText style={styles.timezoneNote}>
-                Times will be saved in {localTimeZone}.
+                {t('create_when_timezone_note', { timeZone: localTimeZone })}
               </StyledText>
 
-              <StyledText style={styles.label}>START TIME</StyledText>
+              <StyledText style={styles.label}>{t('create_when_start_time')}</StyledText>
 
               <TouchableOpacity
                 style={styles.pwaInput}
@@ -334,7 +337,7 @@ export default function FormalWhenScreen() {
                 }
               >
                 <StyledText style={styles.pwaInputText}>
-                  {tempDate.toLocaleString('en-GB', {
+                  {tempDate.toLocaleString(dateLocale, {
                     dateStyle: 'medium',
                     timeStyle: 'short',
                   })}
@@ -351,11 +354,11 @@ export default function FormalWhenScreen() {
                 <>
                   <View style={styles.iosDeadlinePickerHeader}>
                     <TouchableOpacity onPress={() => setShowPicker(false)}>
-                      <StyledText style={styles.iosCancelText}>Cancel</StyledText>
+                      <StyledText style={styles.iosCancelText}>{t('common_cancel')}</StyledText>
                     </TouchableOpacity>
 
                     <TouchableOpacity onPress={confirmIOSDate}>
-                      <StyledText style={styles.iosConfirmText}>Confirm</StyledText>
+                      <StyledText style={styles.iosConfirmText}>{t('common_confirm')}</StyledText>
                     </TouchableOpacity>
                   </View>
 
@@ -370,7 +373,7 @@ export default function FormalWhenScreen() {
                 </>
               )}
 
-              <StyledText style={styles.label}>DURATION</StyledText>
+              <StyledText style={styles.label}>{t('create_when_duration')}</StyledText>
 
               <TouchableOpacity
                 style={styles.pwaInput}
@@ -384,7 +387,7 @@ export default function FormalWhenScreen() {
                 >
                   {form.durationMins
                     ? `${Math.floor(form.durationMins / 60)}h ${form.durationMins % 60}m`
-                    : 'No end time'}
+                    : t('duration_no_end_time')}
                 </StyledText>
 
                 <Ionicons
@@ -397,7 +400,7 @@ export default function FormalWhenScreen() {
               {showDurationDropdown && (
                 <View style={styles.durationDropdown}>
                   <TouchableOpacity style={styles.durationOption} onPress={() => setDuration(null)}>
-                    <StyledText style={styles.durationOptionText}>No end time</StyledText>
+                    <StyledText style={styles.durationOptionText}>{t('duration_no_end_time')}</StyledText>
                   </TouchableOpacity>
 
                   <TouchableOpacity style={styles.durationOption} onPress={() => setDuration(30)}>
@@ -424,7 +427,7 @@ export default function FormalWhenScreen() {
 
               <TouchableOpacity style={styles.secondaryCard} onPress={openSeriesFromSpecific}>
                 <View style={{ flex: 1 }}>
-                  <StyledText style={styles.secondaryTitle}>Repeat this event</StyledText>
+                  <StyledText style={styles.secondaryTitle}>{t('create_when_repeat_event')}</StyledText>
                   <StyledText style={styles.secondarySub}>
                     Create several sessions of the same event.
                   </StyledText>
@@ -434,7 +437,7 @@ export default function FormalWhenScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity onPress={continueSpecific}>
-                <StyledText style={styles.doneText}>Done</StyledText>
+                <StyledText style={styles.doneText}>{t('common_done')}</StyledText>
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -457,24 +460,24 @@ export default function FormalWhenScreen() {
             </View>
 
             <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-              <StyledText style={styles.stepTitle}>Repeat this event</StyledText>
+              <StyledText style={styles.stepTitle}>{t('create_when_repeat_event')}</StyledText>
 
               <StyledText style={styles.modeSub}>
                 Add each session of the same event.
               </StyledText>
               <StyledText style={styles.timezoneNote}>
-                Times will be saved in {localTimeZone}.
+                {t('create_when_timezone_note', { timeZone: localTimeZone })}
               </StyledText>
 
               {Platform.OS === 'ios' && showPicker && form.whenMode === 'series' && (
                 <>
                   <View style={styles.iosDeadlinePickerHeader}>
                     <TouchableOpacity onPress={() => setShowPicker(false)}>
-                      <StyledText style={styles.iosCancelText}>Cancel</StyledText>
+                      <StyledText style={styles.iosCancelText}>{t('common_cancel')}</StyledText>
                     </TouchableOpacity>
 
                     <TouchableOpacity onPress={confirmIOSDate}>
-                      <StyledText style={styles.iosConfirmText}>Confirm</StyledText>
+                      <StyledText style={styles.iosConfirmText}>{t('common_confirm')}</StyledText>
                     </TouchableOpacity>
                   </View>
 
@@ -489,7 +492,7 @@ export default function FormalWhenScreen() {
                 </>
               )}
 
-              <StyledText style={styles.label}>SESSIONS</StyledText>
+              <StyledText style={styles.label}>{t('create_when_sessions')}</StyledText>
 
               {form.seriesDates.length > 0 ? (
                 <View style={{ marginTop: 8 }}>
@@ -510,7 +513,7 @@ export default function FormalWhenScreen() {
                           </StyledText>
 
                           <StyledText style={styles.sessionDate}>
-                            {date.toLocaleString('en-GB', {
+                            {date.toLocaleString(dateLocale, {
                               weekday: 'short',
                               day: 'numeric',
                               month: 'short',
@@ -519,7 +522,7 @@ export default function FormalWhenScreen() {
                           </StyledText>
 
                           <StyledText style={styles.sessionTime}>
-                            {date.toLocaleString('en-GB', {
+                            {date.toLocaleString(dateLocale, {
                               hour: '2-digit',
                               minute: '2-digit',
                             })}
@@ -540,7 +543,7 @@ export default function FormalWhenScreen() {
               )}
 
               
-              <StyledText style={styles.label}>DURATION</StyledText>
+              <StyledText style={styles.label}>{t('create_when_duration')}</StyledText>
 
               <TouchableOpacity
                 style={styles.pwaInput}
@@ -554,7 +557,7 @@ export default function FormalWhenScreen() {
                 >
                   {form.durationMins
                     ? `${Math.floor(form.durationMins / 60)}h ${form.durationMins % 60}m`
-                    : 'No end time'}
+                    : t('duration_no_end_time')}
                 </StyledText>
 
                 <Ionicons
@@ -567,7 +570,7 @@ export default function FormalWhenScreen() {
               {showDurationDropdown && (
                 <View style={styles.durationDropdown}>
                   <TouchableOpacity style={styles.durationOption} onPress={() => setDuration(null)}>
-                    <StyledText style={styles.durationOptionText}>No end time</StyledText>
+                    <StyledText style={styles.durationOptionText}>{t('duration_no_end_time')}</StyledText>
                   </TouchableOpacity>
 
                   <TouchableOpacity style={styles.durationOption} onPress={() => setDuration(30)}>
@@ -599,12 +602,12 @@ export default function FormalWhenScreen() {
                     : openIOSPicker(new Date())
                 }
               >
-                <StyledText style={styles.pwaInputText}>Add session</StyledText>
+                <StyledText style={styles.pwaInputText}>{t('create_when_add_session')}</StyledText>
                 <Ionicons name="add" size={18} color={COLORS.textMuted} />
               </TouchableOpacity>
 
               <TouchableOpacity onPress={continueSeries}>
-                <StyledText style={styles.doneText}>Done</StyledText>
+                <StyledText style={styles.doneText}>{t('common_done')}</StyledText>
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -627,16 +630,16 @@ export default function FormalWhenScreen() {
             </View>
 
             <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-              <StyledText style={styles.stepTitle}>A few options</StyledText>
+              <StyledText style={styles.stepTitle}>{t('create_when_options_title')}</StyledText>
 
               <StyledText style={styles.modeSub}>
-                Add possible dates so guests can choose what works.
+                {t('create_when_options_subtitle')}
               </StyledText>
               <StyledText style={styles.timezoneNote}>
-                Times will be saved in {localTimeZone}.
+                {t('create_when_timezone_note', { timeZone: localTimeZone })}
               </StyledText>
 
-              <StyledText style={styles.label}>DATE OPTIONS</StyledText>
+              <StyledText style={styles.label}>{t('create_when_date_options')}</StyledText>
 
               <TouchableOpacity
                 style={styles.pwaInput}
@@ -646,7 +649,7 @@ export default function FormalWhenScreen() {
                     : openIOSPicker(new Date())
                 }
               >
-                <StyledText style={styles.pwaInputText}>Add a date option</StyledText>
+                <StyledText style={styles.pwaInputText}>{t('create_when_add_date_option')}</StyledText>
                 <Ionicons name="add" size={18} color={COLORS.textMuted} />
               </TouchableOpacity>
 
@@ -666,7 +669,7 @@ export default function FormalWhenScreen() {
                       onPress={() => setShowPicker(false)}
                       style={styles.iosFooterCancelBtn}
                     >
-                      <StyledText style={styles.iosCancelText}>Cancel</StyledText>
+                      <StyledText style={styles.iosCancelText}>{t('common_cancel')}</StyledText>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -688,7 +691,7 @@ export default function FormalWhenScreen() {
                         setShowPicker(false);
                       }}
                     >
-                      <StyledText style={styles.iosChooseText}>Choose</StyledText>
+                      <StyledText style={styles.iosChooseText}>{t('create_when_choose')}</StyledText>
                     </TouchableOpacity>
                   </View>
                 </>
@@ -708,7 +711,7 @@ export default function FormalWhenScreen() {
                         ]}
                       >
                         <StyledText style={[styles.pwaInputText, { flex: 1 }]}>
-                          {date.toLocaleString('en-GB', {
+                          {date.toLocaleString(dateLocale, {
                             dateStyle: 'medium',
                             timeStyle: 'short',
                           })}
@@ -733,7 +736,7 @@ export default function FormalWhenScreen() {
               )}
 
               <TouchableOpacity onPress={continueOptions}>
-                <StyledText style={styles.doneText}>Done</StyledText>
+                <StyledText style={styles.doneText}>{t('common_done')}</StyledText>
               </TouchableOpacity>
             </ScrollView>
           </View>

@@ -20,6 +20,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 
 import { supabase } from '@pallinky/core';
+import { useI18n } from '@pallinky/i18n/client';
 import {
   StyledText,
   GiphyPicker,
@@ -125,6 +126,7 @@ const DEFAULT_COVER_IMAGE_URLS = new Set(
 export default function DesignStudioScreen() {
   const { token } = useLocalSearchParams<{ token: string }>();
   const router = useRouter();
+  const { t } = useI18n();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -178,7 +180,7 @@ export default function DesignStudioScreen() {
           setInitialStudioState(nextState);
         }
       } catch {
-        Alert.alert('Error', 'Could not load Design Studio.');
+        Alert.alert(t('common_error'), t('studio_load_error'));
       } finally {
         setLoading(false);
       }
@@ -227,7 +229,7 @@ export default function DesignStudioScreen() {
       );
     } catch (error) {
       console.error('Studio autosave failed', error);
-      Alert.alert('Save failed', 'Could not save your studio changes.');
+      Alert.alert(t('studio_save_failed'), t('studio_save_failed_body'));
     } finally {
       setSaving(false);
     }
@@ -263,9 +265,9 @@ export default function DesignStudioScreen() {
       return;
     }
 
-    Alert.alert('Discard changes?', 'You have unsaved studio changes.', [
-      { text: 'Keep editing', style: 'cancel' },
-      { text: 'Discard', style: 'destructive', onPress: () => router.back() },
+    Alert.alert(t('studio_discard_title'), t('studio_discard_body'), [
+      { text: t('common_keep_editing'), style: 'cancel' },
+      { text: t('common_discard'), style: 'destructive', onPress: () => router.back() },
     ]);
   };
 
@@ -274,7 +276,7 @@ export default function DesignStudioScreen() {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (!permission.granted) {
-        Alert.alert('Permission needed', 'Please allow photo library access.');
+        Alert.alert(t('studio_permission_title'), t('studio_permission_body'));
         return;
       }
 
@@ -316,7 +318,7 @@ export default function DesignStudioScreen() {
       updateStudioState({ coverImageUrl: publicUrl });
     } catch (error) {
       console.error('Cover upload failed', error);
-      Alert.alert('Upload failed', 'Could not upload the cover image.');
+      Alert.alert(t('studio_upload_failed'), t('studio_upload_failed_body'));
     } finally {
       setUploadingCover(false);
     }
@@ -337,9 +339,9 @@ export default function DesignStudioScreen() {
   if (!event) {
     return (
       <View style={styles.centered}>
-        <StyledText>Event not found.</StyledText>
+        <StyledText>{t('manage_event_not_found')}</StyledText>
         <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20 }}>
-          <StyledText style={{ color: '#43691b' }}>Close</StyledText>
+          <StyledText style={{ color: '#43691b' }}>{t('common_close')}</StyledText>
         </TouchableOpacity>
       </View>
     );
@@ -375,7 +377,7 @@ export default function DesignStudioScreen() {
           />
         </TouchableOpacity>
 
-        <StyledText style={styles.headerTitle}>Studio</StyledText>
+        <StyledText style={styles.headerTitle}>{t('studio_title')}</StyledText>
 
         <View style={styles.headerStatusSlot}>
           {saving ? <ActivityIndicator size="small" color="#43691b" /> : null}
@@ -385,10 +387,9 @@ export default function DesignStudioScreen() {
       {step === 1 ? (
         <View style={styles.stepOneCenterWrap}>
           <View style={styles.stepOneContainer}>
-            <StyledText style={styles.stepOneTitle}>Color Scheme</StyledText>
+            <StyledText style={styles.stepOneTitle}>{t('studio_color_scheme')}</StyledText>
             <StyledText style={styles.stepOneSubtitle}>
-              Pick a color palette. Each palette starts with its own cover photo, and you can
-              swap the photo in the next step.
+              {t('studio_palette_subtitle')}
             </StyledText>
 
             <View style={styles.themeGrid}>
@@ -445,8 +446,8 @@ export default function DesignStudioScreen() {
                 <View style={styles.controlRowGroup}>
                   <TouchableOpacity style={styles.controlRow} onPress={() => setShowSearch(true)}>
                     <Ionicons name="search-outline" size={20} color="#6b7280" />
-                    <StyledText style={styles.controlText}>Search for a Cover Image</StyledText>
-                    <StyledText style={styles.controlValue}>Search</StyledText>
+                    <StyledText style={styles.controlText}>{t('studio_search_cover')}</StyledText>
+                    <StyledText style={styles.controlValue}>{t('studio_search')}</StyledText>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -456,7 +457,7 @@ export default function DesignStudioScreen() {
                   >
                     <Ionicons name="cloud-upload-outline" size={20} color="#6b7280" />
                     <StyledText style={styles.controlText}>
-                      {uploadingCover ? 'Uploading Image...' : 'Upload Your Own Image'}
+                      {uploadingCover ? t('studio_uploading_image') : t('studio_upload_image')}
                     </StyledText>
                   </TouchableOpacity>
                 </View>
@@ -470,20 +471,20 @@ export default function DesignStudioScreen() {
                   }}
                 >
                   <Ionicons name="text-outline" size={20} color="#6b7280" />
-                  <StyledText style={styles.controlText}>Font</StyledText>
+                  <StyledText style={styles.controlText}>{t('studio_font')}</StyledText>
                   <StyledText style={styles.controlValue}>{studioState.font}</StyledText>
                 </TouchableOpacity>
               </>
             ) : (
               <TouchableOpacity style={styles.controlRow} onPress={() => setShowGiphy(true)}>
                 <Ionicons name="happy-outline" size={20} color="#6b7280" />
-                <StyledText style={styles.controlText}>Click here  to choose a GIPHY</StyledText>
+                <StyledText style={styles.controlText}>{t('studio_giphy')}</StyledText>
               </TouchableOpacity>
             )}
 
             {hasChanges ? (
               <TouchableOpacity style={styles.revertBtn} onPress={resetChanges}>
-                <StyledText style={styles.revertText}>Revert Changes</StyledText>
+                <StyledText style={styles.revertText}>{t('studio_revert')}</StyledText>
               </TouchableOpacity>
             ) : null}
           </View>

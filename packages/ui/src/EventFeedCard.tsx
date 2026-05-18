@@ -71,25 +71,26 @@ function formatDateTime(
 
   const date = new Date(startsAt);
   const timeZone = eventTimeZone || undefined;
+  const locale = lang === 'fr' ? 'fr-FR' : lang === 'nl' ? 'nl-NL' : 'en-US';
 
-  const weekday = date.toLocaleDateString(undefined, {
+  const weekday = date.toLocaleDateString(locale, {
     weekday: 'short',
     ...(timeZone ? { timeZone } : {}),
   });
 
-  const month = date.toLocaleDateString(undefined, {
+  const month = date.toLocaleDateString(locale, {
     month: 'short',
     ...(timeZone ? { timeZone } : {}),
   });
 
-  const dayPart = new Intl.DateTimeFormat(undefined, {
+  const dayPart = new Intl.DateTimeFormat(locale, {
     day: 'numeric',
     ...(timeZone ? { timeZone } : {}),
   })
     .formatToParts(date)
     .find((part) => part.type === 'day')?.value;
 
-  const time = date.toLocaleTimeString(undefined, {
+  const time = date.toLocaleTimeString(locale, {
     hour: 'numeric',
     minute: '2-digit',
     ...(timeZone ? { timeZone } : {}),

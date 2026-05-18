@@ -31,6 +31,8 @@ import DateTimePicker, {
 
 import { createVibeDraft, getLocalTimeZone, supabase } from '@pallinky/core';
 import { StyledInput, StyledText } from '@pallinky/ui';
+import { useI18n } from '@pallinky/i18n/client';
+import type { TranslationKey } from '@pallinky/i18n';
 
 import LocationSearch from '../../components/LocationSearch';
 
@@ -63,43 +65,26 @@ function toDateOnly(value: Date) {
   return value.toISOString().slice(0, 10);
 }
 
-function formatDeadlineLabel(value: string | null) {
-  if (!value) return 'Select date';
+function formatDeadlineLabel(
+  value: string | null,
+  translate: (key: TranslationKey) => string,
+  locale: string
+) {
+  if (!value) return translate('create_deadline_select_date');
 
   const date = new Date(`${value}T12:00:00`);
-  const month = date.toLocaleString('en-US', { month: 'short' });
-  const day = date.getDate();
-  const year = date.getFullYear();
-
-  const suffix =
-    day % 10 === 1 && day !== 11
-      ? 'st'
-      : day % 10 === 2 && day !== 12
-      ? 'nd'
-      : day % 10 === 3 && day !== 13
-      ? 'rd'
-      : 'th';
-
-  return `${month} ${day}${suffix} ${year}`;
+  return date.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function visibilitySummary(
   visibleInFeed: boolean,
-  requiresApproval: boolean
+  requiresApproval: boolean,
+  translate: (key: TranslationKey) => string
 ) {
-  if (visibleInFeed && requiresApproval) {
-    return 'People can see this • Approval required';
-  }
-
-  if (visibleInFeed && !requiresApproval) {
-    return 'People can see this • Anyone can RSVP';
-  }
-
-  if (!visibleInFeed && requiresApproval) {
-    return 'Link only • Approval required';
-  }
-
-  return 'Link only • Anyone can RSVP';
+  if (visibleInFeed && requiresApproval) return translate('visibility_public_approval');
+  if (visibleInFeed && !requiresApproval) return translate('visibility_public_open');
+  if (!visibleInFeed && requiresApproval) return translate('visibility_link_approval');
+  return translate('visibility_link_open');
 }
 
 function makeSeriesId() {
@@ -118,6 +103,8 @@ export default function FormalDetailsScreen() {
   }>();
 
   const { form, updateForm, initializeFromPrefill } = useFormalDraft();
+  const { t, language } = useI18n();
+  const dateLocale = language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US';
 
   const [loading, setLoading] = useState(false);
   const submitLockRef = useRef(false);
@@ -291,8 +278,8 @@ export default function FormalDetailsScreen() {
 
       if (!effectiveEmail) {
         Alert.alert(
-          'Identity Error',
-          'We need an email to save your plan.'
+          t('create_details_identity_error'),
+          t('create_details_identity_email_required')
         );
 
         return;
@@ -300,8 +287,8 @@ export default function FormalDetailsScreen() {
 
       if (!form.title.trim()) {
         Alert.alert(
-          'Required',
-          'Please provide a title.'
+          t('manage_required'),
+          t('manage_required_title_body')
         );
 
         return;
@@ -353,10 +340,10 @@ export default function FormalDetailsScreen() {
 
         if (datesToCreate.length === 0) {
           Alert.alert(
-            'Missing date',
+            t('create_details_missing_date'),
             form.whenMode === 'series'
-              ? 'Please add at least one date to the series.'
-              : 'Please choose a date.'
+              ? t('create_details_missing_series_date')
+              : t('create_details_missing_specific_date')
           );
 
           return;
@@ -432,7 +419,7 @@ export default function FormalDetailsScreen() {
 
           if (!row?.id) {
             throw new Error(
-              'Event was created without an id.'
+              t('create_details_created_without_id')
             );
           }
 
@@ -460,7 +447,7 @@ export default function FormalDetailsScreen() {
           !firstRow?.manage_handle
         ) {
           throw new Error(
-            'Could not open the success page for the new event.'
+            t('create_details_success_open_error')
           );
         }
 
@@ -559,9 +546,9 @@ export default function FormalDetailsScreen() {
       });
     } catch (e: any) {
       Alert.alert(
-        'Save Failed',
+        t('manage_save_failed'),
         e?.message ??
-          'Could not save your plan.'
+          t('create_details_save_error')
       );
     } finally {
       submitLockRef.current = false;
@@ -609,11 +596,11 @@ export default function FormalDetailsScreen() {
         >
           <View>
             <StyledText style={styles.stepTitle}>
-              Finish it off
+              {t('create_details_title')}
             </StyledText>
 
             <StyledInput
-              placeholder="Add a note..."
+              placeholder={t('manage_note_placeholder')}
               value={form.description}
               onChangeText={(t: string) =>
                 updateForm(
@@ -631,7 +618,7 @@ export default function FormalDetailsScreen() {
             <StyledText
               style={styles.sectionLabel}
             >
-              Where
+              {t('manage_label_where')}
             </StyledText>
 
             <View style={styles.locationWrap}>
@@ -654,7 +641,7 @@ export default function FormalDetailsScreen() {
             >
               <View>
                 <StyledText style={styles.label}>
-                  SOCIAL SETTINGS
+                  {t('create_details_social_settings')}
                 </StyledText>
 
                 <StyledText
@@ -665,7 +652,8 @@ export default function FormalDetailsScreen() {
                       true,
 
                     form.requires_approval ??
-                      false
+                      false,
+                    t
                   )}
                 </StyledText>
               </View>
@@ -680,11 +668,11 @@ export default function FormalDetailsScreen() {
             <StyledText
               style={styles.sectionLabel}
             >
-              Who&apos;s this from?
+              {t('create_details_from')}
             </StyledText>
 
             <StyledInput
-              placeholder="Your Name"
+              placeholder={t('manage_name_placeholder')}
               value={form.host_name}
               onChangeText={(t: string) =>
                 updateForm(
@@ -696,7 +684,7 @@ export default function FormalDetailsScreen() {
             />
 
             <StyledInput
-              placeholder="Your Email"
+              placeholder={t('manage_email_placeholder')}
               value={form.host_email}
               onChangeText={(t: string) =>
                 updateForm(
@@ -779,7 +767,7 @@ export default function FormalDetailsScreen() {
                     styles.compactHeading
                   }
                 >
-                  Social visibility
+                  {t('create_details_social_visibility')}
                 </StyledText>
 
                 <TouchableOpacity
@@ -816,8 +804,7 @@ export default function FormalDetailsScreen() {
                       styles.radioRowText
                     }
                   >
-                    People can see
-                    I&apos;m doing this
+                    {t('create_details_people_can_see')}
                   </StyledText>
                 </TouchableOpacity>
 
@@ -855,8 +842,7 @@ export default function FormalDetailsScreen() {
                       styles.radioRowText
                     }
                   >
-                    I approve
-                    attendees first
+                    {t('create_details_approve_attendees')}
                   </StyledText>
                 </TouchableOpacity>
               </View>
@@ -889,7 +875,7 @@ export default function FormalDetailsScreen() {
                       styles.modalSecondaryText
                     }
                   >
-                    Cancel
+                    {t('common_cancel')}
                   </StyledText>
                 </TouchableOpacity>
 
@@ -906,7 +892,7 @@ export default function FormalDetailsScreen() {
                       styles.modalPrimaryText
                     }
                   >
-                    Save
+                    {t('common_save')}
                   </StyledText>
                 </TouchableOpacity>
               </View>
@@ -937,7 +923,7 @@ export default function FormalDetailsScreen() {
                           styles.iosCancelText
                         }
                       >
-                        Cancel
+                        {t('common_cancel')}
                       </StyledText>
                     </TouchableOpacity>
 
@@ -951,7 +937,7 @@ export default function FormalDetailsScreen() {
                           styles.iosConfirmText
                         }
                       >
-                        Confirm
+                        {t('common_confirm')}
                       </StyledText>
                     </TouchableOpacity>
                   </View>
