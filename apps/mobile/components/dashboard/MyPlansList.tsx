@@ -386,6 +386,7 @@ return (
                 hostAvatarUrl={avatarByEmail[hostEmail] || null}
                 title={ev.title}
                 startsAt={ev.starts_at}
+                endsAt={ev.ends_at}
                 eventTimeZone={ev.event_time_zone}
                 location={ev.location}
                 coverImageUrl={ev.cover_image_url || null}

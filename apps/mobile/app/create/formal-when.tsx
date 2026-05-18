@@ -9,6 +9,7 @@
 
 import React, { useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -54,9 +55,10 @@ export default function FormalWhenScreen() {
   const [showOptionsModal, setShowOptionsModal] = useState(false);
 
   const [showPicker, setShowPicker] = useState(false);
-  const [showDurationDropdown, setShowDurationDropdown] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
 
   const [tempDate, setTempDate] = useState(form.specificDate || new Date());
+  const [tempEndDate, setTempEndDate] = useState(form.endDate || new Date((form.specificDate || new Date()).getTime() + 60 * 60 * 1000));
 
   const sameMinute = (a: Date, b: Date) => a.getTime() === b.getTime();
 
@@ -64,7 +66,7 @@ export default function FormalWhenScreen() {
     updateForm('whenMode', 'specific');
     setTempDate(form.specificDate || new Date());
     setShowPicker(false);
-    setShowDurationDropdown(false);
+    setShowEndPicker(false);
     setShowSpecificModal(true);
   };
 
@@ -89,7 +91,7 @@ export default function FormalWhenScreen() {
 
     setTempDate(seedDate);
     setShowPicker(false);
-    setShowDurationDropdown(false);
+    setShowEndPicker(false);
     setShowSpecificModal(false);
     setShowSeriesModal(true);
   };
@@ -97,20 +99,20 @@ export default function FormalWhenScreen() {
   const openOptions = () => {
     updateForm('whenMode', 'options');
     setShowPicker(false);
-    setShowDurationDropdown(false);
+    setShowEndPicker(false);
     setShowOptionsModal(true);
   };
 
   const closeSpecific = () => {
     setShowSpecificModal(false);
     setShowPicker(false);
-    setShowDurationDropdown(false);
+    setShowEndPicker(false);
   };
 
   const closeSeries = () => {
     setShowSeriesModal(false);
     setShowPicker(false);
-    setShowDurationDropdown(false);
+    setShowEndPicker(false);
   };
 
   const closeOptions = () => {
@@ -202,9 +204,62 @@ export default function FormalWhenScreen() {
     });
   };
 
-  const setDuration = (mins: number | null) => {
-    updateForm('durationMins', mins);
-    setShowDurationDropdown(false);
+
+  const getDefaultEndDate = (startDate = form.specificDate || tempDate || new Date()) =>
+    form.endDate || new Date(startDate.getTime() + 60 * 60 * 1000);
+
+  const onIOSEndChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (selectedDate) setTempEndDate(selectedDate);
+  };
+
+  const confirmIOSEndDate = () => {
+    updateForm('endDate', tempEndDate);
+    setShowEndPicker(false);
+  };
+
+  const openEndPicker = () => {
+    setTempEndDate(getDefaultEndDate());
+    setShowEndPicker(true);
+  };
+
+  const clearEndDate = () => {
+    updateForm('endDate', null);
+    setShowEndPicker(false);
+  };
+
+  const showAndroidEndPicker = () => {
+    const baseDate = getDefaultEndDate();
+
+    DateTimePickerAndroid.open({
+      value: baseDate,
+      mode: 'date',
+      onChange: (event, date) => {
+        if (event.type === 'set' && date) {
+          DateTimePickerAndroid.open({
+            value: baseDate,
+            mode: 'time',
+            is24Hour: true,
+            onChange: (timeEvent, timeDate) => {
+              if (timeEvent.type === 'set' && timeDate) {
+                const merged = new Date(date);
+                merged.setHours(timeDate.getHours(), timeDate.getMinutes(), 0, 0);
+                updateForm('endDate', merged);
+              }
+            },
+          });
+        }
+      },
+    });
+  };
+
+  const validateEndDate = (startDate: Date) => {
+    if (!form.endDate || form.endDate.getTime() >= startDate.getTime()) return true;
+
+    Alert.alert(
+      t('create_when_end_before_start_title'),
+      t('create_when_end_before_start_body')
+    );
+    return false;
   };
 
   const removeSeriesDate = (date: Date) => {
@@ -215,11 +270,13 @@ export default function FormalWhenScreen() {
   };
 
   const continueSpecific = () => {
+    if (!validateEndDate(tempDate)) return;
+
     updateForm('whenMode', 'specific');
     updateForm('specificDate', tempDate);
     setShowSpecificModal(false);
     setShowPicker(false);
-    setShowDurationDropdown(false);
+    setShowEndPicker(false);
     router.push('/create/formal-details');
   };
 
@@ -227,7 +284,7 @@ export default function FormalWhenScreen() {
     updateForm('whenMode', 'series');
     setShowSeriesModal(false);
     setShowPicker(false);
-    setShowDurationDropdown(false);
+    setShowEndPicker(false);
     router.push('/create/formal-details');
   };
 
@@ -373,56 +430,64 @@ export default function FormalWhenScreen() {
                 </>
               )}
 
-              <StyledText style={styles.label}>{t('create_when_duration')}</StyledText>
+              <StyledText style={styles.label}>{t('create_when_end_time')}</StyledText>
 
               <TouchableOpacity
                 style={styles.pwaInput}
-                onPress={() => setShowDurationDropdown((prev) => !prev)}
+                onPress={() =>
+                  Platform.OS === 'android'
+                    ? showAndroidEndPicker()
+                    : openEndPicker()
+                }
               >
                 <StyledText
                   style={[
                     styles.pwaInputText,
-                    !form.durationMins && styles.placeholderText,
+                    !form.endDate && styles.placeholderText,
                   ]}
                 >
-                  {form.durationMins
-                    ? `${Math.floor(form.durationMins / 60)}h ${form.durationMins % 60}m`
-                    : t('duration_no_end_time')}
+                  {form.endDate
+                    ? form.endDate.toLocaleString(dateLocale, {
+                        dateStyle: 'medium',
+                        timeStyle: 'short',
+                      })
+                    : t('end_time_none')}
                 </StyledText>
 
                 <Ionicons
-                  name={showDurationDropdown ? 'chevron-up' : 'chevron-down'}
+                  name="time-outline"
                   size={18}
                   color={COLORS.textMuted}
                 />
               </TouchableOpacity>
 
-              {showDurationDropdown && (
-                <View style={styles.durationDropdown}>
-                  <TouchableOpacity style={styles.durationOption} onPress={() => setDuration(null)}>
-                    <StyledText style={styles.durationOptionText}>{t('duration_no_end_time')}</StyledText>
-                  </TouchableOpacity>
+              {form.endDate && (
+                <TouchableOpacity onPress={clearEndDate}>
+                  <StyledText style={styles.clearEndText}>{t('create_when_clear_end_time')}</StyledText>
+                </TouchableOpacity>
+              )}
 
-                  <TouchableOpacity style={styles.durationOption} onPress={() => setDuration(30)}>
-                    <StyledText style={styles.durationOptionText}>30m</StyledText>
-                  </TouchableOpacity>
+              {Platform.OS === 'ios' && showEndPicker && (
+                <>
+                  <View style={styles.iosDeadlinePickerHeader}>
+                    <TouchableOpacity onPress={() => setShowEndPicker(false)}>
+                      <StyledText style={styles.iosCancelText}>{t('common_cancel')}</StyledText>
+                    </TouchableOpacity>
 
-                  <TouchableOpacity style={styles.durationOption} onPress={() => setDuration(60)}>
-                    <StyledText style={styles.durationOptionText}>1h</StyledText>
-                  </TouchableOpacity>
+                    <TouchableOpacity onPress={confirmIOSEndDate}>
+                      <StyledText style={styles.iosConfirmText}>{t('common_confirm')}</StyledText>
+                    </TouchableOpacity>
+                  </View>
 
-                  <TouchableOpacity style={styles.durationOption} onPress={() => setDuration(90)}>
-                    <StyledText style={styles.durationOptionText}>1h 30m</StyledText>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.durationOption} onPress={() => setDuration(120)}>
-                    <StyledText style={styles.durationOptionText}>2h</StyledText>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.durationOption} onPress={() => setDuration(180)}>
-                    <StyledText style={styles.durationOptionText}>3h</StyledText>
-                  </TouchableOpacity>
-                </View>
+                  <DateTimePicker
+                    value={tempEndDate}
+                    mode="datetime"
+                    display="spinner"
+                    onChange={onIOSEndChange}
+                    minuteInterval={15}
+                    style={{ width: '100%' }}
+                  />
+                </>
               )}
 
               <TouchableOpacity style={styles.secondaryCard} onPress={openSeriesFromSpecific}>
@@ -543,56 +608,64 @@ export default function FormalWhenScreen() {
               )}
 
               
-              <StyledText style={styles.label}>{t('create_when_duration')}</StyledText>
+              <StyledText style={styles.label}>{t('create_when_end_time')}</StyledText>
 
               <TouchableOpacity
                 style={styles.pwaInput}
-                onPress={() => setShowDurationDropdown((prev) => !prev)}
+                onPress={() =>
+                  Platform.OS === 'android'
+                    ? showAndroidEndPicker()
+                    : openEndPicker()
+                }
               >
                 <StyledText
                   style={[
                     styles.pwaInputText,
-                    !form.durationMins && styles.placeholderText,
+                    !form.endDate && styles.placeholderText,
                   ]}
                 >
-                  {form.durationMins
-                    ? `${Math.floor(form.durationMins / 60)}h ${form.durationMins % 60}m`
-                    : t('duration_no_end_time')}
+                  {form.endDate
+                    ? form.endDate.toLocaleString(dateLocale, {
+                        dateStyle: 'medium',
+                        timeStyle: 'short',
+                      })
+                    : t('end_time_none')}
                 </StyledText>
 
                 <Ionicons
-                  name={showDurationDropdown ? 'chevron-up' : 'chevron-down'}
+                  name="time-outline"
                   size={18}
                   color={COLORS.textMuted}
                 />
               </TouchableOpacity>
 
-              {showDurationDropdown && (
-                <View style={styles.durationDropdown}>
-                  <TouchableOpacity style={styles.durationOption} onPress={() => setDuration(null)}>
-                    <StyledText style={styles.durationOptionText}>{t('duration_no_end_time')}</StyledText>
-                  </TouchableOpacity>
+              {form.endDate && (
+                <TouchableOpacity onPress={clearEndDate}>
+                  <StyledText style={styles.clearEndText}>{t('create_when_clear_end_time')}</StyledText>
+                </TouchableOpacity>
+              )}
 
-                  <TouchableOpacity style={styles.durationOption} onPress={() => setDuration(30)}>
-                    <StyledText style={styles.durationOptionText}>30m</StyledText>
-                  </TouchableOpacity>
+              {Platform.OS === 'ios' && showEndPicker && (
+                <>
+                  <View style={styles.iosDeadlinePickerHeader}>
+                    <TouchableOpacity onPress={() => setShowEndPicker(false)}>
+                      <StyledText style={styles.iosCancelText}>{t('common_cancel')}</StyledText>
+                    </TouchableOpacity>
 
-                  <TouchableOpacity style={styles.durationOption} onPress={() => setDuration(60)}>
-                    <StyledText style={styles.durationOptionText}>1h</StyledText>
-                  </TouchableOpacity>
+                    <TouchableOpacity onPress={confirmIOSEndDate}>
+                      <StyledText style={styles.iosConfirmText}>{t('common_confirm')}</StyledText>
+                    </TouchableOpacity>
+                  </View>
 
-                  <TouchableOpacity style={styles.durationOption} onPress={() => setDuration(90)}>
-                    <StyledText style={styles.durationOptionText}>1h 30m</StyledText>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.durationOption} onPress={() => setDuration(120)}>
-                    <StyledText style={styles.durationOptionText}>2h</StyledText>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.durationOption} onPress={() => setDuration(180)}>
-                    <StyledText style={styles.durationOptionText}>3h</StyledText>
-                  </TouchableOpacity>
-                </View>
+                  <DateTimePicker
+                    value={tempEndDate}
+                    mode="datetime"
+                    display="spinner"
+                    onChange={onIOSEndChange}
+                    minuteInterval={15}
+                    style={{ width: '100%' }}
+                  />
+                </>
               )}
 <TouchableOpacity
                 style={[styles.pwaInput, { marginTop: 12 }]}
@@ -770,26 +843,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  durationDropdown: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    marginTop: 8,
+  clearEndText: {
+    color: COLORS.primary,
+    fontWeight: '800',
     marginBottom: 8,
-    overflow: 'hidden',
-  },
-
-  durationOption: {
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderSoft,
-  },
-
-  durationOptionText: {
-    fontSize: 16,
-    color: COLORS.text,
   },
 
   container: {

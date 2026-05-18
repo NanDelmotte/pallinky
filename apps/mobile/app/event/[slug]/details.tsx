@@ -130,12 +130,19 @@ function formatEventTime(event: any, language: AppLanguage) {
   if (!event?.starts_at) return '';
 
   const date = new Date(event.starts_at);
-
-  return date.toLocaleTimeString(localeForLanguage(language), {
-    hour: 'numeric',
-    minute: '2-digit',
+  const formatOptions = {
+    hour: 'numeric' as const,
+    minute: '2-digit' as const,
     ...(event?.event_time_zone ? { timeZone: event.event_time_zone } : {}),
-  });
+  };
+  const startTime = date.toLocaleTimeString(localeForLanguage(language), formatOptions);
+
+  if (!event?.ends_at) return startTime;
+
+  const endDate = new Date(event.ends_at);
+  if (Number.isNaN(endDate.getTime())) return startTime;
+
+  return `${startTime}–${endDate.toLocaleTimeString(localeForLanguage(language), formatOptions)}`;
 }
 
 function getRsvpLabel(status: string | null | undefined, t: any) {
@@ -601,7 +608,7 @@ setPollResponses([]);
       const seriesPromise = eventData.series_id
         ? supabase
             .from('events')
-            .select('id, slug, title, starts_at, event_time_zone, event_type, manage_handle, series_id')
+            .select('id, slug, title, starts_at, ends_at, event_time_zone, event_type, manage_handle, series_id')
             .eq('series_id', eventData.series_id)
             .order('starts_at', { ascending: true, nullsFirst: false })
         : Promise.resolve({ data: [], error: null });
