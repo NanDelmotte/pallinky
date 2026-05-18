@@ -21,6 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase, useSession } from '@pallinky/core';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+
 import { CalendarButton } from '@pallinky/ui';
 import { getEventAccessDecision } from '../../../lib/visibility/getEventAccessDecision';
 import DetailsGuestsSection from './components/DetailsGuestsSection';
@@ -205,7 +206,7 @@ function HostHeaderSection({
 
         <View style={styles.hostHeaderTextWrap}>
           <Text style={[styles.hostHeaderText, { color: theme.text }]}>
-            {t('event_organized_by', { host: hostName })}
+           {t('event_organized_by', { host: hostName })}
           </Text>
 
           {canOpenHostDm && openingDmForEmail === hostEmailLc ? (

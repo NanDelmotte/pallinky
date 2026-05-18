@@ -59,6 +59,7 @@ export const fr: Record<TranslationKey, string> = {
   event_card_you_are_organizing: "Vous organisez",
   event_card_host_is_organizing: "{host} organise",
   event_card_badge_planning: "EN COURS",
+  event_organized_by: "Organisé par {host}",
 
   people_may_know_someone: "quelqu’un",
   people_may_know_this_person: "cette personne",
