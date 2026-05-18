@@ -1,6 +1,17 @@
--- Add an optional host-provided External link without changing Pallinky event URLs/slugs.
+-- Ensure the legacy Pallinky event URL column and the new host-provided External link column exist.
+alter table public.events
+  add column if not exists event_url text;
+
 alter table public.events
   add column if not exists external_url text;
+
+alter table public.events
+  drop constraint if exists events_event_url_reasonable_length;
+
+alter table public.events
+  add constraint events_event_url_reasonable_length
+  check (event_url is null or length(event_url) <= 2048)
+  not valid;
 
 alter table public.events
   drop constraint if exists events_external_url_reasonable_length;
@@ -10,80 +21,25 @@ alter table public.events
   check (external_url is null or length(external_url) <= 2048)
   not valid;
 
-drop function if exists public.create_event_draft(
-  text,
-  text,
-  text,
-  text,
-  timestamptz,
-  timestamptz,
-  text,
-  text,
-  text,
-  text,
-  text,
-  text,
-  text[],
-  integer,
-  boolean,
-  boolean,
-  integer,
-  text,
-  text,
-  boolean,
-  integer,
-  date,
-  boolean,
-  text,
-  text
-);
+-- Remove every older create_event_draft overload so PostgREST exposes exactly one RPC signature.
+do $$
+declare
+  v_function regprocedure;
+begin
+  for v_function in
+    select p.oid::regprocedure
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.proname = 'create_event_draft'
+    order by p.pronargs asc
+  loop
+    execute format('drop function if exists %s', v_function);
+  end loop;
+end;
+$$;
 
-drop function if exists public.create_event_draft(
-  text,
-  timestamptz,
-  text,
-  integer,
-  text,
-  text,
-  text,
-  text,
-  integer,
-  boolean,
-  date,
-  boolean,
-  boolean,
-  timestamptz,
-  text,
-  boolean,
-  text
-);
-
-drop function if exists public.update_event_by_manage_token(
-  text,
-  text,
-  timestamptz,
-  timestamptz,
-  text,
-  text,
-  text,
-  timestamptz,
-  text,
-  text,
-  text[],
-  integer,
-  text,
-  text,
-  boolean,
-  integer,
-  date,
-  boolean,
-  text,
-  boolean,
-  boolean,
-  text
-);
-
-create or replace function public.create_event_draft(
+create function public.create_event_draft(
   p_title text,
   p_host_name text,
   p_host_email text,
@@ -228,66 +184,6 @@ begin
 end;
 $$;
 
-create or replace function public.create_event_draft(
-  p_description text,
-  p_ends_at timestamptz,
-  p_event_type text,
-  p_expires_in_days integer,
-  p_host_email text,
-  p_host_name text,
-  p_keyword text,
-  p_location text,
-  p_remind_after_days integer,
-  p_requires_approval boolean,
-  p_rsvp_deadline date,
-  p_send_final_reminder_at_deadline boolean,
-  p_send_rsvp_reminders boolean,
-  p_starts_at timestamptz,
-  p_title text,
-  p_visible_in_feed boolean,
-  p_event_time_zone text default null,
-  p_external_url text default null
-)
-returns table (
-  id uuid,
-  slug text,
-  manage_handle text
-)
-language sql
-security definer
-set search_path = public
-as $$
-  select *
-  from public.create_event_draft(
-    p_title := p_title,
-    p_host_name := p_host_name,
-    p_host_email := p_host_email,
-    p_keyword := p_keyword,
-    p_starts_at := p_starts_at,
-    p_ends_at := p_ends_at,
-    p_location := p_location,
-    p_description := p_description,
-    p_event_url := null,
-    p_cover_image_url := null,
-    p_gif_key := 'waves',
-    p_event_type := p_event_type,
-    p_proposed_dates := '{}',
-    p_visibility := 2,
-    p_visible_in_feed := p_visible_in_feed,
-    p_requires_approval := p_requires_approval,
-    p_expires_in_days := p_expires_in_days,
-    p_invite_list_visibility := 'host_only',
-    p_guest_list_visibility := 'guests_can_see',
-    p_send_rsvp_reminders := p_send_rsvp_reminders,
-    p_remind_after_days := p_remind_after_days,
-    p_rsvp_deadline := p_rsvp_deadline,
-    p_send_final_reminder_at_deadline := p_send_final_reminder_at_deadline,
-    p_forwarding_mode := null,
-    p_event_time_zone := p_event_time_zone,
-    p_external_url := p_external_url
-  );
-$$;
-
 create or replace function public.update_event_by_manage_token(
   p_manage_token text,
   p_title text,
@@ -382,27 +278,6 @@ grant all on function public.create_event_draft(
   date,
   boolean,
   text,
-  text,
-  text
-) to anon, authenticated, service_role;
-
-grant all on function public.create_event_draft(
-  text,
-  timestamptz,
-  text,
-  integer,
-  text,
-  text,
-  text,
-  text,
-  integer,
-  boolean,
-  date,
-  boolean,
-  boolean,
-  timestamptz,
-  text,
-  boolean,
   text,
   text
 ) to anon, authenticated, service_role;
