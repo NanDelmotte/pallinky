@@ -3,13 +3,14 @@
 /** * Path: app/admin/users.tsx 
  * Description: Admin tool to manage beta tester profiles and photos. */
 
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Image, TouchableOpacity, Alert, ActivityIndicator, FlatList } from 'react-native';
+import React, { useCallback, useState, useEffect } from 'react';
+import { View, StyleSheet, Image, TouchableOpacity, Alert, ActivityIndicator, FlatList } from 'react-native';
 import { StyledText } from '@pallinky/ui';
 import { supabase } from '@pallinky/core';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
+import { useI18n } from '@pallinky/i18n/client';
 
 interface Profile {
   email_lc: string;
@@ -21,12 +22,9 @@ export default function AdminUserManagement() {
   const [loading, setLoading] = useState(true);
   const [uploadingFor, setUploadingFor] = useState<string | null>(null);
   const router = useRouter();
+  const { t } = useI18n();
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  async function fetchUsers() {
+  const fetchUsers = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -36,11 +34,15 @@ export default function AdminUserManagement() {
       if (error) throw error;
       setUsers(data || []);
     } catch (e: any) {
-      Alert.alert("Error", e.message);
+      Alert.alert(t("common_error"), e.message);
     } finally {
       setLoading(false);
     }
-  }
+  }, [t]);
+
+  useEffect(() => {
+    void fetchUsers();
+  }, [fetchUsers]);
 
   const pickAndUpload = async (targetEmail: string) => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -79,9 +81,9 @@ export default function AdminUserManagement() {
 
       // Refresh local state
       setUsers(prev => prev.map(u => u.email_lc === targetEmail ? { ...u, avatar_url: publicUrl } : u));
-      Alert.alert("Success", `Updated photo for ${targetEmail}`);
+      Alert.alert(t("common_success"), t("admin_photo_updated", { email: targetEmail }));
     } catch (err: any) {
-      Alert.alert("Upload Error", err.message);
+      Alert.alert(t("admin_upload_error"), err.message);
     } finally {
       setUploadingFor(null);
     }
@@ -95,7 +97,7 @@ export default function AdminUserManagement() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#1f2a1b" />
         </TouchableOpacity>
-        <StyledText style={styles.headerTitle}>Beta Testers</StyledText>
+        <StyledText style={styles.headerTitle}>{t("admin_users_title")}</StyledText>
         <View style={{ width: 24 }} />
       </View>
 

@@ -4,6 +4,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { formatInEventTimeZone } from '@pallinky/core';
+import { useI18n } from '@pallinky/i18n/client';
 
 type Theme = {
   bg: string;
@@ -12,8 +13,8 @@ type Theme = {
   isDark: boolean;
 };
 
-function formatSeriesDateTime(event: any) {
-  if (!event?.starts_at) return 'Date TBD';
+function formatSeriesDateTime(event: any, fallback: string) {
+  if (!event?.starts_at) return fallback;
 
   return formatInEventTimeZone(
     event.starts_at,
@@ -44,11 +45,13 @@ export default function DetailsSeriesSection({
   visibleSeriesEvents: any[];
   onOpenSeriesEvent: (slug: string) => void;
 }) {
+  const { t } = useI18n();
+
   if (!visibleSeriesEvents.length && !event?.series_id) return null;
 
   return (
     <View style={styles.seriesSection}>
-      <Text style={[styles.sectionTitle, { color: theme.text }]}>Series</Text>
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('event_series')}</Text>
 
       <View style={styles.seriesList}>
         <TouchableOpacity
@@ -64,14 +67,14 @@ export default function DetailsSeriesSection({
         >
           <View style={styles.seriesRowTextWrap}>
             <Text style={[styles.seriesRowTitle, { color: theme.text }]}>
-              {event.title || 'This event'}
+              {event.title || t('event_this_event')}
             </Text>
             <Text style={[styles.seriesRowMeta, { color: theme.text }]}>
-              {formatSeriesDateTime(event)}
+              {formatSeriesDateTime(event, t('common_tbd'))}
             </Text>
           </View>
 
-          <Text style={[styles.seriesCurrentBadge, { color: theme.accent }]}>Current</Text>
+          <Text style={[styles.seriesCurrentBadge, { color: theme.accent }]}>{t('event_current')}</Text>
         </TouchableOpacity>
 
         {visibleSeriesEvents.map((item: any) => (
@@ -88,10 +91,10 @@ export default function DetailsSeriesSection({
           >
             <View style={styles.seriesRowTextWrap}>
               <Text style={[styles.seriesRowTitle, { color: theme.text }]}>
-                {item.title || 'Untitled event'}
+                {item.title || t('activity_card_untitled_event')}
               </Text>
               <Text style={[styles.seriesRowMeta, { color: theme.text }]}>
-                {formatSeriesDateTime(item)}
+                {formatSeriesDateTime(item, t('common_tbd'))}
               </Text>
             </View>
 

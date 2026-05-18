@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StyledText } from '@pallinky/ui';
 import { supabase, useSession } from '@pallinky/core';
+import { useI18n } from '@pallinky/i18n/client';
 
 type ReportRow = {
   id: string;
@@ -34,6 +35,7 @@ function formatDate(value: string | null) {
 export default function AdminReportsScreen() {
   const router = useRouter();
   const { session } = useSession();
+  const { t } = useI18n();
 
   const email = session?.user?.email?.toLowerCase().trim() || '';
   const isAdmin = email === 'nanbowles@gmail.com';
@@ -62,11 +64,11 @@ export default function AdminReportsScreen() {
 
       setReports((data || []) as ReportRow[]);
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Could not load reports.');
+      Alert.alert(t('common_error'), err?.message || t('admin_reports_load_error'));
     } finally {
       setLoading(false);
     }
-  }, [isAdmin]);
+  }, [isAdmin, t]);
 
   useEffect(() => {
     void loadReports();
@@ -78,7 +80,7 @@ export default function AdminReportsScreen() {
     });
 
     if (error) {
-      Alert.alert('Error', error.message);
+      Alert.alert(t('common_error'), error.message);
       return;
     }
 
@@ -91,7 +93,7 @@ export default function AdminReportsScreen() {
     });
 
     if (error) {
-      Alert.alert('Error', error.message);
+      Alert.alert(t('common_error'), error.message);
       return;
     }
 
@@ -101,7 +103,7 @@ export default function AdminReportsScreen() {
   if (!isAdmin) {
     return (
       <View style={styles.centered}>
-        <StyledText style={styles.deniedTitle}>Admin access only</StyledText>
+        <StyledText style={styles.deniedTitle}>{t('admin_reports_access_only')}</StyledText>
       </View>
     );
   }
@@ -112,9 +114,9 @@ export default function AdminReportsScreen() {
         <Ionicons name="arrow-back" size={28} color="#43691b" />
       </TouchableOpacity>
 
-      <StyledText style={styles.headerTitle}>Reports</StyledText>
+      <StyledText style={styles.headerTitle}>{t('admin_reports_title')}</StyledText>
       <StyledText style={styles.subtitle}>
-        Review objectionable content and abusive-user reports within 24 hours.
+        {t('admin_reports_subtitle')}
       </StyledText>
 
       {loading ? (
@@ -123,14 +125,14 @@ export default function AdminReportsScreen() {
         </View>
       ) : reports.length === 0 ? (
         <View style={styles.emptyCard}>
-          <StyledText style={styles.emptyText}>No reports yet.</StyledText>
+          <StyledText style={styles.emptyText}>{t('admin_reports_empty')}</StyledText>
         </View>
       ) : (
         reports.map((report) => (
           <View key={report.id} style={styles.card}>
             <View style={styles.cardTop}>
               <StyledText style={styles.reason}>
-                {report.reason || 'Report'}
+                {report.reason || t('admin_reports_fallback_reason')}
               </StyledText>
 
               <View
@@ -144,24 +146,24 @@ export default function AdminReportsScreen() {
                 ]}
               >
                 <StyledText style={styles.statusText}>
-                  {report.status || 'open'}
+                  {report.status || t('admin_reports_status_open')}
                 </StyledText>
               </View>
             </View>
 
             <StyledText style={styles.meta}>
-              Type: {report.target_type || 'unknown'}
+              {t('admin_reports_type', { type: report.target_type || t('admin_reports_unknown') })}
             </StyledText>
 
             {report.target_user_email ? (
               <StyledText style={styles.meta}>
-                Target: {report.target_user_email}
+                {t('admin_reports_target', { target: report.target_user_email })}
               </StyledText>
             ) : null}
 
             {report.reporter_email ? (
               <StyledText style={styles.meta}>
-                Reporter: {report.reporter_email}
+                {t('admin_reports_reporter', { reporter: report.reporter_email })}
               </StyledText>
             ) : null}
 
@@ -171,7 +173,7 @@ export default function AdminReportsScreen() {
 
             {report.created_at ? (
               <StyledText style={styles.date}>
-                Created: {formatDate(report.created_at)}
+                {t('admin_reports_created', { date: formatDate(report.created_at) })}
               </StyledText>
             ) : null}
 
@@ -180,14 +182,14 @@ export default function AdminReportsScreen() {
                 style={styles.reviewBtn}
                 onPress={() => void markReviewed(report.id)}
               >
-                <StyledText style={styles.reviewBtnText}>Mark reviewed</StyledText>
+                <StyledText style={styles.reviewBtnText}>{t('admin_reports_mark_reviewed')}</StyledText>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.actionBtn}
                 onPress={() => void markActioned(report.id)}
               >
-                <StyledText style={styles.actionBtnText}>Mark actioned</StyledText>
+                <StyledText style={styles.actionBtnText}>{t('admin_reports_mark_actioned')}</StyledText>
               </TouchableOpacity>
             </View>
           </View>
