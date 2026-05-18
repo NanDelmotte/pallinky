@@ -495,6 +495,7 @@ export const en: Record<TranslationKey, string> = {
   event_no_votes: "No votes yet",
   event_most_popular: "Most popular",
   event_guest_fallback: "Guest",
+  event_organized_by: "Organized by {host}",
   event_requests: "Requests",
   event_pending_approvals: "Pending approvals",
   event_manage_poll: "Manage poll",

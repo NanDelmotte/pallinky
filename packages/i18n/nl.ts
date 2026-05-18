@@ -533,6 +533,7 @@ export const nl: Record<TranslationKey, string> = {
   event_no_votes: "Nog geen stemmen",
   event_most_popular: "Populairst",
   event_guest_fallback: "Gast",
+  event_organized_by: "Georganiseerd door {host}",
   event_requests: "Verzoeken",
   event_pending_approvals: "Wachtende goedkeuringen",
   event_manage_poll: "Poll beheren",

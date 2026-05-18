@@ -460,6 +460,7 @@ export type TranslationKey =
   | "event_no_votes"
   | "event_most_popular"
   | "event_guest_fallback"
+  | "event_organized_by"
   | "event_requests"
   | "event_pending_approvals"
   | "event_manage_poll"

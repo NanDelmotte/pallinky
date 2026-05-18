@@ -165,6 +165,7 @@ function HostHeaderSection({
   openingDmForEmail,
   hostEmailLc,
   onOpenHostDm,
+  t,
 }: {
   theme: Theme;
   hostAvatarUrl: string | null;
@@ -174,6 +175,7 @@ function HostHeaderSection({
   openingDmForEmail: string | null;
   hostEmailLc: string;
   onOpenHostDm: () => void;
+  t: any;
 }) {
   return (
     <View style={styles.hostHeaderWrap}>
@@ -203,8 +205,7 @@ function HostHeaderSection({
 
         <View style={styles.hostHeaderTextWrap}>
           <Text style={[styles.hostHeaderText, { color: theme.text }]}>
-            <Text style={styles.hostHeaderMuted}>Organized by </Text>
-            <Text style={styles.hostHeaderName}>{hostName}</Text>
+            {t('event_organized_by', { host: hostName })}
           </Text>
 
           {canOpenHostDm && openingDmForEmail === hostEmailLc ? (
@@ -1057,6 +1058,7 @@ setInvites(invitesRes.data || []);
             openingDmForEmail={openingDmForEmail}
             hostEmailLc={hostEmailLc}
             onOpenHostDm={() => handleOpenOrCreateDm(hostEmailLc)}
+            t={t}
           />
 
           {isFixedDate && event.starts_at ? (
