@@ -30,6 +30,7 @@ import { StyledText } from '@pallinky/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { supabase, useSession } from '@pallinky/core';
+import { useI18n } from '@pallinky/i18n/client';
 
 import EventFeedCard from '../../../../packages/ui/src/EventFeedCard';
 
@@ -272,6 +273,8 @@ function FormalEventCard({
   avatarByEmail,
   unreadMessages = 0,
   onPress,
+  lang,
+  labels,
 }: {
   item: EventRow;
   currentUserEmail: string;
@@ -280,6 +283,8 @@ function FormalEventCard({
   avatarByEmail: Record<string, string>;
   unreadMessages?: number;
   onPress: () => void;
+  lang: any;
+  labels: { respond: string; manage: string; viewEvent: string };
 }) {
   const isHost = normalizeEmail(item.host_email) === currentUserEmail;
   const hostEmail = normalizeEmail(item.host_email);
@@ -315,10 +320,10 @@ function FormalEventCard({
 
   const actionLabel =
     variant === 'action'
-      ? 'Respond'
+      ? labels.respond
       : isHost
-      ? 'Manage'
-      : 'View Event';
+      ? labels.manage
+      : labels.viewEvent;
 
   return (
     <View style={styles.cardWrapper}>
@@ -339,6 +344,7 @@ function FormalEventCard({
         participantAvatars={participantAvatars}
         participantCount={participantAvatars.length}
         isSeries={!!item.series_id}
+        lang={lang}
         onPress={onPress}
       />
     </View>
@@ -347,6 +353,12 @@ function FormalEventCard({
 
 export default function EventsScreen() {
   const { userEmail: sessionEmail } = useSession();
+  const { language, t } = useI18n();
+  const cardLabels = useMemo(() => ({
+    respond: t('common_respond'),
+    manage: t('common_manage'),
+    viewEvent: t('common_view_event'),
+  }), [t]);
 
   const [events, setEvents] = useState<EventRow[]>([]);
   const [rsvps, setRsvps] = useState<RsvpRow[]>([]);
@@ -767,6 +779,8 @@ export default function EventsScreen() {
                 rsvps={rsvps}
                 avatarByEmail={avatarByEmail}
                 onPress={() => router.push(`/event/${item.slug}/details`)}
+                lang={language}
+                labels={cardLabels}
               />
             );
           })}
@@ -783,6 +797,8 @@ export default function EventsScreen() {
               avatarByEmail={avatarByEmail}
               unreadMessages={0}
               onPress={() => router.push(`/event/${item.slug}/details`)}
+              lang={language}
+              labels={cardLabels}
             />
           ))}
         </Section>
@@ -814,6 +830,8 @@ export default function EventsScreen() {
               rsvps={rsvps}
               avatarByEmail={avatarByEmail}
               onPress={() => router.push(`/event/${item.slug}/details`)}
+              lang={language}
+              labels={cardLabels}
             />
           ))}
         </Section>

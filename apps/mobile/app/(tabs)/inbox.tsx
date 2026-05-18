@@ -20,6 +20,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { ScrollView, Swipeable } from 'react-native-gesture-handler';
 import { StyledText } from '@pallinky/ui';
 import { supabase, useSession } from '@pallinky/core';
+import { useI18n } from '@pallinky/i18n/client';
 
 const COLORS = {
   background: '#F6F7F9',
@@ -59,14 +60,14 @@ type EventMap = Record<
   }
 >;
 
-function formatRelativeDate(value: string | null | undefined) {
+function formatRelativeDate(value: string | null | undefined, t: any) {
   if (!value) return '';
   const date = new Date(value);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMin = Math.floor(diffMs / 60000);
 
-  if (diffMin < 1) return 'Just now';
+  if (diffMin < 1) return t('inbox_just_now');
   if (diffMin < 60) return `${diffMin}m ago`;
 
   const diffHr = Math.floor(diffMin / 60);
@@ -86,94 +87,95 @@ function getDmThreadId(row: InboxRow) {
   return row.thread_id || row.latest_payload?.thread_id || null;
 }
 
-function getDmCounterpartName(row: InboxRow) {
-  return row.latest_payload?.counterpart_name || 'Direct message';
+function getDmCounterpartName(row: InboxRow, t: any) {
+  return row.latest_payload?.counterpart_name || t('inbox_direct_message');
 }
 
-function getDmPreview(row: InboxRow) {
-  return row.latest_message || row.latest_payload?.preview || 'New message';
+function getDmPreview(row: InboxRow, t: any) {
+  return row.latest_message || row.latest_payload?.preview || t('inbox_new_message');
 }
 
-function getRowTitle(row: InboxRow, eventTitle: string) {
+function getRowTitle(row: InboxRow, eventTitle: string, t: any) {
   if (isEventDmRow(row)) {
-    return getDmCounterpartName(row);
+    return getDmCounterpartName(row, t);
   }
 
   const payload = row.latest_payload || {};
 
   switch (row.notification_type) {
     case 'invite_created':
-      if (payload.event_type === 'reach_out') return 'Reaching Out';
-      return payload.is_series === true ? 'Series invitation' : 'Invitation';
+      if (payload.event_type === 'reach_out') return t('inbox_reaching_out');
+      return payload.is_series === true ? t('inbox_series_invitation') : t('inbox_invitation');
 
     case 'chat_message_batch':
-      return row.unread_count > 1 ? `${row.unread_count} new messages` : 'New message';
+      return row.unread_count > 1 ? t('inbox_unread', { count: String(row.unread_count) }) : t('inbox_new_message');
     case 'event_updated':
-      return 'Event updated';
+      return t('inbox_event_updated');
     case 'rsvp_received':
-      return row.unread_count > 1 ? `${row.unread_count} new RSVPs` : 'New RSVP';
+      return row.unread_count > 1 ? t('inbox_unread', { count: String(row.unread_count) }) : t('inbox_new_rsvp');
     case 'join_request_created':
-      return row.unread_count > 1 ? `${row.unread_count} join requests` : 'Join request';
+      return row.unread_count > 1 ? t('inbox_unread', { count: String(row.unread_count) }) : t('inbox_join_request');
     case 'join_request_approved':
-      return 'Request approved';
+      return t('inbox_request_approved');
     case 'join_request_denied':
-      return 'Request declined';
+      return t('inbox_request_declined');
     case 'event_cancelled':
-      return 'Event cancelled';
+      return t('inbox_event_cancelled');
     case 'host_message':
-      return 'Message from host';
+      return t('inbox_message_from_host');
     case 'reach_out_suggestion':
-      return 'New plan suggestion';
+      return t('inbox_plan_suggestion');
     case 'rsvp_deadline_reminder':
-      return 'RSVP reminder';
+      return t('inbox_rsvp_reminder');
     case 'guest_rsvp_confirmation':
-      return 'RSVP recorded';
+      return t('inbox_rsvp_recorded');
     default:
-      return eventTitle || 'Notification';
+      return eventTitle || t('inbox_notification');
   }
 }
 
-function getRowBody(row: InboxRow, eventTitle: string) {
+function getRowBody(row: InboxRow, eventTitle: string, t: any) {
   const payload = row.latest_payload || {};
 
   if (isEventDmRow(row)) {
-    return `${eventTitle} — ${getDmPreview(row)}`;
+    return `${eventTitle} — ${getDmPreview(row, t)}`;
   }
 
   switch (row.notification_type) {
     case 'invite_created':
   return payload.event_type === 'reach_out'
-    ? `${payload.host_name || 'Someone'} reached out for ${eventTitle}`
-    : `${payload.host_name || 'Someone'} invited you to ${eventTitle}`;
+    ? t('inbox_reached_out_body', { host: payload.host_name || t('inbox_someone'), event: eventTitle })
+    : t('inbox_invited_body', { host: payload.host_name || t('inbox_someone'), event: eventTitle });
     case 'chat_message_batch':
-      return `In ${eventTitle}`;
+      return t('inbox_in_event', { event: eventTitle });
     case 'event_updated':
-      return `Details changed for ${eventTitle}`;
+      return t('inbox_details_changed', { event: eventTitle });
     case 'rsvp_received':
       return row.unread_count > 1
-        ? `${row.unread_count} people responded to ${eventTitle}`
-        : `${payload.guest_name || 'Someone'} responded to ${eventTitle}`;
+        ? t('inbox_people_responded', { count: String(row.unread_count), event: eventTitle })
+        : t('inbox_someone_responded', { name: payload.guest_name || t('inbox_someone'), event: eventTitle });
     case 'join_request_created':
       return row.unread_count > 1
-        ? `${row.unread_count} people want to join ${eventTitle}`
-        : `${payload.guest_name || 'Someone'} wants to join ${eventTitle}`;
+        ? t('inbox_people_want_join', { count: String(row.unread_count), event: eventTitle })
+        : t('inbox_someone_wants_join', { name: payload.guest_name || t('inbox_someone'), event: eventTitle });
     case 'join_request_approved':
-      return `You're in for ${eventTitle}`;
+      return t('inbox_youre_in_for', { event: eventTitle });
     case 'join_request_denied':
-      return `Your request for ${eventTitle} was declined`;
+      return t('inbox_request_declined_body', { event: eventTitle });
     case 'reach_out_suggestion':
-  return `${payload.guest_name || 'Someone'} suggested something for ${eventTitle}`;case 'event_cancelled':
+  return t('inbox_suggested_body', { name: payload.guest_name || t('inbox_someone'), event: eventTitle });
+    case 'event_cancelled':
       return payload.message
         ? `${eventTitle} — ${payload.message}`
-        : `${eventTitle} was cancelled`;
+        : t('inbox_cancelled_body', { event: eventTitle });
     case 'host_message':
-      return payload.message || row.latest_message || `Message about ${eventTitle}`;
+      return payload.message || row.latest_message || t('inbox_message_about', { event: eventTitle });
     case 'rsvp_deadline_reminder':
-      return `Please reply to ${eventTitle}`;
+      return t('inbox_reply_to', { event: eventTitle });
     case 'guest_rsvp_confirmation':
-      return `Your RSVP for ${eventTitle} was recorded`;
+      return t('inbox_rsvp_recorded_body', { event: eventTitle });
     default:
-      return row.latest_message || eventTitle || 'You have a new notification';
+      return row.latest_message || eventTitle || t('inbox_new_notification');
   }
 }
 
@@ -213,6 +215,7 @@ function getRowIcon(row: InboxRow) {
 export default function InboxTabScreen() {
   const router = useRouter();
   const { session } = useSession();
+  const { t } = useI18n();
 
   const userEmailLc = session?.user?.email?.toLowerCase().trim() || '';
   const [loading, setLoading] = useState(true);
@@ -311,12 +314,12 @@ useEffect(() => {
       } catch (err: any) {
         console.log('Inbox dismiss error:', err);
         setRows(previousRows);
-        Alert.alert('Error', err?.message || 'Could not remove notification.');
+        Alert.alert(t('common_error'), err?.message || t('inbox_remove_error_body'));
       } finally {
         setDismissingId(null);
       }
     },
-    [rows]
+    [rows, t]
   );
 
   const handleOpenRow = useCallback(
@@ -328,7 +331,7 @@ useEffect(() => {
         const threadId = getDmThreadId(row);
 
         if (!threadId) {
-          Alert.alert('Direct message unavailable', 'Missing DM thread id.');
+          Alert.alert(t('inbox_dm_unavailable'), t('inbox_missing_dm_thread'));
           return;
         }
 
@@ -365,24 +368,24 @@ useEffect(() => {
 
       router.push(`/event/${eventInfo.slug}/details` as any);
     },
-    [eventsById, router]
+    [eventsById, router, t]
   );
 
   const renderDismissActions = useCallback(() => {
   return (
     <View style={styles.dismissAction}>
       <Ionicons name="trash-outline" size={20} color="#fff" />
-      <StyledText style={styles.dismissActionText}>Dismiss</StyledText>
+      <StyledText style={styles.dismissActionText}>{t('inbox_dismiss')}</StyledText>
     </View>
   );
-}, []);
+}, [t]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <StyledText style={styles.title}>Inbox</StyledText>
+        <StyledText style={styles.title}>{t('inbox_title')}</StyledText>
         <StyledText style={styles.subtitle}>
-          {unreadTotal > 0 ? `${unreadTotal} unread` : 'All caught up'}
+          {unreadTotal > 0 ? t('inbox_unread', { count: String(unreadTotal) }) : t('inbox_all_caught_up')}
         </StyledText>
       </View>
 
@@ -399,9 +402,9 @@ useEffect(() => {
           {rows.length === 0 ? (
             <View style={styles.emptyCard}>
               <Ionicons name="mail-open-outline" size={28} color={COLORS.textMuted} />
-              <StyledText style={styles.emptyTitle}>No notifications yet</StyledText>
+              <StyledText style={styles.emptyTitle}>{t('inbox_empty_title')}</StyledText>
               <StyledText style={styles.emptyBody}>
-                Invites, chat updates, RSVPs, host messages, and direct messages will show up here.
+                {t('inbox_empty_body')}
               </StyledText>
             </View>
           ) : (
@@ -411,7 +414,7 @@ useEffect(() => {
                 row.latest_payload?.event_title ||
                 eventInfo?.title ||
                 row.latest_payload?.title ||
-                'your event';
+                t('inbox_your_event');
 
               const isDm = isEventDmRow(row);
               const canDismiss = !isDm && row.can_dismiss !== false;
@@ -427,15 +430,15 @@ useEffect(() => {
                   <View style={styles.rowMain}>
                     <View style={styles.rowTop}>
                       <StyledText style={styles.rowTitle}>
-                        {getRowTitle(row, eventTitle)}
+                        {getRowTitle(row, eventTitle, t)}
                       </StyledText>
                       <StyledText style={styles.rowTime}>
-                        {formatRelativeDate(row.last_received_at)}
+                        {formatRelativeDate(row.last_received_at, t)}
                       </StyledText>
                     </View>
 
                     <StyledText style={styles.rowBody}>
-                      {getRowBody(row, eventTitle)}
+                      {getRowBody(row, eventTitle, t)}
                     </StyledText>
 
                     <View style={styles.rowBottom}>
