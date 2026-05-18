@@ -27,6 +27,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 
 import { StyledText } from '@pallinky/ui';
+import { useI18n } from '@pallinky/i18n/client';
 import { buildInviteMessage, useHostGate } from '@pallinky/core';
 
 import IdentityModal from '../../components/IdentityModal';
@@ -104,6 +105,7 @@ export default function SuccessScreen() {
   const isPublicEvent = visibilityMode === 3;
 
   const { isHost } = useHostGate(slug);
+  const { t } = useI18n();
 
   const [showConfetti, setShowConfetti] = useState(true);
   const [identityVisible, setIdentityVisible] = useState(false);
@@ -175,18 +177,18 @@ export default function SuccessScreen() {
 
 await Share.share({ message });
     } catch (error: any) {
-      Alert.alert('Share Error', error?.message ?? 'Could not open the share sheet.');
+      Alert.alert(t('create_success_share_error'), error?.message ?? t('create_success_share_sheet_error'));
     }
   };
 
   const copyToClipboard = async () => {
     await Clipboard.setStringAsync(shareLink);
-    Alert.alert('Link Copied!', 'Paste this into your browser or chat.');
+    Alert.alert(t('create_success_link_copied'), t('create_success_link_copied_body'));
   };
 
   const handleStudioNav = () => {
     if (!manage_handle) {
-      Alert.alert('Missing Link', 'We could not find the manage handle for Design Studio.');
+      Alert.alert(t('create_success_missing_link'), t('create_success_missing_manage_handle'));
       return;
     }
 
@@ -218,17 +220,17 @@ await Share.share({ message });
               <View style={styles.iconCircle}>
                 <Ionicons name="checkmark-circle" size={60} color={COLORS.primary} />
               </View>
-              <StyledText style={styles.title}>Invite Created!</StyledText>
+              <StyledText style={styles.title}>{t('create_success_title')}</StyledText>
             </View>
 
             <View style={styles.temptationCard}>
               <View style={styles.temptationHeader}>
                 <Ionicons name="sparkles" size={18} color={COLORS.secondary} />
-                <StyledText style={styles.temptationTitle}>Make it pop?</StyledText>
+                <StyledText style={styles.temptationTitle}>{t('create_success_make_pop')}</StyledText>
               </View>
 
               <StyledText style={styles.temptationSub}>
-                Add a GIF and colors to delight your guests!
+                {t('create_success_make_pop_body')}
               </StyledText>
 
               <TouchableOpacity style={styles.studioBtn} onPress={handleStudioNav}>
@@ -237,7 +239,7 @@ await Share.share({ message });
                     <StyledText style={styles.miniText}>Fiesta!</StyledText>
                   </View>
                   <View style={styles.studioTextWrap}>
-                    <StyledText style={styles.studioBtnTitle}>Open Design Studio</StyledText>
+                    <StyledText style={styles.studioBtnTitle}>{t('create_success_open_studio')}</StyledText>
                   </View>
                   <Ionicons name="chevron-forward" size={20} color={COLORS.secondary} />
                 </View>
@@ -265,7 +267,7 @@ await Share.share({ message });
 */}
             
               <View style={styles.card}>
-                <StyledText style={styles.label}>Your Invite Link</StyledText>
+                <StyledText style={styles.label}>{t('create_success_invite_link')}</StyledText>
 
                 <View style={styles.previewBox}>
                   <TextInput
@@ -273,7 +275,7 @@ await Share.share({ message });
                     value={customMessage}
                     onChangeText={setCustomMessage}
                     multiline
-                    placeholder="Add a message..."
+                    placeholder={t('create_success_add_message')}
                     placeholderTextColor={COLORS.textMuted}
                   />
                   <StyledText style={styles.linkTextPreview}>{shareLink}</StyledText>
@@ -286,7 +288,7 @@ await Share.share({ message });
                       size={20}
                       color="#fff"
                     />
-                    <StyledText style={styles.btnText}>Share Link</StyledText>
+                    <StyledText style={styles.btnText}>{t('create_success_share_link')}</StyledText>
                   </TouchableOpacity>
 
                   <TouchableOpacity style={styles.copyBtn} onPress={copyToClipboard}>
@@ -296,9 +298,9 @@ await Share.share({ message });
 
                 <View style={styles.qrCard}>
                   <Image source={{ uri: qrImageUri }} style={styles.qrImage} />
-                  <StyledText style={styles.qrTitle}>Scan to open event</StyledText>
+                  <StyledText style={styles.qrTitle}>{t('create_success_qr_title')}</StyledText>
                   <StyledText style={styles.qrSub}>
-                    Guests can scan this code to open the invite link directly.
+                    {t('create_success_qr_body')}
                   </StyledText>
                 </View>
               </View>
@@ -313,9 +315,9 @@ await Share.share({ message });
               </View>
 
               <View style={styles.cardTextContent}>
-                <StyledText style={styles.cardTitle}>Open Event</StyledText>
+                <StyledText style={styles.cardTitle}>{t('create_success_open_event')}</StyledText>
                 <StyledText style={styles.cardDesc}>
-                  View the event details and guest-facing page.
+                  {t('create_success_open_event_body')}
                 </StyledText>
               </View>
 
@@ -323,7 +325,7 @@ await Share.share({ message });
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.homeBtn} onPress={() => router.replace('/(tabs)')}>
-              <StyledText style={styles.homeBtnText}>Back to My Hub</StyledText>
+              <StyledText style={styles.homeBtnText}>{t('create_success_back_hub')}</StyledText>
             </TouchableOpacity>
           </ScrollView>
         </KeyboardAvoidingView>

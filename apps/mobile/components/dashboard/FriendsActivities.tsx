@@ -10,6 +10,7 @@ import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import ActivityFeedCard from '../../../../packages/ui/src/ActivityFeedCard';
 import { supabase } from '@pallinky/core';
+import { useI18n } from '@pallinky/i18n/client';
 
 interface FriendsActivitiesProps {
   data: {
@@ -91,6 +92,7 @@ export default function FriendsActivities({
   signals = [],
 }: FriendsActivitiesProps) {
   const router = useRouter();
+  const { t } = useI18n();
   const {
     events = [],
     rsvps = [],
@@ -303,7 +305,7 @@ export default function FriendsActivities({
                     setDismissedEventIds((prev) =>
                       prev.filter((id) => id !== eventId)
                     );
-                    Alert.alert('Error', 'Could not hide card.');
+                    Alert.alert(t('common_error'), t('common_hide_card_error'));
                     return;
                   }
 
@@ -311,12 +313,12 @@ export default function FriendsActivities({
                 };
 
                 Alert.alert(
-                  'Hide card',
-                  'This hides the card from your feed. You can always restore it in settings.',
+                  t('common_hide_card_title'),
+                  t('common_hide_card_body'),
                   [
-                    { text: 'Cancel', style: 'cancel' },
+                    { text: t('common_cancel'), style: 'cancel' },
                     {
-                      text: 'Hide',
+                      text: t('common_hide'),
                       onPress: async () => {
                         await executeDismiss();
                       },

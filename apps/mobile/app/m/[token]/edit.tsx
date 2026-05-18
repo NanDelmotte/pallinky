@@ -28,6 +28,8 @@ import DateTimePicker, {
 
 import { getLocalTimeZone, supabase } from "@pallinky/core";
 import { StyledInput, StyledText } from "@pallinky/ui";
+import { useI18n } from "@pallinky/i18n/client";
+import type { TranslationKey } from "@pallinky/i18n";
 
 import DateOptionPicker from "../../../components/DateOptionPicker";
 import LocationSearch from "../../../components/LocationSearch";
@@ -66,20 +68,15 @@ const COLORS = {
   overlay: "rgba(31, 42, 27, 0.35)",
 };
 
-function visibilitySummary(visibleInFeed: boolean, requiresApproval: boolean) {
-  if (visibleInFeed && requiresApproval) {
-    return "People can see this • Approval required";
-  }
-
-  if (visibleInFeed && !requiresApproval) {
-    return "People can see this • Anyone can RSVP";
-  }
-
-  if (!visibleInFeed && requiresApproval) {
-    return "Link only • Approval required";
-  }
-
-  return "Link only • Anyone can RSVP";
+function visibilitySummary(
+  visibleInFeed: boolean,
+  requiresApproval: boolean,
+  translate: (key: TranslationKey) => string,
+) {
+  if (visibleInFeed && requiresApproval) return translate("visibility_public_approval");
+  if (visibleInFeed && !requiresApproval) return translate("visibility_public_open");
+  if (!visibleInFeed && requiresApproval) return translate("visibility_link_approval");
+  return translate("visibility_link_open");
 }
 
 function stripLocationFromDescription(value: string) {
@@ -104,6 +101,8 @@ export default function EditCreateScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const token = typeof params.token === "string" ? params.token : "";
+  const { t, language } = useI18n();
+  const dateLocale = language === "fr" ? "fr-FR" : language === "nl" ? "nl-NL" : "en-GB";
 
   const titleParam = typeof params.title === "string" ? params.title : "";
   const descriptionParam =
@@ -299,12 +298,12 @@ export default function EditCreateScreen() {
 
   const saveChanges = async () => {
     if (!token) {
-      Alert.alert("Missing token", "Could not identify this event.");
+      Alert.alert(t("manage_missing_token_title"), t("manage_missing_token_body"));
       return;
     }
 
     if (!form.title.trim()) {
-      Alert.alert("Required", "Please provide a title.");
+      Alert.alert(t("manage_required"), t("manage_required_title_body"));
       return;
     }
 
@@ -362,10 +361,10 @@ export default function EditCreateScreen() {
 
       if (error) throw error;
 
-      Alert.alert("Saved", "Event updated.");
+      Alert.alert(t("manage_saved"), t("manage_event_updated"));
       router.replace(`/m/${token}` as any);
     } catch (e: any) {
-      Alert.alert("Save Failed", e?.message ?? "Could not update your event.");
+      Alert.alert(t("manage_save_failed"), e?.message ?? t("manage_update_error"));
     } finally {
       setLoading(false);
     }
@@ -393,20 +392,20 @@ export default function EditCreateScreen() {
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
         >
-          <StyledText style={styles.stepTitle}>Edit your Event</StyledText>
+          <StyledText style={styles.stepTitle}>{t("manage_edit_event")}</StyledText>
           <StyledText style={styles.sectionHint}>
-            This updates your current event
+            {t("manage_update_hint")}
           </StyledText>
 
-          <StyledText style={styles.label}>TITLE</StyledText>
+          <StyledText style={styles.label}>{t("manage_label_title")}</StyledText>
           <StyledInput
-            placeholder="e.g. Dinner at 8"
+            placeholder={t("create_title_placeholder")}
             value={form.title}
             onChangeText={(t: string) => updateForm("title", t)}
             style={styles.inputStyle}
           />
 
-          <StyledText style={styles.label}>WHEN</StyledText>
+          <StyledText style={styles.label}>{t("manage_label_when")}</StyledText>
 
           <View style={styles.whenToggleRow}>
             <TouchableOpacity
@@ -422,7 +421,7 @@ export default function EditCreateScreen() {
                   form.whenMode === "specific" && styles.whenToggleTextSelected,
                 ]}
               >
-                DATE
+                {t("manage_date")}
               </StyledText>
             </TouchableOpacity>
 
@@ -439,14 +438,14 @@ export default function EditCreateScreen() {
                   form.whenMode === "options" && styles.whenToggleTextSelected,
                 ]}
               >
-                POLL
+                {t("manage_poll")}
               </StyledText>
             </TouchableOpacity>
           </View>
 
           {form.whenMode === "specific" && (
             <>
-              <StyledText style={styles.label}>START TIME</StyledText>
+              <StyledText style={styles.label}>{t("manage_label_start_time")}</StyledText>
               <TouchableOpacity
                 style={styles.pwaInput}
                 onPress={() =>
@@ -456,14 +455,14 @@ export default function EditCreateScreen() {
                 }
               >
                 <StyledText style={styles.pwaInputText}>
-                  {form.specificDate.toLocaleString("en-GB", {
+                  {form.specificDate.toLocaleString(dateLocale, {
                     dateStyle: "medium",
                     timeStyle: "short",
                   })}
                 </StyledText>
               </TouchableOpacity>
 
-              <StyledText style={styles.label}>DURATION</StyledText>
+              <StyledText style={styles.label}>{t("manage_label_duration")}</StyledText>
               <TouchableOpacity
                 style={styles.pwaInput}
                 onPress={() => setShowCustomDuration(true)}
@@ -476,7 +475,7 @@ export default function EditCreateScreen() {
                 >
                   {form.durationMins
                     ? `${Math.floor(form.durationMins / 60)}h ${form.durationMins % 60}m`
-                    : "No end time"}
+                    : t("duration_no_end_time")}
                 </StyledText>
                 <Ionicons
                   name="chevron-down"
@@ -505,11 +504,11 @@ export default function EditCreateScreen() {
                   onPress={() => setShowPicker(false)}
                   style={styles.iosHeaderBtn}
                 >
-                  <StyledText style={styles.iosCancelText}>Cancel</StyledText>
+                  <StyledText style={styles.iosCancelText}>{t("common_cancel")}</StyledText>
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={confirmIOSDate}>
-                  <StyledText style={styles.iosConfirmText}>Confirm</StyledText>
+                  <StyledText style={styles.iosConfirmText}>{t("common_confirm")}</StyledText>
                 </TouchableOpacity>
               </View>
 
@@ -524,16 +523,16 @@ export default function EditCreateScreen() {
             </View>
           )}
 
-          <StyledText style={styles.label}>DESCRIPTION</StyledText>
+          <StyledText style={styles.label}>{t("manage_label_description")}</StyledText>
           <StyledInput
-            placeholder="Add a note..."
+            placeholder={t("manage_note_placeholder")}
             value={form.description}
             onChangeText={(t: string) => updateForm("description", t)}
             multiline
             style={[styles.inputStyle, styles.detailsInput]}
           />
 
-          <StyledText style={styles.sectionLabel}>Where</StyledText>
+          <StyledText style={styles.sectionLabel}>{t("manage_label_where")}</StyledText>
           <View style={styles.locationWrap}>
             <LocationSearch
               value={form.location}
@@ -546,11 +545,12 @@ export default function EditCreateScreen() {
             onPress={openVisibilityConfig}
           >
             <View>
-              <StyledText style={styles.label}>WHO CAN JOIN?</StyledText>
+              <StyledText style={styles.label}>{t("manage_label_who_can_join")}</StyledText>
               <StyledText style={styles.pwaInputText}>
                 {visibilitySummary(
                   form.visible_in_feed,
                   form.requires_approval,
+                  t,
                 )}
               </StyledText>
             </View>
@@ -562,18 +562,18 @@ export default function EditCreateScreen() {
           </TouchableOpacity>
 
           <StyledText style={styles.sectionLabel}>
-            Who&apos;s this from?
+            {t("create_details_from")}
           </StyledText>
 
           <StyledInput
-            placeholder="Your Name"
+            placeholder={t("manage_name_placeholder")}
             value={form.host_name}
             onChangeText={(t: string) => updateForm("host_name", t)}
             style={styles.inputStyle}
           />
 
           <StyledInput
-            placeholder="Your Email"
+            placeholder={t("manage_email_placeholder")}
             value={form.host_email}
             onChangeText={(t: string) => updateForm("host_email", t)}
             keyboardType="email-address"
@@ -589,7 +589,7 @@ export default function EditCreateScreen() {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <StyledText style={styles.saveBtnText}>Save changes</StyledText>
+              <StyledText style={styles.saveBtnText}>{t("manage_save_changes")}</StyledText>
             )}
           </TouchableOpacity>
         </ScrollView>
@@ -599,7 +599,7 @@ export default function EditCreateScreen() {
         <View style={styles.modalOverlayCenter}>
           <View style={styles.durationModalContent}>
             <StyledText style={styles.durationModalLabel}>
-              Set Duration
+              {t("manage_label_duration")}
             </StyledText>
 
             <View style={styles.durationInputRow}>
@@ -611,7 +611,7 @@ export default function EditCreateScreen() {
                   onChangeText={(t: string) => setCustomHrs(t)}
                   maxLength={2}
                 />
-                <StyledText style={styles.inlineFieldLabel}>Hours</StyledText>
+                <StyledText style={styles.inlineFieldLabel}>{t("manage_hours")}</StyledText>
               </View>
 
               <View style={styles.inputGroup}>
@@ -622,13 +622,13 @@ export default function EditCreateScreen() {
                   onChangeText={(t: string) => setCustomMins(t)}
                   maxLength={2}
                 />
-                <StyledText style={styles.inlineFieldLabel}>Mins</StyledText>
+                <StyledText style={styles.inlineFieldLabel}>{t("manage_mins")}</StyledText>
               </View>
             </View>
 
             <View style={styles.modalButtons}>
               <TouchableOpacity onPress={() => setShowCustomDuration(false)}>
-                <StyledText style={styles.modalCancelText}>Cancel</StyledText>
+                <StyledText style={styles.modalCancelText}>{t("common_cancel")}</StyledText>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -639,7 +639,7 @@ export default function EditCreateScreen() {
                   )
                 }
               >
-                <StyledText style={styles.modalSetText}>Set</StyledText>
+                <StyledText style={styles.modalSetText}>{t("common_set")}</StyledText>
               </TouchableOpacity>
             </View>
           </View>
@@ -652,7 +652,7 @@ export default function EditCreateScreen() {
             <ScrollView keyboardShouldPersistTaps="handled">
               <View style={styles.compactSection}>
                 <StyledText style={styles.compactHeading}>
-                  Social visibility
+                  {t("create_details_social_visibility")}
                 </StyledText>
 
                 <TouchableOpacity
@@ -671,7 +671,7 @@ export default function EditCreateScreen() {
                     color={COLORS.primary}
                   />
                   <StyledText style={styles.radioRowText}>
-                    People can see I&apos;m doing this
+                    {t("create_details_people_can_see")}
                   </StyledText>
                 </TouchableOpacity>
 
@@ -691,7 +691,7 @@ export default function EditCreateScreen() {
                     color={COLORS.primary}
                   />
                   <StyledText style={styles.radioRowText}>
-                    I approve attendees first
+                    {t("create_details_approve_attendees")}
                   </StyledText>
                 </TouchableOpacity>
               </View>
@@ -704,7 +704,7 @@ export default function EditCreateScreen() {
                   }}
                 >
                   <StyledText style={styles.modalSecondaryText}>
-                    Cancel
+                    {t("common_cancel")}
                   </StyledText>
                 </TouchableOpacity>
 
@@ -712,7 +712,7 @@ export default function EditCreateScreen() {
                   style={styles.modalPrimaryBtn}
                   onPress={saveVisibilityConfig}
                 >
-                  <StyledText style={styles.modalPrimaryText}>Save</StyledText>
+                  <StyledText style={styles.modalPrimaryText}>{t("common_save")}</StyledText>
                 </TouchableOpacity>
               </View>
             </ScrollView>
