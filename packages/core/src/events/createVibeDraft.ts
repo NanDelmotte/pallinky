@@ -14,6 +14,7 @@ export type CreateVibeDraftInput = {
   eventTimeZone?: string | null;
   proposedDates?: string[];
   location?: string | null;
+  externalUrl?: string | null;
   visibility?: 1 | 2 | 3;
 
   visibleInFeed?: boolean;
@@ -50,6 +51,7 @@ export async function createVibeDraft(
   p_gif_key: input.gifKey ?? 'waves',
   p_event_type: input.eventType ?? 'vibe',
   p_event_time_zone: input.eventTimeZone ?? getLocalTimeZone(),
+  p_external_url: input.externalUrl ?? null,
   p_proposed_dates: input.proposedDates ?? [],
 
   p_visibility: input.visibility ?? 2,

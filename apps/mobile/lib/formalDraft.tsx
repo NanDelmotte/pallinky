@@ -22,6 +22,7 @@ export type FormalDraftState = {
   durationMins: number | null;
   description: string;
   location: string;
+  external_url: string;
   host_name: string;
   host_email: string;
   visibility: VisibilityMode;
@@ -69,6 +70,7 @@ function buildInitialFormalDraft(
   durationMins: null,
   description: prefill?.prefill_desc || '',
   location: '',
+  external_url: '',
   host_name: '',
   host_email: '',
 
@@ -117,6 +119,7 @@ export function FormalDraftProvider({
       return prev.title ||
         prev.description ||
         prev.location ||
+        prev.external_url ||
         prev.host_name ||
         prev.host_email ||
         prev.seriesDates.length > 0 ||
