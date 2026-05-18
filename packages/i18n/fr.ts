@@ -165,6 +165,10 @@ export const fr: Record<TranslationKey, string> = {
   people_you_both_know: "Vous connaissez tous les deux {name}",
   people_you_both_know_plus_others:
     "Vous connaissez tous les deux {name} + {count} autres",
+  people_hide_suggestion_title: "Masquer la suggestion",
+  people_hide_suggestion_body:
+    "Cela masque uniquement cette suggestion/carte. Cela ne retire, ne supprime ni ne bloque la personne ou le contact. Vous pouvez restaurer les cartes et suggestions masquées dans les paramètres.",
+  people_hide_suggestion_error: "Impossible de masquer la suggestion.",
   common_create: "Créer",
   people_qr_card_title: "Ajoutez-moi sur Pallinky",
   people_qr_card_subtitle:
@@ -232,7 +236,7 @@ export const fr: Record<TranslationKey, string> = {
   settings_manage_tester_photos: "Gérer les photos testeurs",
   settings_review_reports: "Examiner les signalements",
   settings_data_management: "Gestion des données",
-  settings_restore_hidden_cards: "Restaurer les cartes masquées",
+  settings_restore_hidden_cards: "Restaurer les cartes et suggestions masquées",
   settings_support: "Assistance",
   settings_contact_support: "Contacter l’assistance",
   settings_account: "Compte",
@@ -240,7 +244,7 @@ export const fr: Record<TranslationKey, string> = {
   settings_sign_out: "Se déconnecter",
   settings_sign_out_confirm: "Êtes-vous sûr ?",
   settings_restore_cards_title: "Restaurer les cartes",
-  settings_restore_cards_confirm: "Réafficher toutes les cartes masquées ?",
+  settings_restore_cards_confirm: "Réafficher toutes les cartes et suggestions masquées ?",
   settings_success: "Succès",
   settings_restored: "Restauré.",
   settings_yes: "Oui",

@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Image,
   Pressable,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -27,6 +28,10 @@ import type {
   CircleMemberRow,
 } from '../../components/circles/circleManagerTypes';
 import { deriveFeedSignals, type FeedItem } from '../../lib/feed/deriveFeed';
+import {
+  dismissPeopleSuggestion,
+  getDismissedPeopleSuggestionIds,
+} from '../../lib/dismissedPeopleSuggestions';
 
 type PersonProfile = {
   email: string;
@@ -233,6 +238,7 @@ export default function PeopleScreen() {
 
   const [profileMap, setProfileMap] = useState<Map<string, PersonProfile>>(new Map());
   const [selectedFriend, setSelectedFriend] = useState<FriendCardData | null>(null);
+  const [dismissedPeopleSuggestionIds, setDismissedPeopleSuggestionIds] = useState<string[]>([]);
 
   const [circleManagerVisible, setCircleManagerVisible] = useState(false);
   const [circleManagerMode, setCircleManagerMode] = useState<'create' | 'edit'>('create');
@@ -241,6 +247,39 @@ export default function PeopleScreen() {
   function handleOpenFriend(item: FeedItem) {
     const card = buildFriendCardFromSignal(item, profileMap, lang);
     setSelectedFriend(card);
+  }
+
+  function handleDismissPeopleSuggestion(friend: FriendCardData) {
+    const suggestionId = normalizeEmail(friend.id);
+    if (!suggestionId || !data.userEmail) return;
+
+    Alert.alert(
+      t(lang, 'people_hide_suggestion_title'),
+      t(lang, 'people_hide_suggestion_body'),
+      [
+        { text: t(lang, 'common_cancel'), style: 'cancel' },
+        {
+          text: t(lang, 'common_hide'),
+          onPress: async () => {
+            const previous = dismissedPeopleSuggestionIds;
+            const optimistic = previous.includes(suggestionId)
+              ? previous
+              : [...previous, suggestionId];
+
+            setDismissedPeopleSuggestionIds(optimistic);
+
+            try {
+              const next = await dismissPeopleSuggestion(data.userEmail, suggestionId);
+              setDismissedPeopleSuggestionIds(next);
+              if (selectedFriend?.id === friend.id) setSelectedFriend(null);
+            } catch {
+              setDismissedPeopleSuggestionIds(previous);
+              Alert.alert(t(lang, 'common_error'), t(lang, 'people_hide_suggestion_error'));
+            }
+          },
+        },
+      ]
+    );
   }
 
   const setSocialCircles = useCallback((updater: React.SetStateAction<Circle[]>) => {
@@ -286,6 +325,8 @@ export default function PeopleScreen() {
     try {
       setLoading(true);
       const emailLower = normalizeEmail(session.user.email);
+      const hiddenPeopleSuggestionIds = await getDismissedPeopleSuggestionIds(emailLower);
+      setDismissedPeopleSuggestionIds(hiddenPeopleSuggestionIds);
 
       let nextDeviceContactCount = 0;
       const { status } = await Contacts.getPermissionsAsync();
@@ -707,11 +748,20 @@ export default function PeopleScreen() {
 
   const reconnectCards = useMemo(() => {
     return sortByLastSeenDesc(
-      dedupeByPerson(feed.items.filter((item) => item.type === 'reconnect_person'))
+      dedupeByPerson(
+        feed.items.filter((item) => {
+          const email = normalizeEmail(item.personEmail);
+          return (
+            item.type === 'reconnect_person' &&
+            !!email &&
+            !dismissedPeopleSuggestionIds.includes(email)
+          );
+        })
+      )
     )
       .slice(0, 2)
       .map((item) => buildFriendCardFromSignal(item, profileMap, lang));
-  }, [feed.items, profileMap, lang]);
+  }, [feed.items, profileMap, lang, dismissedPeopleSuggestionIds]);
   
 
   const reconnectEmails = useMemo(() => {
@@ -743,7 +793,8 @@ const sharedHistoryEmailSet = useMemo(() => {
             !innerCircleEmails.has(email) &&
             !reconnectEmails.has(email) &&
             !activeConnectionEmails.has(email) &&
-!sharedHistoryEmailSet.has(email)
+            !sharedHistoryEmailSet.has(email) &&
+            !dismissedPeopleSuggestionIds.includes(email)
           );
         })
         .sort((a, b) => {
@@ -766,8 +817,8 @@ const sharedHistoryEmailSet = useMemo(() => {
   reconnectEmails,
   activeConnectionEmails,
   sharedHistoryEmailSet,
+  dismissedPeopleSuggestionIds,
   profileMap,
-  lang,
   lang,
 ]);
 
@@ -809,8 +860,14 @@ const sharedHistoryEmailSet = useMemo(() => {
           activity: [],
         } satisfies FriendCardData;
       })
-      .filter((card) => !reconnectEmails.has(normalizeEmail(String(card.id))));
-  }, [data.socialIntent, profileMap, reconnectEmails, lang]);
+      .filter((card) => {
+        const email = normalizeEmail(String(card.id));
+        return (
+          !reconnectEmails.has(email) &&
+          !dismissedPeopleSuggestionIds.includes(email)
+        );
+      });
+  }, [data.socialIntent, profileMap, reconnectEmails, dismissedPeopleSuggestionIds, lang]);
   
 
   const hasAnyPeopleContent =
@@ -905,7 +962,8 @@ const sharedHistoryEmailSet = useMemo(() => {
                   title={t(lang, 'people_reconnect_title')}
                   subtitle={t(lang, 'people_reconnect_subtitle')}
                   cards={reconnectCards}
-                   lang={lang}
+                  lang={lang}
+                  onDismissCard={handleDismissPeopleSuggestion}
                 />
               )}
 
@@ -914,7 +972,8 @@ const sharedHistoryEmailSet = useMemo(() => {
                   title={t(lang, 'people_want_to_hear_from_title')}
                   subtitle={t(lang, 'people_want_to_hear_from_subtitle')}
                   cards={socialIntentCards}
-                   lang={lang}
+                  lang={lang}
+                  onDismissCard={handleDismissPeopleSuggestion}
                 />
               )}
 
@@ -923,7 +982,8 @@ const sharedHistoryEmailSet = useMemo(() => {
                   title={t(lang, 'people_second_degree_title')}
                   subtitle={t(lang, 'people_second_degree_subtitle')}
                   cards={suggestedCards}
-                   lang={lang}
+                  lang={lang}
+                  onDismissCard={handleDismissPeopleSuggestion}
                 />
               )}
             </>
@@ -1210,11 +1270,13 @@ function CardSection({
   subtitle,
   cards,
   lang,
+  onDismissCard,
 }: {
   title: string;
   subtitle: string;
   cards: FriendCardData[];
   lang: AppLanguage;
+  onDismissCard?: (friend: FriendCardData) => void;
 }) {
   return (
     <View style={styles.section}>
@@ -1225,7 +1287,12 @@ function CardSection({
 
       <View style={styles.cardsWrap}>
         {cards.map((friend) => (
-          <FriendCard key={friend.id} friend={friend} lang={lang} />
+          <FriendCard
+            key={friend.id}
+            friend={friend}
+            lang={lang}
+            onDismiss={onDismissCard ? () => onDismissCard(friend) : undefined}
+          />
         ))}
       </View>
     </View>

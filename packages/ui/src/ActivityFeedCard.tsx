@@ -81,7 +81,14 @@ const ActivityFeedCard = ({
           </View>
 
           {onDismiss ? (
-            <Pressable onPress={onDismiss} hitSlop={10} style={styles.dismissButton}>
+            <Pressable
+              onPress={(e) => {
+                e.stopPropagation();
+                onDismiss?.();
+              }}
+              hitSlop={10}
+              style={styles.dismissButton}
+            >
               <Ionicons name="close" size={16} color="#fff" />
             </Pressable>
           ) : null}

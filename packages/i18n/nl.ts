@@ -201,6 +201,10 @@ export const nl: Record<TranslationKey, string> = {
   people_you_both_know: "Jullie kennen allebei {name}",
   people_you_both_know_plus_others:
     "Jullie kennen allebei {name} + {count} anderen",
+  people_hide_suggestion_title: "Suggestie verbergen",
+  people_hide_suggestion_body:
+    "Dit verbergt alleen deze suggestie/kaart. De persoon of contactpersoon wordt niet verwijderd, geblokkeerd of weggehaald. Je kunt verborgen kaarten en suggesties herstellen in de instellingen.",
+  people_hide_suggestion_error: "Kon suggestie niet verbergen.",
   people_qr_card_title: "Voeg mij toe op Pallinky",
   people_qr_card_subtitle:
     "Toon je QR-code zodat iemand je kan toevoegen.",
@@ -269,7 +273,7 @@ export const nl: Record<TranslationKey, string> = {
   settings_manage_tester_photos: "Testerfoto’s beheren",
   settings_review_reports: "Meldingen beoordelen",
   settings_data_management: "Gegevensbeheer",
-  settings_restore_hidden_cards: "Verborgen kaarten herstellen",
+  settings_restore_hidden_cards: "Verborgen kaarten en suggesties herstellen",
   settings_support: "Support",
   settings_contact_support: "Contact opnemen met support",
   settings_account: "Account",
@@ -277,7 +281,7 @@ export const nl: Record<TranslationKey, string> = {
   settings_sign_out: "Uitloggen",
   settings_sign_out_confirm: "Weet je het zeker?",
   settings_restore_cards_title: "Kaarten herstellen",
-  settings_restore_cards_confirm: "Alle verborgen kaarten terugzetten?",
+  settings_restore_cards_confirm: "Alle verborgen kaarten en suggesties terugzetten?",
   settings_success: "Gelukt",
   settings_restored: "Hersteld.",
   settings_yes: "Ja",

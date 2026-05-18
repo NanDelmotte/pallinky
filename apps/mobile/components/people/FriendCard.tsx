@@ -6,6 +6,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { View, StyleSheet, Image, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { StyledText } from '@pallinky/ui';
 
 import { t } from '@pallinky/i18n';
@@ -72,9 +73,11 @@ function isFutureDate(value: string | null | undefined) {
 export default function FriendCard({
   friend,
   lang = 'en',
+  onDismiss,
 }: {
   friend: FriendCardData;
   lang?: AppLanguage;
+  onDismiss?: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -139,7 +142,21 @@ export default function FriendCard({
           )}
         </View>
 
-     
+
+        {onDismiss ? (
+          <Pressable
+            onPress={(e) => {
+              e.stopPropagation();
+              onDismiss();
+            }}
+            hitSlop={10}
+            style={styles.dismissButton}
+            accessibilityRole="button"
+            accessibilityLabel={t(lang, 'people_hide_suggestion_title')}
+          >
+            <Ionicons name="close" size={18} color="#66715f" />
+          </Pressable>
+        ) : null}
       </Pressable>
 
       {expanded && !isSecondDegree && (
@@ -268,6 +285,14 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     paddingRight: 6,
+  },
+  dismissButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F6F7F9',
   },
   friendName: {
     fontSize: 17,
