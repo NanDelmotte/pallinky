@@ -21,6 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { formatInEventTimeZone, supabase, useSession } from '@pallinky/core';
 import { Ionicons } from '@expo/vector-icons';
+import { useI18n } from '@pallinky/i18n/client';
 
 const SYSTEM = {
   background: '#F6F7F9',
@@ -58,12 +59,12 @@ function normalizeEmail(value: string | null | undefined) {
   return String(value || '').toLowerCase().trim();
 }
 
-function getFirstName(value: string | null | undefined) {
-  return (value || '').trim().split(' ')[0] || 'Guest';
+function getFirstName(value: string | null | undefined, fallback: string) {
+  return (value || '').trim().split(' ')[0] || fallback;
 }
 
-function formatDateTime(value: string | null | undefined, event: any) {
-  if (!value) return 'Date TBD';
+function formatDateTime(value: string | null | undefined, event: any, fallback: string) {
+  if (!value) return fallback;
 
   return formatInEventTimeZone(
     value,
@@ -78,8 +79,8 @@ function formatDateTime(value: string | null | undefined, event: any) {
   );
 }
 
-function formatDateOnly(value: string | null | undefined, event: any) {
-  if (!value) return 'Date TBD';
+function formatDateOnly(value: string | null | undefined, event: any, fallback: string) {
+  if (!value) return fallback;
 
   return formatInEventTimeZone(
     value,
@@ -92,6 +93,7 @@ export default function PollPage() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
   const { session } = useSession();
+  const { t } = useI18n();
 
   const viewerEmail = normalizeEmail(session?.user?.email);
 
@@ -133,7 +135,7 @@ export default function PollPage() {
         (Array.isArray(eventData.proposed_dates) && eventData.proposed_dates.length > 0);
 
       if (!isPoll) {
-        Alert.alert('Not a poll', 'This page is only for poll events.');
+        Alert.alert(t('event_not_poll'), t('event_not_poll_body'));
         router.replace(`/event/${slug}/details` as any);
         return;
       }
@@ -149,11 +151,11 @@ export default function PollPage() {
       setVotes(voteData || []);
     } catch (err) {
       console.error(err);
-      Alert.alert('Load failed', 'Could not load this poll right now.');
+      Alert.alert(t('event_poll_load_failed'), t('event_poll_load_failed_body'));
     } finally {
       setLoading(false);
     }
-  }, [slug, router]);
+  }, [slug, router, t]);
 
   useEffect(() => {
     void loadData();
@@ -167,7 +169,7 @@ export default function PollPage() {
     });
 
     votes.forEach((vote) => {
-      const voterLabel = vote.guest_name?.trim() || vote.user_email?.trim() || 'Guest';
+      const voterLabel = vote.guest_name?.trim() || vote.user_email?.trim() || t('common_guest');
 
       (vote.selected_dates || []).forEach((date) => {
         if (!map[date]) {
@@ -180,7 +182,7 @@ export default function PollPage() {
     });
 
     return map;
-  }, [event, votes]);
+  }, [event, votes, t]);
 
   const sortedDates = useMemo(() => {
     return Object.keys(tallies).sort(
@@ -229,7 +231,7 @@ export default function PollPage() {
   const handleFinalize = useCallback(
     async (winningDateIso: string) => {
       if (!event?.manage_handle) {
-        Alert.alert('Error', 'Missing manage token for this poll.');
+        Alert.alert(t('common_error'), t('event_poll_manage_missing_token_body'));
         return;
       }
 
@@ -247,16 +249,16 @@ export default function PollPage() {
 
         await notifyGuestsOfFinalDate(normalizedIso);
 
-        Alert.alert('Date confirmed', 'The poll has been finalized and guests have been notified.');
+        Alert.alert(t('event_poll_date_confirmed'), t('event_poll_date_confirmed_body'));
         router.replace(`/event/${slug}/details` as any);
       } catch (err) {
         console.error(err);
-        Alert.alert('Error', 'Could not finalize this poll.');
+        Alert.alert(t('common_error'), t('event_poll_finalize_error'));
       } finally {
         setFinalizingDate(null);
       }
     },
-    [event, slug, router, notifyGuestsOfFinalDate]
+    [event, slug, router, notifyGuestsOfFinalDate, t]
   );
 
   const handleDeleteDate = useCallback(
@@ -268,7 +270,7 @@ export default function PollPage() {
       );
 
       if (remainingDates.length === 0) {
-        Alert.alert('Cannot delete', 'A poll must keep at least one date option.');
+        Alert.alert(t('event_poll_cannot_delete'), t('event_poll_cannot_delete_body'));
         return;
       }
 
@@ -294,23 +296,23 @@ export default function PollPage() {
         setVotes(filteredVotes);
       } catch (err) {
         console.error(err);
-        Alert.alert('Error', 'Could not delete this date option.');
+        Alert.alert(t('common_error'), t('event_poll_delete_error'));
       } finally {
         setDeletingDate(null);
       }
     },
-    [event, votes]
+    [event, votes, t]
   );
 
   const confirmDeleteDate = useCallback(
     (dateToDelete: string) => {
       Alert.alert(
-        'Delete date?',
-        `Remove ${formatDateOnly(dateToDelete, event)} from this poll?`,
+        t('event_poll_delete_date'),
+        t('event_poll_delete_date_body', { date: formatDateOnly(dateToDelete, event, t('common_tbd')) }),
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: t('common_cancel'), style: 'cancel' },
           {
-            text: 'Delete',
+            text: t('common_delete'),
             style: 'destructive',
             onPress: () => {
               void handleDeleteDate(dateToDelete);
@@ -319,7 +321,7 @@ export default function PollPage() {
         ]
       );
     },
-    [handleDeleteDate]
+    [event, handleDeleteDate, t]
   );
 
   if (loading) {
@@ -334,7 +336,7 @@ export default function PollPage() {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: SYSTEM.background }]}>
         <View style={styles.centered}>
-          <Text style={styles.emptyTitle}>Poll not found</Text>
+          <Text style={styles.emptyTitle}>{t('event_poll_not_found')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -356,15 +358,15 @@ export default function PollPage() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
           <Text style={[styles.eyebrow, { color: theme.accent }]}>
-            {isHost ? 'POLL MANAGEMENT' : 'POLL RESULTS'}
+            {isHost ? t('event_poll_management_label') : t('event_poll_results_label')}
           </Text>
 
           <Text style={[styles.title, { color: theme.text }]}>{event.title}</Text>
 
           <Text style={[styles.subtitle, { color: theme.text }]}>
             {isHost
-              ? 'Review votes and lock in the final date.'
-              : 'See how the voting is shaping up.'}
+              ? t('event_poll_host_subtitle')
+              : t('event_poll_guest_subtitle')}
           </Text>
 
           {isHost && !!event.manage_handle && (
@@ -374,17 +376,17 @@ export default function PollPage() {
             >
               <Ionicons name="create-outline" size={16} color={theme.accent} />
               <Text style={[styles.manageLinkText, { color: theme.accent }]}>
-                Edit event details
+                {t('event_poll_edit_details')}
               </Text>
             </TouchableOpacity>
           )}
 
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Date options</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('event_poll_date_options')}</Text>
 
             {sortedDates.length === 0 ? (
               <View style={styles.emptyCard}>
-                <Text style={styles.emptyText}>No date options found.</Text>
+                <Text style={styles.emptyText}>{t('event_poll_no_date_options')}</Text>
               </View>
             ) : (
               sortedDates.map((date) => {
@@ -398,10 +400,10 @@ export default function PollPage() {
                     <View style={styles.dateHeaderRow}>
                       <View style={styles.dateTextWrap}>
                         <Text style={[styles.dateTitle, { color: theme.text }]}>
-                          {formatDateOnly(date, event)}
+                          {formatDateOnly(date, event, t('common_tbd'))}
                         </Text>
                         <Text style={styles.dateMeta}>
-                          {formatDateTime(date, event)} • {tally.count} vote{tally.count === 1 ? '' : 's'}
+                          {formatDateTime(date, event, t('common_tbd'))} • {t(tally.count === 1 ? 'event_poll_vote_count_one' : 'event_poll_vote_count_other', { count: String(tally.count) })}
                         </Text>
                       </View>
 
@@ -419,7 +421,7 @@ export default function PollPage() {
                             {busyFinalize ? (
                               <ActivityIndicator size="small" color="#fff" />
                             ) : (
-                              <Text style={styles.inlineConfirmBtnText}>Confirm</Text>
+                              <Text style={styles.inlineConfirmBtnText}>{t('common_confirm')}</Text>
                             )}
                           </TouchableOpacity>
 
@@ -445,12 +447,12 @@ export default function PollPage() {
                       <View style={styles.voterChips}>
                         {tally.voters.map((name, index) => (
                           <View key={`${date}-${name}-${index}`} style={styles.voterChip}>
-                            <Text style={styles.voterChipText}>{getFirstName(name)}</Text>
+                            <Text style={styles.voterChipText}>{getFirstName(name, t('common_guest'))}</Text>
                           </View>
                         ))}
                       </View>
                     ) : (
-                      <Text style={styles.emptyInline}>No one voted for this option yet.</Text>
+                      <Text style={styles.emptyInline}>{t('event_poll_no_one_voted')}</Text>
                     )}
                   </View>
                 );
@@ -459,18 +461,18 @@ export default function PollPage() {
           </View>
 
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Who voted</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('event_poll_who_voted')}</Text>
 
             {votes.length === 0 ? (
               <View style={styles.emptyCard}>
-                <Text style={styles.emptyText}>No votes yet.</Text>
+                <Text style={styles.emptyText}>{t('event_no_votes')}</Text>
               </View>
             ) : (
               votes.map((vote, index) => {
                 const voterName =
                   vote.guest_name?.trim() ||
                   vote.user_email?.trim() ||
-                  'Guest';
+                  t('common_guest');
 
                 return (
                   <View key={vote.id || `${voterName}-${index}`} style={styles.voteCard}>
@@ -480,17 +482,17 @@ export default function PollPage() {
                       <View style={styles.voteSelections}>
                         {(vote.selected_dates || []).map((date) => (
                           <View key={`${voterName}-${date}`} style={styles.selectionChip}>
-                            <Text style={styles.selectionChipText}>{formatDateOnly(date, event)}</Text>
+                            <Text style={styles.selectionChipText}>{formatDateOnly(date, event, t('common_tbd'))}</Text>
                           </View>
                         ))}
                       </View>
                     ) : (
-                      <Text style={styles.emptyInline}>No date selections.</Text>
+                      <Text style={styles.emptyInline}>{t('event_poll_no_date_selections')}</Text>
                     )}
 
                     {!!vote.note?.trim() ? (
                       <View style={styles.noteBox}>
-                        <Text style={styles.noteLabel}>Note</Text>
+                        <Text style={styles.noteLabel}>{t('event_poll_note')}</Text>
                         <Text style={styles.noteText}>{vote.note.trim()}</Text>
                       </View>
                     ) : null}
@@ -512,7 +514,7 @@ export default function PollPage() {
             onPress={() => router.push(`/event/${slug}/guest-poll` as any)}
           >
             <Text style={[styles.secondaryBtnText, { color: theme.accent }]}>
-              Change my vote
+              {t('event_poll_change_vote')}
             </Text>
           </TouchableOpacity>
         )}

@@ -20,6 +20,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StyledText } from '@pallinky/ui';
 import { supabase } from '@pallinky/core';
+import { useI18n } from '@pallinky/i18n/client';
 
 const COLORS = {
   background: '#F6F7F9',
@@ -72,6 +73,7 @@ export default function EventDmThreadScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ slug?: string; thread_id?: string }>();
+  const { t } = useI18n();
   const threadId = Array.isArray(params.thread_id) ? params.thread_id[0] : params.thread_id;
 
   const [viewerEmail, setViewerEmail] = useState('');
@@ -131,7 +133,7 @@ export default function EventDmThreadScreen() {
       const nextHeader: ThreadHeader = {
         thread_id: thread.id,
         event_id: thread.event_id,
-        event_title: event?.title || 'Event',
+        event_title: event?.title || t('event_guest_fallback'),
         other_person_email_lc: otherEmail,
         other_person_name: profile?.full_name?.trim() || otherEmail,
       };
@@ -139,7 +141,7 @@ export default function EventDmThreadScreen() {
       setHeader(nextHeader);
       return nextHeader;
     },
-    [threadId]
+    [t, threadId]
   );
 
   const loadMessages = useCallback(
@@ -190,12 +192,12 @@ export default function EventDmThreadScreen() {
       await markRead(email);
     } catch (err: any) {
       console.log('DM thread load error:', err);
-      Alert.alert('Error', err?.message || 'Could not load direct messages.');
+      Alert.alert(t('common_error'), err?.message || t('event_dm_load_error'));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [loadHeader, loadMessages, loadViewerEmail, markRead, threadId, viewerEmail]);
+  }, [loadHeader, loadMessages, loadViewerEmail, markRead, t, threadId, viewerEmail]);
 
   useEffect(() => {
     void loadThread();
@@ -241,11 +243,11 @@ export default function EventDmThreadScreen() {
       });
     } catch (err: any) {
       console.log('DM send error:', err);
-      Alert.alert('Error', err?.message || 'Could not send message.');
+      Alert.alert(t('common_error'), err?.message || t('event_dm_send_error'));
     } finally {
       setSending(false);
     }
-  }, [draft, header, loadMessages, markRead, viewerEmail]);
+  }, [draft, header, loadMessages, markRead, t, viewerEmail]);
 
   const renderMessage = useCallback(
     ({ item }: { item: DmMessage }) => {
@@ -289,10 +291,10 @@ export default function EventDmThreadScreen() {
 
           <View style={styles.headerTextWrap}>
             <StyledText style={styles.headerTitle}>
-              {header?.other_person_name || 'Direct message'}
+              {header?.other_person_name || t('event_chat')}
             </StyledText>
             <StyledText style={styles.headerSubtitle}>
-              {header?.event_title || 'Loading event...'}
+              {header?.event_title || t('common_loading')}
             </StyledText>
           </View>
         </View>
@@ -319,9 +321,9 @@ export default function EventDmThreadScreen() {
               ListEmptyComponent={
                 <View style={styles.emptyCard}>
                   <Ionicons name="chatbubble-ellipses-outline" size={28} color={COLORS.textMuted} />
-                  <StyledText style={styles.emptyTitle}>No messages yet</StyledText>
+                  <StyledText style={styles.emptyTitle}>{t('event_no_messages')}</StyledText>
                   <StyledText style={styles.emptyBody}>
-                    Start the conversation about {header?.event_title || 'this event'}.
+                    {t('event_dm_empty_body', { event: header?.event_title || t('event_guest_fallback') })}
                   </StyledText>
                 </View>
               }
@@ -337,7 +339,7 @@ export default function EventDmThreadScreen() {
                 <TextInput
                   value={draft}
                   onChangeText={setDraft}
-                  placeholder="Write a message"
+                  placeholder={t('event_dm_placeholder')}
                   placeholderTextColor={COLORS.textMuted}
                   style={styles.input}
                   multiline
