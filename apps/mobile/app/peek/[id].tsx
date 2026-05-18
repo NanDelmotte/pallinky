@@ -25,6 +25,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase, useSession } from '@pallinky/core';
 import * as SecureStore from 'expo-secure-store';
 import { getEventAccessDecision } from '../../lib/visibility/getEventAccessDecision';
+import { useI18n } from '@pallinky/i18n/client';
 
 const SYSTEM = {
   bg: '#EEF2EC',
@@ -47,19 +48,23 @@ function capitalize(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function formatStatus(status: string | null | undefined) {
+function formatStatus(status: string | null | undefined, t: any) {
   const v = String(status || '').toLowerCase().trim();
-  if (!v) return 'Responded';
-  if (v === 'yes' || v === 'going') return 'Going';
-  if (v === 'maybe' || v === 'interested') return 'Interested';
-  if (v === 'no' || v === 'declined' || v === 'not_going') return 'Not going';
+  if (!v) return t('event_status_responded');
+  if (v === 'yes' || v === 'going') return t('event_status_going');
+  if (v === 'maybe' || v === 'interested') return t('event_interested');
+  if (v === 'no' || v === 'declined' || v === 'not_going') return t('event_status_not_going');
   return capitalize(v);
 }
 
-function formatDateTime(value: string | null | undefined) {
-  if (!value) return 'Date TBD';
+function localeForLanguage(language: string) {
+  return language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US';
+}
+
+function formatDateTime(value: string | null | undefined, language: string, t: any) {
+  if (!value) return t('event_card_date_tbd');
   const d = new Date(value);
-  return d.toLocaleDateString(undefined, {
+  return d.toLocaleDateString(localeForLanguage(language), {
     weekday: 'long',
     month: 'short',
     day: 'numeric',
@@ -92,6 +97,7 @@ export default function PeekPage() {
   peek_actor_name?: string;
 }>();
   const router = useRouter();
+  const { language, t } = useI18n();
   const { userEmail: sessionEmail } = useSession();
 
   const [event, setEvent] = useState<any>(null);
@@ -198,18 +204,18 @@ export default function PeekPage() {
   };
 
   const relationshipTitle = useMemo(() => {
-    if (!accessDecision) return 'Open to friends of friends';
+    if (!accessDecision) return t('peek_open_friends');
 
     if (accessDecision.requires_host_approval === true) {
-      return 'Open to friends of friends · approval required';
+      return t('peek_open_friends_approval');
     }
 
     if (accessDecision.reason === 'public_event') {
-      return 'Open event';
+      return t('peek_open_event');
     }
 
-    return 'Open to friends of friends';
-  }, [accessDecision]);
+    return t('peek_open_friends');
+  }, [accessDecision, t]);
 
   const relationshipBody = useMemo(() => {
   const hostName = capitalize(event?.host_name || 'the host');
@@ -217,26 +223,26 @@ export default function PeekPage() {
 
   // Direct relationship (host is your connection)
   if (peek_source_signal === 'friend_created_event') {
-    return `You are seeing this because you know ${hostName}.`;
+    return t('peek_reason_friend_created', { host: hostName });
   }
 
   // Friend attending → bridge person
   if (peek_source_signal === 'friend_attending_event' && actorName) {
-    return `You are seeing this because you and ${hostName} both know ${actorName}.`;
+    return t('peek_reason_friend_attending', { host: hostName, actor: actorName });
   }
 
   // Fully open event (no network link)
   if (accessDecision?.visibility === 3 && !accessDecision?.is_network_qualified) {
-    return `You are seeing this because ${hostName} is looking for people to join.`;
+    return t('peek_reason_public', { host: hostName });
   }
 
   // Network fallback
   if (accessDecision?.is_network_qualified) {
-    return `You are seeing this because you’re in ${hostName}’s extended network.`;
+    return t('peek_reason_network', { host: hostName });
   }
 
-  return `You are seeing this because this event is visible to you.`;
-}, [peek_source_signal, peek_actor_name, accessDecision, event]);
+  return t('peek_reason_visible');
+}, [peek_source_signal, peek_actor_name, accessDecision, event, t]);
 
   const hostName = capitalize(event?.host_name || 'the host');
   const description = getDescriptionText(event);
@@ -253,7 +259,7 @@ export default function PeekPage() {
   if (blocked || !event) {
     return (
       <View style={styles.centered}>
-        <StyledText style={styles.emptyTitle}>This event is not available to you.</StyledText>
+        <StyledText style={styles.emptyTitle}>{t('peek_unavailable')}</StyledText>
       </View>
     );
   }
@@ -268,10 +274,10 @@ export default function PeekPage() {
         </TouchableOpacity>
 
         <StyledText style={styles.peekLabel}>
-          {isPastEvent ? 'YOU CAME ACROSS THIS' : 'PEEK'}
+          {isPastEvent ? t('peek_you_came_across') : t('peek_label')}
         </StyledText>
         <StyledText style={styles.title}>{event?.title}</StyledText>
-        <StyledText style={styles.host}>Hosted by {hostName}</StyledText>
+        <StyledText style={styles.host}>{t('peek_hosted_by', { host: hostName })}</StyledText>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -285,11 +291,11 @@ export default function PeekPage() {
         </View>
 
         <View style={styles.snapshotCard}>
-          <StyledText style={styles.sectionTitle}>Event</StyledText>
+          <StyledText style={styles.sectionTitle}>{t('peek_event')}</StyledText>
 
           <View style={styles.metaRow}>
             <Ionicons name="calendar-outline" size={16} color={SYSTEM.primary} />
-            <StyledText style={styles.metaText}>{formatDateTime(event?.starts_at)}</StyledText>
+            <StyledText style={styles.metaText}>{formatDateTime(event?.starts_at, language, t)}</StyledText>
           </View>
 
           {locationText ? (
@@ -308,28 +314,28 @@ export default function PeekPage() {
             onPress={() => router.push(`/event/${event.slug}` as any)}
           >
             <Ionicons name="arrow-forward-circle-outline" size={20} color="#fff" />
-            <StyledText style={styles.primaryBtnText}>View invite</StyledText>
+            <StyledText style={styles.primaryBtnText}>{t('peek_view_invite')}</StyledText>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.shareLink}
             onPress={() =>
               Share.share({
-                message: `Peek at ${event?.title}: https://pallinky.com/peek/${id}`,
+                message: t('peek_at_share', { title: String(event?.title || ''), url: `https://pallinky.com/peek/${id}` }),
               })
             }
           >
             <Ionicons name="share-outline" size={16} color={SYSTEM.secondary} />
-            <StyledText style={styles.shareLinkText}>Share this peek</StyledText>
+            <StyledText style={styles.shareLinkText}>{t('peek_share')}</StyledText>
           </TouchableOpacity>
         </View>
 
         <View style={styles.actionCard}>
           <View style={styles.loopToggle}>
             <View style={styles.loopCopy}>
-              <StyledText style={styles.loopLabel}>See more from {hostName}</StyledText>
+              <StyledText style={styles.loopLabel}>{t('peek_see_more_from', { host: hostName })}</StyledText>
               <StyledText style={styles.loopSub}>
-                Let them know you’d like to hear about future plans.
+                {t('peek_keep_loop')}
               </StyledText>
             </View>
             <Switch
@@ -343,14 +349,14 @@ export default function PeekPage() {
         {accessDecision?.can_see_guest_list === true ? (
           <>
             <StyledText style={styles.sectionLabel}>
-              Who&apos;s already in ({attendees.length})
+              {t('peek_who_already_in')} ({attendees.length})
             </StyledText>
 
             {attendees.length === 0 ? (
               <View style={styles.emptyCard}>
-                <StyledText style={styles.emptyTitle}>No responses yet</StyledText>
+                <StyledText style={styles.emptyTitle}>{t('peek_no_responses')}</StyledText>
                 <StyledText style={styles.emptyBody}>
-                  When people respond, they will appear here.
+                  {t('peek_no_responses_body')}
                 </StyledText>
               </View>
             ) : (
@@ -363,30 +369,30 @@ export default function PeekPage() {
                   </View>
 
                   <View style={styles.personInfo}>
-                    <StyledText style={styles.personName}>{person.name || 'Guest'}</StyledText>
+                    <StyledText style={styles.personName}>{person.name || t('event_guest_fallback')}</StyledText>
 
                     {person.common_event ? (
                       <View style={styles.personContextBadge}>
                         <Ionicons name="sparkles" size={12} color={SYSTEM.primary} />
                         <StyledText style={styles.personContextText}>
-                          Both went to {person.common_event}
+                          {t('peek_both_went', { event: String(person.common_event) })}
                         </StyledText>
                       </View>
                     ) : person.mutual_friend_count > 0 ? (
                       <View style={styles.personContextBadge}>
                         <Ionicons name="people" size={12} color={SYSTEM.primary} />
                         <StyledText style={styles.personContextText}>
-                          {person.mutual_friend_count} mutual friends
+                          {t('peek_mutual_friends', { count: String(person.mutual_friend_count) })}
                         </StyledText>
                       </View>
                     ) : (
                       <StyledText style={styles.friendOfFriend}>
-                        In {hostName}&apos;s orbit
+                        {t('peek_in_host_orbit', { host: hostName })}
                       </StyledText>
                     )}
 
                     <StyledText style={styles.statusTag}>
-                      {formatStatus(person.status)}
+                      {formatStatus(person.status, t)}
                     </StyledText>
                   </View>
                 </View>
