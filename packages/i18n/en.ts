@@ -116,6 +116,14 @@ export const en: Record<TranslationKey, string> = {
 
   home_import_coffee_title: "Invite someone for coffee",
   home_import_coffee_subtitle: "One easy plan is enough to get things moving.",
+  activity_card_badge_idea: "IDEA",
+  activity_card_badge_activity: "ACTIVITY",
+  activity_card_started_this: "{name} started this",
+  activity_card_is_going: "{name} is going",
+  activity_card_someone: "Someone",
+  activity_card_untitled_event: "Untitled event",
+  activity_card_peekable: "Peekable",
+  activity_card_peek: "Peek",
   home_empty_activity_title: "No live activity yet",
   home_empty_activity_subtitle:
     "As soon as plans, invites, or network activity appear, this section will populate.",

@@ -117,6 +117,14 @@ export const fr: Record<TranslationKey, string> = {
   home_import_coffee_title: "Inviter quelqu’un à prendre un café",
   home_import_coffee_subtitle:
     "Un plan simple suffit pour lancer le mouvement.",
+  activity_card_badge_idea: "IDÉE",
+  activity_card_badge_activity: "ACTIVITÉ",
+  activity_card_started_this: "{name} a lancé ceci",
+  activity_card_is_going: "{name} participe",
+  activity_card_someone: "Quelqu’un",
+  activity_card_untitled_event: "Événement sans titre",
+  activity_card_peekable: "Visible en aperçu",
+  activity_card_peek: "Aperçu",
   home_empty_activity_title: "Aucune activité en direct pour le moment",
   home_empty_activity_subtitle:
     "Dès que des plans, invitations ou activités de réseau apparaîtront, cette section se remplira.",

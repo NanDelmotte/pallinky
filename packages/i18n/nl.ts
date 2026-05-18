@@ -140,6 +140,14 @@ export const nl: Record<TranslationKey, string> = {
   home_import_coffee_title: "Nodig iemand uit voor koffie",
   home_import_coffee_subtitle:
     "Eén simpel plan is genoeg om beweging te krijgen.",
+  activity_card_badge_idea: "IDEE",
+  activity_card_badge_activity: "ACTIVITEIT",
+  activity_card_started_this: "{name} is dit gestart",
+  activity_card_is_going: "{name} gaat",
+  activity_card_someone: "Iemand",
+  activity_card_untitled_event: "Event zonder titel",
+  activity_card_peekable: "Te bekijken",
+  activity_card_peek: "Bekijken",
   home_empty_activity_title: "Nog geen live activiteit",
   home_empty_activity_subtitle:
     "Plannen, invites en netwerkactiviteit verschijnen hier.",
