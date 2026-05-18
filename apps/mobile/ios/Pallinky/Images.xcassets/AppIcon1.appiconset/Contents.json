@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "icon-pink-green2.png",
+      "filename" : "icon-cherry.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -13,7 +13,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "icon-pink-green2 1.png",
+      "filename" : "icon-cherry 1.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -25,7 +25,7 @@
           "value" : "tinted"
         }
       ],
-      "filename" : "icon-pink-green2 2.png",
+      "filename" : "icon-cherry 2.png",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
