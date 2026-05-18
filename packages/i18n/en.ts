@@ -161,6 +161,10 @@ export const en: Record<TranslationKey, string> = {
   people_connected_through_network: "Connected through your network",
   people_you_both_know: "You both know {name}",
   people_you_both_know_plus_others: "You both know {name} + {count} others",
+  people_hide_suggestion_title: "Hide suggestion",
+  people_hide_suggestion_body:
+    "This only hides this suggestion/card. It does not remove, delete, or block the person or contact. You can restore hidden cards and suggestions in settings.",
+  people_hide_suggestion_error: "Could not hide suggestion.",
   common_create: "Create",
   people_qr_card_title: "Add me on Pallinky",
   people_qr_card_subtitle:
@@ -225,7 +229,7 @@ export const en: Record<TranslationKey, string> = {
   settings_manage_tester_photos: "Manage Tester Photos",
   settings_review_reports: "Review Reports",
   settings_data_management: "Data Management",
-  settings_restore_hidden_cards: "Restore Hidden Cards",
+  settings_restore_hidden_cards: "Restore Hidden Cards & Suggestions",
   settings_support: "Support",
   settings_contact_support: "Contact Support",
   settings_account: "Account",
@@ -233,7 +237,7 @@ export const en: Record<TranslationKey, string> = {
   settings_sign_out: "Sign Out",
   settings_sign_out_confirm: "Are you sure?",
   settings_restore_cards_title: "Restore Cards",
-  settings_restore_cards_confirm: "Bring back all hidden cards?",
+  settings_restore_cards_confirm: "Bring back all hidden cards and suggestions?",
   settings_success: "Success",
   settings_restored: "Restored.",
   settings_yes: "Yes",

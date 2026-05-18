@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import LanguageSelector from '../components/LanguageSelector';
 import { useI18n } from '@pallinky/i18n/client';
+import { clearDismissedPeopleSuggestions } from '../lib/dismissedPeopleSuggestions';
 
 export default function SettingsScreen() {
   const { session } = useSession();
@@ -43,8 +44,9 @@ export default function SettingsScreen() {
     ]);
   }
 
-  async function clearDismissedCardState() {
+  async function clearDismissedCardState(userEmail: string) {
     await SecureStore.deleteItemAsync('dismissed_vibes');
+    await clearDismissedPeopleSuggestions(userEmail);
   }
 
   function contactSupport() {
@@ -74,7 +76,7 @@ export default function SettingsScreen() {
             return;
           }
 
-          await clearDismissedCardState();
+          await clearDismissedCardState(emailLc);
           Alert.alert(t('settings_success'), t('settings_restored'));
         },
       },
