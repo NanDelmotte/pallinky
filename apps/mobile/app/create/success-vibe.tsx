@@ -14,7 +14,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Share,
   StatusBar,
   StyleSheet,
   TextInput,
@@ -131,7 +130,10 @@ const [customMessage, setCustomMessage] = useState(
     if (!isHost || !pendingAction) return;
 
     if (pendingAction === 'share') {
-      void openNativeShare();
+      router.push({
+        pathname: '/circles/share-picker',
+        params: { slug, title, circleId },
+      });
     }
 
     if (pendingAction === 'circles') {
@@ -148,7 +150,10 @@ const [customMessage, setCustomMessage] = useState(
   const requireHost = (action: PendingAction) => {
     if (isHost) {
       if (action === 'share') {
-        void openNativeShare();
+        router.push({
+          pathname: '/circles/share-picker',
+          params: { slug, title, circleId },
+        });
       }
 
       if (action === 'circles') {
@@ -163,19 +168,6 @@ const [customMessage, setCustomMessage] = useState(
 
     setPendingAction(action);
     setIdentityVisible(true);
-  };
-
-  const openNativeShare = async () => {
-    try {
-      const message =
-  customMessage.trim() === buildInviteMessage({ title, link: shareLink }).trim()
-    ? buildInviteMessage({ title, link: shareLink })
-    : `${customMessage.trim()}\n\n${shareLink}`;
-
-await Share.share({ message });
-    } catch (error: any) {
-      Alert.alert('Share Error', error?.message ?? 'Could not open the share sheet.');
-    }
   };
 
   const copyToClipboard = async () => {
