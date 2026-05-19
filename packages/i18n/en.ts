@@ -352,6 +352,7 @@ export const en: Record<TranslationKey, string> = {
   welcome_discover: "I want to discover Pallinky",
   identity_email_required_title: "Email Required",
   identity_email_required_body: "Please enter your email.",
+  identity_code_title:"Send 6-digit code",
   identity_code_sent_title: "Sent",
   identity_code_sent_body: "Check your email for the 6-digit code.",
   identity_send_code_error: "Could not send the code.",
@@ -361,9 +362,19 @@ export const en: Record<TranslationKey, string> = {
   identity_login_incomplete: "Login Incomplete",
   identity_login_incomplete_body:
     "The sign-in flow did not return a session. Please try again.",
+  identity_name_title: "What should we call you?",
+  identity_subtitle: "Sign in to create an event or to see your events and groups.",
   identity_login_error: "Login Error",
   identity_login_error_body: "Could not complete sign-in.",
   identity_claim_plan: "Claim your plan",
+  identity_name_label: "What should people call you?",
+  identity_name_helper: "This is how others will see you.",
+  identity_name_preview: "You’ll appear as: {name}",
+  identity_name_conflict_title: "Which name should we use?",
+  identity_name_conflict_body:
+    "We found {existingName} on your profile. Use {enteredName} instead?",
+  identity_name_conflict_keep: "Keep {existingName}",
+  identity_name_conflict_use: "Use {enteredName}",
   identity_email_placeholder: "Email",
   identity_send_code: "1. Send Me a Code",
   identity_code_placeholder: "6-digit code",
@@ -648,8 +659,6 @@ export const en: Record<TranslationKey, string> = {
   welcome_modal_body:
     'Thanks for being an early tester. This app helps turn "we should hang out" into real plans and grow your social circles organically in REAL LIFE.',
   welcome_modal_go: "Let's Go",
-  identity_subtitle:
-    "Verify your identity to unlock sharing and host controls.",
   common_add: "Add",
   common_selected_count: "{count} selected",
   modal_title: "This is a modal",
