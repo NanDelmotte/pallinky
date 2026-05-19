@@ -60,11 +60,6 @@ function normalizeEmail(value: string | null | undefined): string {
   return value?.toLowerCase().trim() || '';
 }
 
-function fallbackNameFromEmail(email: string): string {
-  const local = email.split('@')[0] || 'You';
-  return local.split(/[._-]+/)[0] || 'You';
-}
-
 function avatarFallback(name: string) {
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(
     name
@@ -110,9 +105,8 @@ export default function ProfileScreen() {
   const displayName = useMemo(() => {
     const fullName = profile?.full_name?.trim();
     if (fullName) return fullName;
-    if (emailLower) return fallbackNameFromEmail(emailLower);
     return 'You';
-  }, [profile?.full_name, emailLower]);
+  }, [profile?.full_name]);
 
   const avatarUrl = profile?.avatar_url || avatarFallback(displayName);
   const qrValue = profile?.id
@@ -131,10 +125,10 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (profile?.full_name) {
       setDraftName(profile.full_name);
-    } else if (emailLower) {
-      setDraftName(fallbackNameFromEmail(emailLower));
+    } else {
+      setDraftName('');
     }
-  }, [profile?.full_name, emailLower]);
+  }, [profile?.full_name]);
 
   async function loadProfile() {
     if (!session?.user?.id || !emailLower) {

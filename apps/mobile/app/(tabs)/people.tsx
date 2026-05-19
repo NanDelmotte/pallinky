@@ -105,7 +105,6 @@ function getCircleMemberDisplayName(
   return (
     member.member_name?.trim() ||
     profile?.name ||
-    member.member_email_lc ||
     member.member_phone_e164 ||
     t(lang, 'people_member_fallback')
   );
@@ -125,7 +124,6 @@ function buildFriendCardFromSignal(
   payload?.full_name ||
   payload?.name ||
   payload?.displayName ||
-  email.split('@')[0] ||
   t(lang, 'people_person_fallback');
 
   const sharedEvents = Number(payload?.sharedEvents || 0);
@@ -672,7 +670,6 @@ export default function PeopleScreen() {
           email,
           name:
             profileRow?.full_name ||
-            email.split('@')[0] ||
             t(lang, 'people_person_fallback'),
           avatarUrl: profileRow?.avatar_url || null,
         });
@@ -832,7 +829,7 @@ const sharedHistoryEmailSet = useMemo(() => {
     return dedupedHostEmails
       .map((email) => {
         const profile = profileMap.get(email);
-        const name = profile?.name || email.split('@')[0] || t(lang, 'people_person_fallback');
+        const name = profile?.name || t(lang, 'people_person_fallback');
 
         const matchingRows = rows.filter(
           (row: any) => normalizeEmail(row.host_email) === email
@@ -1229,7 +1226,6 @@ function PeopleAvatarSection({
   item.payload?.full_name ||
   item.payload?.name ||
   item.payload?.displayName ||
-  email.split('@')[0] ||
   'Person';
 
           const sharedEvents = Number(item.payload?.sharedEvents || 0);

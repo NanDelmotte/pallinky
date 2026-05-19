@@ -32,7 +32,6 @@ function getFirstName(value: string | null | undefined, fallback = 'Guest') {
 function getInviteName(inv: any) {
   return (
     inv.invitee_name ||
-    (inv.invitee_email_lc ? inv.invitee_email_lc.split('@')[0] : null) ||
     inv.invitee_phone_e164 ||
     'Guest'
   );
@@ -200,7 +199,7 @@ export default function DetailsGuestsSection({
           );
 
         const emailLc = normalizeEmail(matchingRsvp?.email_lc || matchingRsvp?.email || guest.email);
-        const label = profileNamesByEmail[emailLc] || guest.name || guest.email || t('event_guest_fallback');
+        const label = profileNamesByEmail[emailLc] || guest.name || t('event_guest_fallback');
         const avatarUrl = guest.avatar_url || profileAvatarsByEmail[emailLc] || null;
 
         if (emailLc) guestEmailSet.add(emailLc);
