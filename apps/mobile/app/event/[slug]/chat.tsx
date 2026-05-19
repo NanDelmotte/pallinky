@@ -186,10 +186,10 @@ export default function EventChatPage() {
 
     if (!cleanEmail) return 'Guest';
     if (cleanEmail === normalizeEmail(event?.host_email)) {
-      return profilesByEmail[cleanEmail] || event?.host_name || cleanEmail.split('@')[0];
+      return profilesByEmail[cleanEmail] || event?.host_name || 'Host';
     }
 
-    return profilesByEmail[cleanEmail] || cleanEmail.split('@')[0];
+    return profilesByEmail[cleanEmail] || 'Guest';
   };
 
   if (!viewerEmail) {

@@ -104,7 +104,6 @@ function getFirstName(value: string | null | undefined, fallback = 'Guest') {
 function getInviteName(inv: any) {
   return (
     inv.invitee_name ||
-    (inv.invitee_email_lc ? inv.invitee_email_lc.split('@')[0] : null) ||
     inv.invitee_phone_e164 ||
     'Guest'
   );
@@ -396,7 +395,7 @@ function PollDatesSection({
                       key={`${result.dateValue}-${voter.id || voter.user_email || index}`}
                       style={[styles.pollVoterName, { color: theme.text }]}
                     >
-                      {voter.guest_name || voter.user_email?.split('@')[0] || t('event_guest_fallback')}
+                      {voter.guest_name || t('event_guest_fallback')}
                     </Text>
                   ))
                 ) : (

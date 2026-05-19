@@ -84,7 +84,6 @@ function buildReconnectSubtitle(
     const firstBridgeName =
       firstBridgeProfile?.full_name ||
       bridges[0]?.bridgeName ||
-      (firstBridgeEmail ? firstBridgeEmail.split('@')[0] : '') ||
       'someone';
 
     if (bridges.length > 1) {
@@ -109,7 +108,7 @@ function buildReconnectPersonFromSignal(signal: any): SuggestionPerson {
     normalizeEmail(payload?.email_lc) ||
     normalizeEmail(payload?.email);
 
-  const fallbackName = email ? email.split('@')[0] : 'Someone';
+  const fallbackName = 'Someone';
 
   return {
     person_id: signal?.personId || payload?.person_id || null,
@@ -288,7 +287,6 @@ export default function PeopleYouMayKnow({
         member_name:
           selectedPerson.full_name ||
           selectedPerson.name ||
-          targetEmail.split('@')[0] ||
           null,
         member_email_lc: targetEmail,
         member_phone_e164: null,
@@ -365,7 +363,6 @@ export default function PeopleYouMayKnow({
         member_name:
           selectedPerson.full_name ||
           selectedPerson.name ||
-          targetEmail.split('@')[0] ||
           null,
         member_email_lc: targetEmail,
         member_phone_e164: null,
@@ -433,12 +430,12 @@ export default function PeopleYouMayKnow({
               profile?.full_name ||
               person.name ||
               person.full_name ||
-              email.split('@')[0],
+              'Someone',
             full_name:
               profile?.full_name ||
               person.full_name ||
               person.name ||
-              email.split('@')[0],
+              'Someone',
             avatar_url: profile?.avatar_url || person.avatar_url || null,
           };
 

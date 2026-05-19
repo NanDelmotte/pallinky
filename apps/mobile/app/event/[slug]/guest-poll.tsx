@@ -568,7 +568,7 @@ const syncingGridHorizontalRef = useRef(false);
 
             return {
               email,
-              label: nameMap[email] || invite.invitee_name || email.split('@')[0] || 'Guest',
+              label: nameMap[email] || invite.invitee_name || 'Guest',
               avatar_url: avatarMap[email] || null,
             };
           })
@@ -652,7 +652,6 @@ const syncingGridHorizontalRef = useRef(false);
         profileNamesByEmail[cleanEmail] ||
         vote?.guest_name?.trim() ||
         fallbackLabel ||
-        cleanEmail.split('@')[0] ||
         'Guest';
 
       rows.push({
@@ -685,7 +684,6 @@ const syncingGridHorizontalRef = useRef(false);
           profileNamesByEmail[cleanViewerEmail] ||
           myVote?.guest_name ||
           myInvite?.label ||
-          cleanViewerEmail.split('@')[0] ||
           'You',
         avatar_url: profileAvatarsByEmail[cleanViewerEmail] || myInvite?.avatar_url || null,
       });
@@ -698,7 +696,7 @@ const syncingGridHorizontalRef = useRef(false);
 
         return {
           email,
-          fallbackLabel: vote.guest_name?.trim() || email.split('@')[0] || 'Guest',
+          fallbackLabel: vote.guest_name?.trim() || 'Guest',
           avatar_url: profileAvatarsByEmail[email] || null,
         };
       })

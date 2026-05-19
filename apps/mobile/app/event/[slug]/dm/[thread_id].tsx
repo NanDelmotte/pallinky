@@ -135,7 +135,7 @@ export default function EventDmThreadScreen() {
         event_id: thread.event_id,
         event_title: event?.title || t('event_guest_fallback'),
         other_person_email_lc: otherEmail,
-        other_person_name: profile?.full_name?.trim() || otherEmail,
+        other_person_name: profile?.full_name?.trim() || t('event_guest_fallback'),
       };
 
       setHeader(nextHeader);
