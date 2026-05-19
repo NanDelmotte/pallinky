@@ -14,7 +14,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Share,
   StatusBar,
   StyleSheet,
   TextInput,
@@ -134,7 +133,10 @@ export default function SuccessScreen() {
     if (!isHost || !pendingAction) return;
 
     if (pendingAction === 'share') {
-      void openNativeShare();
+      router.push({
+        pathname: '/circles/share-picker',
+        params: { slug, title, circleId },
+      });
     }
 
     if (pendingAction === 'circles') {
@@ -151,7 +153,10 @@ export default function SuccessScreen() {
   const requireHost = (action: PendingAction) => {
     if (isHost) {
       if (action === 'share') {
-        void openNativeShare();
+        router.push({
+          pathname: '/circles/share-picker',
+          params: { slug, title, circleId },
+        });
       }
 
       if (action === 'circles') {
@@ -166,19 +171,6 @@ export default function SuccessScreen() {
 
     setPendingAction(action);
     setIdentityVisible(true);
-  };
-
-  const openNativeShare = async () => {
-    try {
-            const message =
-  customMessage.trim() === buildInviteMessage({ title, link: shareLink }).trim()
-    ? buildInviteMessage({ title, link: shareLink })
-    : `${customMessage.trim()}\n\n${shareLink}`;
-
-await Share.share({ message });
-    } catch (error: any) {
-      Alert.alert(t('create_success_share_error'), error?.message ?? t('create_success_share_sheet_error'));
-    }
   };
 
   const copyToClipboard = async () => {
