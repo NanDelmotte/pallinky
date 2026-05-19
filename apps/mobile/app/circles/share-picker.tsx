@@ -1281,25 +1281,11 @@ const profileNameById = new Map<string, string>();
               <View style={styles.sectionCard}>
                 <View style={styles.sectionCardHeaderRow}>
                   <StyledText style={styles.sectionTitle}>My People</StyledText>
-
-              <TouchableOpacity
-                    style={styles.addPeopleButton}
-                    onPress={openChooseRawContacts}
-                    disabled={addingPeople}
-                    accessibilityLabel="Add people"
-                  >
-                    <Ionicons
-                      name="person-add-outline"
-                      size={20}
-                      color={addingPeople ? COLORS.textMuted : COLORS.primary}
-                    />
-                  </TouchableOpacity>
-                
                 </View>
 
                 {filteredPeople.length === 0 ? (
                   <StyledText style={styles.emptyText}>
-                    No people yet. Tap the add button to choose who to share from your phone.
+                    No people yet.
                   </StyledText>
                 ) : (
                  <View style={styles.peopleList}>
@@ -1379,138 +1365,6 @@ const profileNameById = new Map<string, string>();
             </View>
           </>
         )}
-
-        <Modal
-          visible={rawContactPickerVisible}
-          animationType="slide"
-          presentationStyle="pageSheet"
-          onRequestClose={() => {
-            setRawContactPickerVisible(false);
-            setShowWhatsAppHelp(false);
-          }}
-        >
-          <SafeAreaView style={styles.modalWrap}>
-            <View style={styles.modalHeader}>
-              <TouchableOpacity
-                onPress={() => {
-                  setRawContactPickerVisible(false);
-                  setShowWhatsAppHelp(false);
-                }}
-              >
-                <StyledText style={styles.modalHeaderAction}>Cancel</StyledText>
-              </TouchableOpacity>
-
-              <View style={styles.modalHeaderCenter}>
-                <StyledText style={styles.modalTitle}>Add People</StyledText>
-              </View>
-
-              <TouchableOpacity
-                onPress={handleAddSelectedRawContacts}
-                disabled={addingPeople || !selectedRawContactKeys.length}
-              >
-                <StyledText
-                  style={[
-                    styles.modalHeaderAction,
-                    (!selectedRawContactKeys.length || addingPeople) && styles.headerActionDisabled,
-                  ]}
-                >
-                  Add
-                </StyledText>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.modalContent}>
-              <View style={styles.searchWrapModal}>
-                <Ionicons name="search" size={18} color={COLORS.textMuted} />
-                <TextInput
-                  value={rawContactsSearch}
-                  onChangeText={setRawContactsSearch}
-                  placeholder="Search contacts"
-                  placeholderTextColor={COLORS.textMuted}
-                  style={styles.searchInput}
-                />
-              </View>
-
-              <StyledText style={styles.modalSubtitle}>
-                If you don’t see them here, add them to your device address book.
-              </StyledText>
-
-              <TouchableOpacity onPress={() => setShowWhatsAppHelp((prev) => !prev)}>
-                <StyledText style={styles.modalHelpLink}>Not seeing WhatsApp contacts?</StyledText>
-              </TouchableOpacity>
-
-              {showWhatsAppHelp && (
-                <View style={styles.helpCard}>
-                  <StyledText style={styles.helpText}>
-                    Pallinky only shows contacts saved to your phone.
-                  </StyledText>
-
-                  <StyledText style={styles.helpText}>
-                    If someone is only in WhatsApp, they will not appear here.
-                  </StyledText>
-
-                  <StyledText style={[styles.helpText, styles.helpTextTopGap]}>
-                    You can turn off WhatsApp contacts in your account settings.
-                  </StyledText>
-
-                  <StyledText style={styles.helpText}>
-                    iPhone: Settings → Privacy → Contacts → toggle WhatsApp
-                  </StyledText>
-
-                  <StyledText style={styles.helpText}>
-                    Android: WhatsApp → Settings → Privacy → Contacts
-                  </StyledText>
-                </View>
-              )}
-
-              <StyledText style={styles.modalSummary}>
-                {selectedRawContactKeys.length} selected
-              </StyledText>
-
-              {rawContactsLoading ? (
-                <View style={styles.stateWrap}>
-                  <ActivityIndicator color={COLORS.primary} />
-                </View>
-              ) : (
-                <ScrollView contentContainerStyle={styles.modalListContent}>
-                  {filteredRawContacts.map((contact) => {
-                    const isSelected = selectedRawContactKeys.includes(contact.key);
-
-                    return (
-                      <TouchableOpacity
-                        key={contact.key}
-                        style={styles.contactRow}
-                        onPress={() => toggleRawContact(contact.key)}
-                      >
-                        <View style={styles.contactAvatar}>
-                          <StyledText style={styles.contactAvatarText}>
-                            {initialsFor(contact.name)}
-                          </StyledText>
-                        </View>
-
-                        <View style={styles.contactMain}>
-                          <StyledText style={styles.contactName}>{contact.name}</StyledText>
-                          {!!contact.email_lc && (
-                            <StyledText style={styles.contactMeta}>{contact.email_lc}</StyledText>
-                          )}
-                          {!!contact.phone_e164 && (
-                            <StyledText style={styles.contactMeta}>{contact.phone_e164}</StyledText>
-                          )}
-                        </View>
-
-                        <Ionicons
-                          name={isSelected ? 'checkbox' : 'square-outline'}
-                          size={22}
-                          color={isSelected ? COLORS.primary : '#b0b7c3'}
-                        />
-                      </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
-              )}
-            </View>
-          </SafeAreaView>
-        </Modal>
 
         <CircleManagerSheet
           visible={circleManagerVisible}
