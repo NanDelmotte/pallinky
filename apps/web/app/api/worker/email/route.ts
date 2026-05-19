@@ -142,6 +142,8 @@ function renderEmail(job: EmailJob) {
     : [];
   const isDatePoll = proposedDates.length > 0;
   const isUpdate = job.payload?.is_update === true;
+  const isPendingRequest =
+    job.payload?.request_pending === true || response === "pending";
   const lang = normalizeLanguage(
     job.payload?.lang || job.payload?.locale || job.payload?.language
   );
@@ -157,20 +159,32 @@ function renderEmail(job: EmailJob) {
     host: hostName,
   });
 
-  const headline = t(lang, copyKeys.headlineKey, {
-    event: eventTitle,
-    host: hostName,
-  });
+  const headline = isPendingRequest
+    ? t(lang, "rsvp_request_pending_headline", {
+        event: eventTitle,
+        host: hostName,
+      })
+    : t(lang, copyKeys.headlineKey, {
+        event: eventTitle,
+        host: hostName,
+      });
 
   const eventContext = t(lang, copyKeys.eventContextKey, {
     event: eventTitle,
     host: hostName,
   });
 
-  const support = t(lang, copyKeys.supportKey, {
-    event: eventTitle,
-    host: hostName,
-  });
+  const support = isPendingRequest
+    ? t(lang, "rsvp_request_pending_support", {
+        event: eventTitle,
+        host: hostName,
+      })
+    : t(lang, copyKeys.supportKey, {
+        event: eventTitle,
+        host: hostName,
+      });
+
+  const installHint = t(lang, "post_rsvp_install_hint");
 
   const eventUrl = slug
     ? `https://pallinky.com/event/${slug}${token ? `?token=${token}` : ""}`
@@ -227,6 +241,12 @@ function renderEmail(job: EmailJob) {
 
               <tr>
                 <td style="padding:4px 28px 18px 28px;text-align:center;font-size:13px;line-height:1.5;color:#66715f;">
+                  ${installHint}
+                </td>
+              </tr>
+
+              <tr>
+                <td style="padding:0 28px 18px 28px;text-align:center;font-size:13px;line-height:1.5;color:#66715f;">
                   On Android? Send an email to nanbowles@gmail.com and we’ll add you to the beta.
                 </td>
               </tr>

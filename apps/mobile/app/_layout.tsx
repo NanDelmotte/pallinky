@@ -189,18 +189,27 @@ function AppNavigator() {
       }
     };
 
-    const extractEventSlugFromUrl = (url: string): string | null => {
+    const extractEventTargetFromUrl = (url: string): { slug: string; token?: string } | null => {
       try {
         const normalized = String(url || '').trim();
+        const token = (() => {
+          try {
+            const parsed = new URL(normalized);
+            return parsed.searchParams.get('token')?.trim() || undefined;
+          } catch {
+            const match = normalized.match(/[?&]token=([^&#]+)/i);
+            return match?.[1] ? decodeURIComponent(match[1]) : undefined;
+          }
+        })();
 
         let match = normalized.match(/^https?:\/\/(?:www\.)?pallinky\.com\/event\/([^/?#]+)/i);
-        if (match?.[1]) return decodeURIComponent(match[1]);
+        if (match?.[1]) return { slug: decodeURIComponent(match[1]), token };
 
         match = normalized.match(/^pallinky(?:-dev)?:\/\/event\/([^/?#]+)/i);
-        if (match?.[1]) return decodeURIComponent(match[1]);
+        if (match?.[1]) return { slug: decodeURIComponent(match[1]), token };
 
         match = normalized.match(/\/event\/([^/?#]+)/i);
-        if (match?.[1]) return decodeURIComponent(match[1]);
+        if (match?.[1]) return { slug: decodeURIComponent(match[1]), token };
 
         return null;
       } catch {
@@ -240,12 +249,15 @@ function AppNavigator() {
       if (!url) return;
 
       try {
-        const slug = extractEventSlugFromUrl(url);
+        const eventTarget = extractEventTargetFromUrl(url);
 
-        if (slug) {
+        if (eventTarget) {
           router.push({
             pathname: '/event/[slug]/details',
-            params: { slug },
+            params: {
+              slug: eventTarget.slug,
+              ...(eventTarget.token ? { token: eventTarget.token } : {}),
+            },
           } as any);
           return;
         }

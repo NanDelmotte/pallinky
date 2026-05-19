@@ -169,7 +169,7 @@ useEffect(() => {
       }
       setDeviceContactCount(nextDeviceContactCount);
 
-      const [{ data: profile }, { data: mePerson }] = await Promise.all([
+      const [{ data: profile }, { data: mePeople }] = await Promise.all([
         supabase
           .from('profiles')
           .select('id, avatar_url')
@@ -179,13 +179,14 @@ useEffect(() => {
           .from('people')
           .select('id, email_lc, matched_user_id')
           .or(`matched_user_id.eq.${session.user.id},email_lc.eq.${emailLower}`)
-          .limit(1)
-          .maybeSingle(),
       ]);
 
       setAvatarUrl((profile as any)?.avatar_url || null);
 
-const userPersonId = normalizeId((mePerson as any)?.id);
+const userPersonIds = Array.from(
+  new Set(((mePeople as any[]) || []).map((person: any) => normalizeId(person?.id)).filter(Boolean))
+);
+const userPersonId = userPersonIds[0] || '';
 
 const { data: relationshipRows, error: relationshipError } = await supabase
   .from('relationships')
@@ -214,7 +215,8 @@ const directRelationshipEmails = Array.from(
 const [
   hostedEventsRes,
         invitesRes,
-        myRsvpsRes,
+        myRsvpsByEmailRes,
+        myRsvpsByPersonRes,
         myVibeResponsesRes,
         circlesRes,
         deviceContactsRes,
@@ -231,6 +233,13 @@ const [
           .select('*')
           .eq('email_lc', emailLower),
 
+        userPersonIds.length > 0
+          ? supabase
+              .from('rsvps')
+              .select('*')
+              .in('person_id', userPersonIds)
+          : Promise.resolve({ data: [] }),
+
         supabase
           .from('vibe_responses')
           .select('*')
@@ -246,6 +255,14 @@ const [
 
         supabase.rpc('get_my_device_contacts'),
       ]);
+
+      const myRsvpRows = Array.from(
+        new Map(
+          [...(myRsvpsByEmailRes.data || []), ...(myRsvpsByPersonRes.data || [])].map(
+            (row: any) => [String(row.id), row]
+          )
+        ).values()
+      );
 
       const circleRows = circlesRes.data || [];
       const circleIds = circleRows.map((circle: any) => circle.id);
@@ -289,7 +306,7 @@ const [
 
       const sharedHistoryEventIds = Array.from(
         new Set(
-          (myRsvpsRes.data || [])
+          myRsvpRows
             .map((r: any) => (r.event_id ? String(r.event_id) : null))
             .filter(Boolean)
         )
@@ -326,7 +343,8 @@ const [
       }
 
       const inviteEventIds = (invitesRes.data || []).map((i: any) => i.event_id);
-      const rsvpEventIds = (myRsvpsRes.data || []).map((r: any) => r.event_id);
+      const rsvpEventIds = myRsvpRows.map((r: any) => r.event_id);
+      const rsvpEventIdSet = new Set(rsvpEventIds.map((eventId: any) => String(eventId)));
       const vibeResponseEventIds = (myVibeResponsesRes.data || []).map((r: any) => r.event_id);
 
       const directEventIdsToLoad = Array.from(
@@ -355,6 +373,18 @@ const [
             eventId: String(ev.id),
             viewerEmail: emailLower,
           });
+
+          if (decision.can_see !== true && rsvpEventIdSet.has(String(ev.id))) {
+            return [
+              String(ev.id),
+              {
+                ...decision,
+                can_see: true,
+                has_existing_rsvp: true,
+                reason: 'existing_rsvp',
+              },
+            ] as const;
+          }
 
           return [String(ev.id), decision] as const;
         })
@@ -490,6 +520,7 @@ const [
   accessByEventId,
   userEmail: emailLower,
   userPersonId,
+  userPersonIds,
 });
     } catch (error) {
       console.error('Social Feed data load failed', error);
