@@ -10,13 +10,13 @@ Run this from the repository root:
 fly deploy --config apps/web/fly.toml --dockerfile apps/web/Dockerfile -a pallinky-prod
 ```
 
-### Automated deploy from GitHub Releases
+### Manual deploy from GitHub Actions
 
 This repository includes a GitHub Actions workflow at:
 
 `/.github/workflows/fly-web-release.yml`
 
-It deploys the web app when a GitHub Release is published (`release.published`), and can also be triggered manually from the Actions tab (`workflow_dispatch`).
+It deploys the web app when triggered manually from the Actions tab (`workflow_dispatch`).
 
 The workflow runs:
 
