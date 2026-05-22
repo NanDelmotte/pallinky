@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { Alert, AppState, Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import { Stack, useGlobalSearchParams, useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
 import * as Device from 'expo-device';
@@ -16,7 +16,8 @@ import { completeSupabaseAuthFromUrl, isAuthCallbackUrl } from '../lib/authRedir
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { I18nProvider, useI18n } from '@pallinky/i18n/client';
 import { isAppLanguage } from '@pallinky/i18n';
-import * as Updates from 'expo-updates';
+import EasUpdateModal from '../components/EasUpdateModal';
+import { useEasUpdate } from '../lib/useEasUpdate';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -336,24 +337,28 @@ function AppNavigator() {
   );
 }
 
+function EasUpdateController() {
+  const { updateAvailable, restarting, dismissUpdate, applyUpdate } = useEasUpdate();
+
+  return (
+    <EasUpdateModal
+      visible={updateAvailable}
+      restarting={restarting}
+      onLater={dismissUpdate}
+      onUpdateNow={() => {
+        void applyUpdate();
+      }}
+    />
+  );
+}
+
 export default function RootLayout() {
-  useEffect(() => {
-    (async () => {
-      const update = await Updates.checkForUpdateAsync();
-      Alert.alert('Update available', String(update.isAvailable));
-
-      if (update.isAvailable) {
-        await Updates.fetchUpdateAsync();
-        await Updates.reloadAsync();
-      }
-    })();
-  }, []);
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <I18nProvider storage={AsyncStorage}>
         <SessionProvider>
           <AppNavigator />
+          <EasUpdateController />
         </SessionProvider>
       </I18nProvider>
     </GestureHandlerRootView>

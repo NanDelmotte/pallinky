@@ -367,7 +367,7 @@ export const en: Record<TranslationKey, string> = {
   identity_login_error: "Login Error",
   identity_login_error_body: "Could not complete sign-in.",
   identity_claim_plan: "Claim your plan",
-  identity_name_label: "What should people call you?",
+  identity_name_label: "First Name?",
   identity_name_helper: "This is how others will see you.",
   identity_name_preview: "You’ll appear as: {name}",
   identity_name_conflict_title: "Which name should we use?",
