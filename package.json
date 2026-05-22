@@ -10,6 +10,10 @@
     "android": "npm run android --workspace=apps/mobile",
     "ios": "npm run ios --workspace=apps/mobile",
     "mobile": "npm run mobile --workspace=apps/mobile",
+    "build:ios:development": "npm run build:ios:development --workspace=apps/mobile",
+    "build:ios:production": "npm run build:ios:production --workspace=apps/mobile",
+    "build:android:development": "npm run build:android:development --workspace=apps/mobile",
+    "build:android:production": "npm run build:android:production --workspace=apps/mobile",
     "web": "npm run dev --workspace=apps/web",
     "build:web": "npm run build --workspace=apps/web"
   },
