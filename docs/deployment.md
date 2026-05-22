@@ -32,6 +32,8 @@ Set this repository secret for Actions:
 
 ## Mobile App (Expo / EAS iOS)
 
+Note: This repo currently commits native projects (`apps/mobile/ios` and `apps/mobile/android`), so native settings are source of truth for install identifiers. `app.config.js` identifier values may be ignored when native folders are present. We can revisit and migrate to a managed/CNG strategy later if desired.
+
 ### Manual build from GitHub Actions
 
 This repository includes two workflows:
