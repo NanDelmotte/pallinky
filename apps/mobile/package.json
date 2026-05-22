@@ -8,6 +8,12 @@
     "android": "expo run:android",
     "mobile": "expo start",
     "lint": "expo lint",
+    "validate-env:development": "node ./scripts/validate-public-env.js development",
+    "validate-env:production": "node ./scripts/validate-public-env.js production",
+    "export:development": "npm run validate-env:development && expo export",
+    "export:production": "npm run validate-env:production && expo export",
+    "update:development": "eas env:exec --environment development 'npm run validate-env:development && eas update --branch development --environment development'",
+    "update:production": "eas env:exec --environment production 'npm run validate-env:production && eas update --branch production --environment production'",
     "reset-project": "node ./scripts/reset-project.js"
   },
   "expo": {
