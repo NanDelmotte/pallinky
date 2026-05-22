@@ -32,28 +32,25 @@ Set this repository secret for Actions:
 
 ## Mobile App (Expo / EAS iOS)
 
-### Current release flow
+### Manual build from GitHub Actions
 
-1. Update version values in `apps/mobile/app.config.js` (`version` and `runtimeVersion`).
-2. Run a development iOS build and test on a real device.
-3. After validation, run the production iOS build.
+This repository includes two workflows:
 
-### Automated build from GitHub Actions
-
-This repository includes a workflow at:
-
-`/.github/workflows/mobile-ios-build.yml`
+- `/.github/workflows/mobile-ios-dev-build.yml`
+- `/.github/workflows/mobile-ios-prod-build.yml`
 
 Run it from the Actions tab using `workflow_dispatch`:
 
-- `profile=development` for test builds
-- `profile=production` for release builds
-  - Requires `confirm_production=release` as a safety check
+1. Run `Mobile iOS Dev Build (EAS)` for test builds.
+2. Validate on device.
+3. Run `Mobile iOS Prod Build (EAS)` for release builds.
+4. Set `confirm_production=release` for production runs.
 
-The workflow runs EAS with:
+The workflows run EAS with:
 
 ```bash
-EXPO_NO_CAPABILITY_SYNC=1 eas build --profile <development|production> --platform ios --non-interactive
+EXPO_NO_CAPABILITY_SYNC=1 eas build --profile development --platform ios --non-interactive
+EXPO_NO_CAPABILITY_SYNC=1 eas build --profile production --platform ios --non-interactive
 ```
 
 ### Required GitHub secret
