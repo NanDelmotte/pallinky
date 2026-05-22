@@ -6,6 +6,7 @@ type RelationshipEntry = {
   key: string;
   personId?: string;
   personEmail?: string;
+  name?: string;
   sharedEvents: number;
   hostedByYouCount: number;
   hostedByThemCount: number;
@@ -250,6 +251,7 @@ export function deriveFeedSignals(input: {
   const oneDayMs = 24 * 60 * 60 * 1000;
 
   const directIdentityMap = new Map<string, FeedIdentity>();
+  const directIdentityNameMap = new Map<string, string>();
 
   for (const circle of socialCircles) {
     const members = Array.isArray(circle?.members) ? circle.members : [];
@@ -257,6 +259,9 @@ export function deriveFeedSignals(input: {
       const identity = resolveIdentity(member);
       if (!identity.key || isViewerIdentity(identity)) continue;
       directIdentityMap.set(identity.key, identity);
+
+      const name = resolveDisplayName(member);
+      if (name) directIdentityNameMap.set(identity.key, name);
     }
   }
 
@@ -512,10 +517,16 @@ const secondDegreeEventIds = new Set(
 
     if (!userInEvent) continue;
 
-    const sharedPeople = new Map<string, FeedIdentity>();
+    const sharedPeople = new Map<
+      string,
+      { identity: FeedIdentity; displayName?: string }
+    >();
 
     if (hostIdentity.key && !isViewerIdentity(hostIdentity)) {
-      sharedPeople.set(hostIdentity.key, hostIdentity);
+      sharedPeople.set(hostIdentity.key, {
+        identity: hostIdentity,
+        displayName: resolveDisplayName({ host_name: ev.host_name }),
+      });
     }
 
     for (const r of eventParticipation) {
@@ -525,14 +536,19 @@ const secondDegreeEventIds = new Set(
       if (!identity.key || isViewerIdentity(identity)) continue;
       if (!isPositiveParticipationStatus(status)) continue;
 
-      sharedPeople.set(identity.key, identity);
+      const existing = sharedPeople.get(identity.key);
+      sharedPeople.set(identity.key, {
+        identity,
+        displayName: existing?.displayName || resolveDisplayName(r),
+      });
     }
 
-    for (const identity of sharedPeople.values()) {
+    for (const { identity, displayName } of sharedPeople.values()) {
       const existing: RelationshipEntry = relationshipMap.get(identity.key!) || {
         key: identity.key!,
         personId: identity.personId,
         personEmail: identity.personEmail,
+        name: displayName,
         sharedEvents: 0,
         hostedByYouCount: 0,
         hostedByThemCount: 0,
@@ -565,6 +581,7 @@ const secondDegreeEventIds = new Set(
 
       if (!existing.personId && identity.personId) existing.personId = identity.personId;
       if (!existing.personEmail && identity.personEmail) existing.personEmail = identity.personEmail;
+      if (!existing.name && displayName) existing.name = displayName;
 
       if (evMs !== null && (existing.lastSeenAtMs === null || evMs > existing.lastSeenAtMs)) {
         existing.lastSeenAtMs = evMs;
@@ -592,6 +609,7 @@ const secondDegreeEventIds = new Set(
       key: identity.key,
       personId: identity.personId,
       personEmail: identity.personEmail,
+      name: directIdentityNameMap.get(identity.key),
       sharedEvents: 0,
       hostedByYouCount: 0,
       hostedByThemCount: 0,

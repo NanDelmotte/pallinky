@@ -84,6 +84,33 @@ function avatarFor(name: string, avatarUrl?: string | null) {
   )}&background=43691b&color=fff`;
 }
 
+function cleanDisplayName(value: unknown) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function emailNameFallback(email: string) {
+  const localPart = normalizeEmail(email).split('@')[0]?.trim();
+  return localPart || '';
+}
+
+function resolvePersonDisplayName(
+  profile: PersonProfile | null | undefined,
+  payload: any,
+  email: string,
+  lang: AppLanguage
+) {
+  return (
+    cleanDisplayName(profile?.name) ||
+    cleanDisplayName(payload?.full_name) ||
+    cleanDisplayName(payload?.name) ||
+    cleanDisplayName(payload?.displayName) ||
+    cleanDisplayName(payload?.member_name) ||
+    cleanDisplayName(payload?.host_name) ||
+    emailNameFallback(email) ||
+    t(lang, 'people_person_fallback')
+  );
+}
+
 function initialsFor(value: string | null | undefined) {
   const words = (value || 'Circle')
     .trim()
@@ -119,12 +146,7 @@ function buildFriendCardFromSignal(
   const payload = signal.payload || {};
   const profile = profileMap.get(email);
 
-  const name =
-  profile?.name ||
-  payload?.full_name ||
-  payload?.name ||
-  payload?.displayName ||
-  t(lang, 'people_person_fallback');
+  const name = resolvePersonDisplayName(profile, payload, email, lang);
 
   const sharedEvents = Number(payload?.sharedEvents || 0);
   const lastSeenAt = payload?.lastSeenAt || null;
@@ -668,9 +690,7 @@ export default function PeopleScreen() {
 
         nextProfileMap.set(email, {
           email,
-          name:
-            profileRow?.full_name ||
-            t(lang, 'people_person_fallback'),
+          name: cleanDisplayName(profileRow?.full_name),
           avatarUrl: profileRow?.avatar_url || null,
         });
       }
@@ -829,7 +849,7 @@ const sharedHistoryEmailSet = useMemo(() => {
     return dedupedHostEmails
       .map((email) => {
         const profile = profileMap.get(email);
-        const name = profile?.name || t(lang, 'people_person_fallback');
+        const name = resolvePersonDisplayName(profile, null, email, lang);
 
         const matchingRows = rows.filter(
           (row: any) => normalizeEmail(row.host_email) === email
@@ -938,6 +958,7 @@ const sharedHistoryEmailSet = useMemo(() => {
                   subtitle={t(lang, 'people_closest_connections_subtitle')}
                   items={innerCircleSignals}
                   profileMap={profileMap}
+                  lang={lang}
                   showCountBadge
                   onPressPerson={handleOpenFriend}
                 />
@@ -949,6 +970,7 @@ const sharedHistoryEmailSet = useMemo(() => {
                   subtitle={t(lang, 'people_recent_connections_subtitle')}
                   items={activeConnectionSignals}
                   profileMap={profileMap}
+                  lang={lang}
                   showCountBadge
                   onPressPerson={handleOpenFriend}
                 />
@@ -1182,6 +1204,7 @@ function PeopleAvatarSection({
   subtitle,
   items,
   profileMap,
+  lang,
   showCountBadge = false,
   onPressPerson,
 }: {
@@ -1189,6 +1212,7 @@ function PeopleAvatarSection({
   subtitle: string;
   items: FeedItem[];
   profileMap: Map<string, PersonProfile>;
+  lang: AppLanguage;
   showCountBadge?: boolean;
   onPressPerson: (item: FeedItem) => void;
 }) {
@@ -1213,20 +1237,25 @@ function PeopleAvatarSection({
       return Number(!!bProfile?.avatarUrl) - Number(!!aProfile?.avatarUrl);
     }
 
-    const aName = aProfile?.name || a.payload?.name || '';
-    const bName = bProfile?.name || b.payload?.name || '';
+    const aName = resolvePersonDisplayName(
+      aProfile,
+      a.payload,
+      normalizeEmail(a.personEmail),
+      lang
+    );
+    const bName = resolvePersonDisplayName(
+      bProfile,
+      b.payload,
+      normalizeEmail(b.personEmail),
+      lang
+    );
 
     return aName.localeCompare(bName);
   })
   .map((item) => {
           const email = normalizeEmail(item.personEmail);
           const profile = profileMap.get(email);
-          const name =
-  profile?.name ||
-  item.payload?.full_name ||
-  item.payload?.name ||
-  item.payload?.displayName ||
-  'Person';
+          const name = resolvePersonDisplayName(profile, item.payload, email, lang);
 
           const sharedEvents = Number(item.payload?.sharedEvents || 0);
 
