@@ -138,14 +138,10 @@ export default function ManageEventScreen() {
         p_body: messageText.trim(),
       };
 
-      console.log("send_host_message_by_manage_token payload", payload);
-
-      const { data, error } = await supabase.rpc(
+      const { error } = await supabase.rpc(
         "send_host_message_by_manage_token",
         payload,
       );
-
-      console.log("send_host_message_by_manage_token result", { data, error });
 
       if (error) {
         throw error;
@@ -156,8 +152,6 @@ export default function ManageEventScreen() {
       setMessageSubject("");
       setShowMessageModal(false);
     } catch (err: any) {
-      console.log("send_host_message_by_manage_token failed", err);
-
       const message =
         err?.message ||
         err?.details ||
@@ -186,17 +180,13 @@ export default function ManageEventScreen() {
         p_message: cancelMessage.trim() || null,
       };
 
-      console.log("cancel_event_by_manage_token payload", payload);
-
-      const { data, error } = await supabase.rpc(
+      const { error } = await supabase.rpc(
         "cancel_event_by_manage_token",
         payload as {
           p_manage_token: string;
           p_message: string;
         },
       );
-
-      console.log("cancel_event_by_manage_token result", { data, error });
 
       if (error) {
         throw error;
@@ -216,8 +206,6 @@ export default function ManageEventScreen() {
         ],
       );
     } catch (err: any) {
-      console.log("cancel_event_by_manage_token failed", err);
-
       const message =
         err?.message ||
         err?.details ||

@@ -43,7 +43,6 @@ function getSupabaseUserClient(authHeader: string) {
 }
 
 export async function POST(request: Request) {
-  console.log('WEB_SUPABASE_URL', process.env.SUPABASE_URL);
   try {
     const authHeader = request.headers.get("authorization");
 
@@ -80,12 +79,6 @@ export async function POST(request: Request) {
       details: adminLookupError?.message || "Admin client cannot access auth user",
       user_id: user.id,
       user_email: user.email,
-      using_url:
-        process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || null,
-      has_service_role: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
-      service_role_prefix: process.env.SUPABASE_SERVICE_ROLE_KEY
-        ? process.env.SUPABASE_SERVICE_ROLE_KEY.slice(0, 12)
-        : null,
     },
     { status: 500 }
   );
@@ -118,9 +111,6 @@ if (deleteUserError) {
       delete_data: deleteData ?? null,
       user_id: user.id,
       user_email: user.email,
-      using_url:
-        process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || null,
-      has_service_role: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
     },
     { status: 500 }
   );
