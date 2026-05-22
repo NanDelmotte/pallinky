@@ -1,7 +1,15 @@
 const appVariant = process.env.EXPO_PUBLIC_APP_VARIANT ?? 'production';
+const isDevelopment = appVariant === 'development';
+const appName = isDevelopment ? 'Pallinky Dev' : 'Pallinky';
+const iosBundleIdentifier = isDevelopment
+  ? 'com.nancy.pallinky.dev'
+  : 'com.nancy.pallinky';
+const androidPackage = isDevelopment
+  ? 'com.nancy.pallinky.dev'
+  : 'com.nancy.pallinky';
 export default {
   expo: {
-    name: 'Pallinky',
+    name: appName,
     slug: 'pallinky',
     owner: 'nanbowles',
     scheme: 'pallinky',
@@ -27,7 +35,7 @@ export default {
 },
     ios: {
       supportsTablet: true,
-      bundleIdentifier: 'com.nancy.pallinky',
+      bundleIdentifier: iosBundleIdentifier,
       usesAppleSignIn: true,
 
       associatedDomains: ['applinks:pallinky.com'],
@@ -71,7 +79,7 @@ export default {
     },
 
     android: {
-      package: 'com.nancy.pallinky',
+      package: androidPackage,
 
       googleServicesFile: './google-services.json',
 
