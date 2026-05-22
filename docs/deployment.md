@@ -56,3 +56,16 @@ EXPO_NO_CAPABILITY_SYNC=1 eas build --profile production --platform ios --non-in
 ### Required GitHub secret
 
 - `EXPO_TOKEN`: Expo token with permission to run EAS builds for this project
+
+### Local build commands
+
+Run from repository root:
+
+```bash
+npm run build:ios:development
+npm run build:ios:production
+npm run build:android:development
+npm run build:android:production
+```
+
+These commands run EAS builds through `apps/mobile` with `EXPO_NO_CAPABILITY_SYNC=1`.
