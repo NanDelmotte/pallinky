@@ -193,8 +193,6 @@ export default function VerifyOTPScreen() {
 
     const redirectUrl = getAuthCallbackUrl();
 
-    console.log('[OAuth] provider:', provider);
-    console.log('[OAuth] redirectUrl:', redirectUrl);
 
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -212,25 +210,16 @@ export default function VerifyOTPScreen() {
         },
       });
 
-      console.log('[OAuth] signInWithOAuth error:', error);
-      console.log('[OAuth] provider url:', data?.url);
-
       if (error) throw error;
       if (!data?.url) throw new Error('No OAuth URL returned.');
 
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
 
-      console.log('[OAuth] browser result:', JSON.stringify(result, null, 2));
-
       if (result.type !== 'success' || !result.url) {
         return;
       }
 
-      console.log('[OAuth] returned url:', result.url);
-
       const session = await completeSupabaseAuthFromUrl(result.url);
-
-      console.log('[OAuth] completed session:', session);
 
       if (session) {
         await ensureProfileFullName({
@@ -241,7 +230,6 @@ export default function VerifyOTPScreen() {
         goToDestination();
       }
     } catch (error: any) {
-      console.log('[OAuth] caught error:', error);
       Alert.alert('Login Error', error.message ?? 'Could not complete login.');
     } finally {
       finishingAuthRef.current = false;

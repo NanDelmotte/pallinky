@@ -73,7 +73,6 @@ async function getExpoPushToken(): Promise<string | null> {
     const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
     const token = tokenData.data;
 
-    console.log('Push token:', token);
     return token;
   } catch (err) {
     console.log('Push token fetch error:', err);
@@ -103,7 +102,6 @@ async function savePushTokenForCurrentUser(token: string) {
     if (error) {
       console.log('Push token save error:', error);
     } else {
-      console.log('Push token saved for:', email);
     }
   } catch (err) {
     console.log('Push token save exception:', err);

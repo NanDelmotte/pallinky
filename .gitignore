@@ -61,6 +61,11 @@ supabase/*dump*.sql
 # =========================
 # Build artifacts
 # =========================
+apps/web/.next/
+apps/web/out/
+apps/web/.vercel/
+*.tsbuildinfo
+apps/mobile/ios/.xcode.env
 android/build/
 ios/build/
 android/.gradle/
@@ -87,4 +92,3 @@ logs/
 # =========================
 *.tmp
 *.swp
-
