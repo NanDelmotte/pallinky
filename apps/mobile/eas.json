@@ -9,6 +9,12 @@
       "distribution": "internal",
       "channel": "development",
       "environment": "development",
+      "ios": {
+        "buildConfiguration": "Debug"
+      },
+      "android": {
+        "gradleCommand": ":app:assembleDebug"
+      },
       "env": {
         "EXPO_PUBLIC_APP_VARIANT": "development"
       }
@@ -17,6 +23,12 @@
       "autoIncrement": true,
       "channel": "production",
       "environment": "production",
+      "ios": {
+        "buildConfiguration": "Release"
+      },
+      "android": {
+        "gradleCommand": ":app:bundleRelease"
+      },
       "env": {
         "EXPO_PUBLIC_APP_VARIANT": "production"
       }
