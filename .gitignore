@@ -44,6 +44,8 @@ supabase/.temp/
 supabase/dev_schema.sql
 supabase/.branches/
 supabase/.cache/
+supabase/prod_*.sql
+supabase/*dump*.sql
 
 # =========================
 # macOS
@@ -85,3 +87,4 @@ logs/
 # =========================
 *.tmp
 *.swp
+
