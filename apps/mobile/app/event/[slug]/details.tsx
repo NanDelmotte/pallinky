@@ -29,6 +29,7 @@ import DetailsApprovalsModal from './components/DetailsApprovalsModal';
 import DetailsSeriesSection from './components/DetailsSeriesSection';
 import { useI18n } from '@pallinky/i18n/client';
 import type { AppLanguage } from '@pallinky/i18n/types';
+import { getExternalUrlDomain, normalizeExternalUrl } from '../../../lib/externalUrl';
 
 const SYSTEM = {
   background: '#F6F7F9',
@@ -69,6 +70,10 @@ type EventModel = {
   baseKind: BaseEventKind;
   isSeries: boolean;
 };
+
+function getExternalLinkText(value: string | null | undefined, fallback: string) {
+  return getExternalUrlDomain(value) || fallback;
+}
 
 function getEventModel(event: any): EventModel {
   const eventType = normalizeStatus(event?.event_type);
@@ -1103,7 +1108,7 @@ setInvites(invitesRes.data || []);
               <Text style={[styles.descriptionText, { color: theme.text }]}>{description}</Text>
             </View>
           ) : null}
-{event.event_url ? (
+{normalizeExternalUrl(event.external_url) ? (
   <TouchableOpacity
     style={[
       styles.eventLinkCard,
@@ -1112,13 +1117,18 @@ setInvites(invitesRes.data || []);
         borderColor: theme.isDark ? 'rgba(255,255,255,0.10)' : SYSTEM.borderSoft,
       },
     ]}
-    onPress={() => Linking.openURL(event.event_url)}
+    onPress={() => {
+      const url = normalizeExternalUrl(event.external_url);
+      if (url) Linking.openURL(url);
+    }}
   >
     <MaterialCommunityIcons name="link-variant" size={22} color={theme.accent} />
     <View style={styles.eventLinkTextWrap}>
-      <Text style={[styles.eventLinkTitle, { color: theme.text }]}>Open link</Text>
+      <Text style={[styles.eventLinkTitle, { color: theme.text }]}>
+        {getExternalLinkText(event.external_url, t('external_link_open'))}
+      </Text>
       <Text style={[styles.eventLinkUrl, { color: theme.accent }]} numberOfLines={1}>
-        {event.event_url}
+        {normalizeExternalUrl(event.external_url)}
       </Text>
     </View>
     <Ionicons name="open-outline" size={18} color={theme.accent} />

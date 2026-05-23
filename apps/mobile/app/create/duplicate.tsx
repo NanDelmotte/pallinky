@@ -30,6 +30,7 @@ import { StyledInput, StyledText } from '@pallinky/ui';
 
 import DateOptionPicker from '../../components/DateOptionPicker';
 import LocationSearch from '../../components/LocationSearch';
+import { isValidExternalUrl, normalizeExternalUrl } from '../../lib/externalUrl';
 
 type VisibilityMode = 1 | 2 | 3;
 type VisibilityText = 'host_only' | 'guests_can_see';
@@ -45,6 +46,7 @@ type FormState = {
   endDate: Date | null;
   description: string;
   location: string;
+  external_url: string;
   host_name: string;
   host_email: string;
   visibility: VisibilityMode;
@@ -134,6 +136,7 @@ const descriptionParam = typeof params.description === 'string' ? params.descrip
 const locationParam = typeof params.location === 'string' ? params.location : '';
 const hostNameParam = typeof params.host_name === 'string' ? params.host_name : '';
 const hostEmailParam = typeof params.host_email === 'string' ? params.host_email : '';
+const externalUrlParam = typeof params.external_url === 'string' ? params.external_url : '';
 const eventTypeParam = typeof params.event_type === 'string' ? params.event_type : '';
 const startsAtParam = typeof params.starts_at === 'string' ? params.starts_at : '';
 const endsAtParam = typeof params.ends_at === 'string' ? params.ends_at : '';
@@ -206,6 +209,7 @@ const initialEndsAt = endsAtParam ? new Date(endsAtParam) : null;
   endDate: initialEndDate,
   description: descriptionParam,
   location: locationParam,
+  external_url: externalUrlParam,
   host_name: hostNameParam,
   host_email: hostEmailParam,
   visibility: Number(visibilityParam || 3) as VisibilityMode,
@@ -457,6 +461,16 @@ const initialEndsAt = endsAtParam ? new Date(endsAtParam) : null;
 
     try {
       const description = form.description.trim() || null;
+
+      if (!isValidExternalUrl(form.external_url)) {
+        Alert.alert(
+          'Invalid external link',
+          'Enter a valid link that starts with http:// or https://.',
+        );
+        return;
+      }
+
+      const externalUrl = normalizeExternalUrl(form.external_url);
       const location = form.location || null;
 
       if (form.whenMode === 'specific') {
@@ -485,6 +499,7 @@ const initialEndsAt = endsAtParam ? new Date(endsAtParam) : null;
           p_description: fullDescription || null,
           p_event_type: 'formal',
           p_event_time_zone: getLocalTimeZone(),
+          p_external_url: externalUrl,
           p_visibility: form.visibility,
           p_expires_in_days: 14,
           p_invite_list_visibility: form.invite_list_visibility,
@@ -538,6 +553,7 @@ const initialEndsAt = endsAtParam ? new Date(endsAtParam) : null;
         rsvpDeadline: form.rsvp_deadline,
         sendFinalReminderAtDeadline: form.send_final_reminder_at_deadline,
         forwardingMode: form.forwarding_mode,
+        externalUrl,
       });
 
       router.replace({
@@ -735,6 +751,20 @@ const initialEndsAt = endsAtParam ? new Date(endsAtParam) : null;
               onChange={(nextValue) => updateForm('location', nextValue)}
             />
           </View>
+
+          <StyledText style={styles.sectionLabel}>External link</StyledText>
+          <StyledInput
+            placeholder="https://example.com"
+            value={form.external_url}
+            onChangeText={(text: string) => updateForm('external_url', text)}
+            keyboardType="url"
+            autoCapitalize="none"
+            autoCorrect={false}
+            style={styles.inputStyle}
+          />
+          <StyledText style={styles.helperText}>
+            Add a restaurant, ticket, menu, or venue link.
+          </StyledText>
 
           <TouchableOpacity
             style={styles.pwaInput}
@@ -1166,6 +1196,14 @@ const styles = StyleSheet.create({
 
   detailsInput: {
     height: 120,
+  },
+
+  helperText: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: -8,
+    marginBottom: 16,
   },
 
   pwaInput: {

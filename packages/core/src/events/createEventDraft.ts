@@ -14,8 +14,9 @@ export type createEventdraftInput = {
   eventTimeZone?: string | null;
   proposedDates?: string[];
   location?: string | null;
+  externalUrl?: string | null;
   visibility?: 1 | 2 | 3;
-eventUrl?: string | null;
+  eventUrl?: string | null;
   inviteListVisibility?: 'host_only' | 'guests_can_see';
   guestListVisibility?: 'host_only' | 'guests_can_see';
   sendRsvpReminders?: boolean;
@@ -60,6 +61,7 @@ p_host_name:
     p_send_final_reminder_at_deadline: input.sendFinalReminderAtDeadline ?? false,
     p_forwarding_mode: input.forwardingMode ?? null,
     p_event_url: input.eventUrl ?? null,
+    p_external_url: input.externalUrl ?? null,
   });
 
   if (error) {
