@@ -39,7 +39,7 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="pallinky"/>
-        <data android:scheme="exp+tarti-flette"/>
+        <data android:scheme="exp+pallinky"/>
       </intent-filter>
       <intent-filter android:autoVerify="true" data-generated="true">
         <action android:name="android.intent.action.VIEW"/>

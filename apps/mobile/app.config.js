@@ -1,12 +1,14 @@
-const appVariant = process.env.EXPO_PUBLIC_APP_VARIANT ?? 'production';
-const isDevelopment = appVariant === 'development';
-const appName = isDevelopment ? 'Pallinky Dev' : 'Pallinky';
-const iosBundleIdentifier = isDevelopment
-  ? 'com.nancy.pallinky.dev'
-  : 'com.nancy.pallinky';
-const androidPackage = isDevelopment
-  ? 'com.nancy.pallinky.dev'
-  : 'com.nancy.pallinky';
+const appVariant = process.env.EXPO_PUBLIC_APP_VARIANT;
+
+if (!['development', 'production'].includes(appVariant)) {
+  throw new Error(
+    `Missing or invalid EXPO_PUBLIC_APP_VARIANT. Expected "development" or "production", got ${appVariant ?? 'unset'}.`
+  );
+}
+
+const appName = 'Pallinky';
+const iosBundleIdentifier = 'com.nancy.pallinky';
+const androidPackage = 'com.nancy.pallinky';
 export default {
   expo: {
     name: appName,
@@ -128,6 +130,7 @@ export default {
     },
 
     extra: {
+      appVariant,
       eas: {
         projectId: '3a13b9ce-13b3-48f4-88b4-e4945d9698dc',
       },

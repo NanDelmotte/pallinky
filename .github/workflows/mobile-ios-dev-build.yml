@@ -30,4 +30,4 @@ jobs:
         working-directory: apps/mobile
         env:
           EXPO_NO_CAPABILITY_SYNC: "1"
-        run: eas build --profile development --platform ios --non-interactive
+        run: npm run validate-env:development && eas build --profile development --platform ios --non-interactive

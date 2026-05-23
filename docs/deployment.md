@@ -71,3 +71,13 @@ npm run build:android:production
 ```
 
 These commands run EAS builds through `apps/mobile` with `EXPO_NO_CAPABILITY_SYNC=1`.
+
+### Mobile environment separation
+
+The mobile app fails closed when public Supabase env vars do not match the selected build variant:
+
+- `development` must use the development Supabase project.
+- `production` must use the production Supabase project.
+- Both variants use the same app identifier: `com.nancy.pallinky`.
+
+The EAS profiles in `apps/mobile/eas.json` provide `EXPO_PUBLIC_APP_VARIANT`, `EXPO_PUBLIC_SUPABASE_URL`, and `EXPO_PUBLIC_SUPABASE_ANON_KEY`. Build and update commands run `validate-public-env.js` before publishing a bundle so a local override such as `.env.local` cannot silently point a development build at production. For local development, run `npm run mobile:development` from `apps/mobile` so the dev variant and dev Supabase project are explicit.
