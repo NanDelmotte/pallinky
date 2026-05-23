@@ -29,7 +29,11 @@ import DetailsApprovalsModal from './components/DetailsApprovalsModal';
 import DetailsSeriesSection from './components/DetailsSeriesSection';
 import { useI18n } from '@pallinky/i18n/client';
 import type { AppLanguage } from '@pallinky/i18n/types';
-import { getExternalUrlDomain, normalizeExternalUrl } from '../../../lib/externalUrl';
+import {
+  getExternalUrlDomain,
+  isValidExternalUrl,
+  normalizeExternalUrl,
+} from '../../../lib/externalUrl';
 
 const SYSTEM = {
   background: '#F6F7F9',
@@ -1012,6 +1016,9 @@ setInvites(invitesRes.data || []);
   const locationText = hasLocationInDesc
     ? event.description.split('Location: ')[1].trim()
     : event.location;
+  const externalUrl = isValidExternalUrl(event.external_url)
+    ? normalizeExternalUrl(event.external_url)
+    : null;
 
   const cta = (() => {
     if (isPoll && isHost) {
@@ -1190,32 +1197,29 @@ setInvites(invitesRes.data || []);
               <Text style={[styles.descriptionText, { color: theme.text }]}>{description}</Text>
             </View>
           ) : null}
-{normalizeExternalUrl(event.external_url) ? (
-  <TouchableOpacity
-    style={[
-      styles.eventLinkCard,
-      {
-        backgroundColor: theme.isDark ? 'rgba(255,255,255,0.08)' : SYSTEM.surface,
-        borderColor: theme.isDark ? 'rgba(255,255,255,0.10)' : SYSTEM.borderSoft,
-      },
-    ]}
-    onPress={() => {
-      const url = normalizeExternalUrl(event.external_url);
-      if (url) Linking.openURL(url);
-    }}
-  >
-    <MaterialCommunityIcons name="link-variant" size={22} color={theme.accent} />
-    <View style={styles.eventLinkTextWrap}>
-      <Text style={[styles.eventLinkTitle, { color: theme.text }]}>
-        {getExternalLinkText(event.external_url, t('external_link_open'))}
-      </Text>
-      <Text style={[styles.eventLinkUrl, { color: theme.accent }]} numberOfLines={1}>
-        {normalizeExternalUrl(event.external_url)}
-      </Text>
-    </View>
-    <Ionicons name="open-outline" size={18} color={theme.accent} />
-  </TouchableOpacity>
-) : null}
+          {externalUrl ? (
+            <TouchableOpacity
+              style={[
+                styles.eventLinkCard,
+                {
+                  backgroundColor: theme.isDark ? 'rgba(255,255,255,0.08)' : SYSTEM.surface,
+                  borderColor: theme.isDark ? 'rgba(255,255,255,0.10)' : SYSTEM.borderSoft,
+                },
+              ]}
+              onPress={() => Linking.openURL(externalUrl)}
+            >
+              <MaterialCommunityIcons name="link-variant" size={22} color={theme.accent} />
+              <View style={styles.eventLinkTextWrap}>
+                <Text style={[styles.eventLinkTitle, { color: theme.text }]}>
+                  {getExternalLinkText(externalUrl, t('external_link_open'))}
+                </Text>
+                <Text style={[styles.eventLinkUrl, { color: theme.accent }]} numberOfLines={1}>
+                  {externalUrl}
+                </Text>
+              </View>
+              <Ionicons name="open-outline" size={18} color={theme.accent} />
+            </TouchableOpacity>
+          ) : null}
           {isPoll ? (
             <PollDatesSection
   theme={theme}
