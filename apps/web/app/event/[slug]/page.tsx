@@ -45,11 +45,21 @@ type Props = {
 function formatEventDate(event: any) {
   if (!event?.starts_at) return '';
 
-  return formatInEventTimeZone(
+  const start = formatInEventTimeZone(
     event.starts_at,
-    { weekday: 'long', month: 'short', day: 'numeric' },
+    { weekday: 'long', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' },
     event
   );
+
+  if (!event.ends_at) return start;
+
+  const end = formatInEventTimeZone(
+    event.ends_at,
+    { hour: '2-digit', minute: '2-digit' },
+    event
+  );
+
+  return `${start}–${end}`;
 }
 
 function formatEventDateTime(isoString?: string | null) {
@@ -94,9 +104,7 @@ function buildICS(event: any) {
   if (!event?.starts_at) return '';
 
   const startsAt = formatICSDate(event.starts_at);
-  const endsAt = formatICSDate(
-    event.ends_at || new Date(new Date(event.starts_at).getTime() + 2 * 60 * 60 * 1000).toISOString()
-  );
+  const endsAt = event.ends_at ? formatICSDate(event.ends_at) : null;
   const stamp = formatICSDate(new Date().toISOString());
 
   return [
@@ -107,7 +115,7 @@ function buildICS(event: any) {
     `UID:${event.id}@pallinky.com`,
     `DTSTAMP:${stamp}`,
     `DTSTART:${startsAt}`,
-    `DTEND:${endsAt}`,
+    ...(endsAt ? [`DTEND:${endsAt}`] : []),
     `SUMMARY:${escapeICS(event.title)}`,
     `DESCRIPTION:${escapeICS(event.description || `Event details: https://pallinky.com/event/${event.slug}`)}`,
     `LOCATION:${escapeICS(event.location || '')}`,

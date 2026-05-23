@@ -6,13 +6,23 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl =
-  process.env.EXPO_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const PRODUCTION_SUPABASE_URL = 'https://nfoshumnlfsjtfxkyqrq.supabase.co';
 
-const supabaseAnonKey =
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const appVariant = process.env.EXPO_PUBLIC_APP_VARIANT ?? 'production';
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+
+if (
+  appVariant === 'production' &&
+  supabaseUrl &&
+  supabaseUrl !== PRODUCTION_SUPABASE_URL
+) {
+  throw new Error(
+    `Production Supabase URL mismatch. Expected ${PRODUCTION_SUPABASE_URL}, got ${supabaseUrl}.`
+  );
+}
 
 const missingConfigError = {
   name: 'SupabaseConfigurationError',

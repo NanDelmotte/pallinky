@@ -373,14 +373,22 @@ export default function FormalDetailsScreen() {
           manage_handle: string;
         }[] = [];
 
+        const endOffsetMs = form.endDate
+          ? form.endDate.getTime() - form.specificDate.getTime()
+          : null;
+
+        if (endOffsetMs !== null && endOffsetMs < 0) {
+          Alert.alert(
+            t('create_when_end_before_start_title'),
+            t('create_when_end_before_start_body')
+          );
+
+          return;
+        }
+
         for (const startDate of datesToCreate) {
-          const endsAt = form.durationMins
-            ? new Date(
-                startDate.getTime() +
-                  form.durationMins *
-                    60 *
-                    1000
-              ).toISOString()
+          const endsAt = endOffsetMs !== null
+            ? new Date(startDate.getTime() + endOffsetMs).toISOString()
             : null;
 
           const payload = {
@@ -396,6 +404,12 @@ export default function FormalDetailsScreen() {
             p_event_type: 'formal',
             p_event_time_zone: getLocalTimeZone(),
             p_external_url: externalUrl,
+            p_visibility: form.visibility,
+            p_invite_list_visibility:
+              form.invite_list_visibility,
+            p_guest_list_visibility:
+              form.guest_list_visibility,
+            p_forwarding_mode: form.forwarding_mode,
 
             p_visible_in_feed:
               form.visible_in_feed ?? true,

@@ -185,13 +185,17 @@ function SummaryStat({ label, value }: { label: string; value: number }) {
 function CoordinatingPlanCard({
   item,
   currentUserEmail,
+  nameByEmail,
   onHostOpenResults,
 }: {
   item: EventRow;
   currentUserEmail: string;
+  nameByEmail: Record<string, string>;
   onHostOpenResults: (item: EventRow) => void;
 }) {
   const isHost = normalizeEmail(item.host_email) === currentUserEmail;
+  const hostEmail = normalizeEmail(item.host_email);
+  const hostName = nameByEmail[hostEmail] || item.host_name || 'Host';
 
   return (
     <TouchableOpacity
@@ -231,7 +235,7 @@ function CoordinatingPlanCard({
       <View style={styles.metaRow}>
         <Ionicons name="person-outline" size={14} color="#6A4C93" />
         <StyledText style={styles.metaText}>
-          {item.host_name || item.host_email || 'Unknown host'}
+          {hostName}
         </StyledText>
       </View>
 
@@ -271,6 +275,7 @@ function FormalEventCard({
   variant,
   rsvps,
   avatarByEmail,
+  nameByEmail,
   unreadMessages = 0,
   onPress,
   lang,
@@ -281,6 +286,7 @@ function FormalEventCard({
   variant: 'action' | 'upcoming' | 'past';
   rsvps: RsvpRow[];
   avatarByEmail: Record<string, string>;
+  nameByEmail: Record<string, string>;
   unreadMessages?: number;
   onPress: () => void;
   lang: any;
@@ -298,8 +304,10 @@ function FormalEventCard({
     const email = normalizeEmail(r.email_lc || r.email);
     if (!email || email === hostEmail || participantMap.has(email)) return;
 
+    const participantName = nameByEmail[email] || r.name || null;
+
     participantMap.set(email, {
-      seed: seedFromName(r.name, r.email_lc || r.email),
+      seed: seedFromName(participantName),
       avatarUrl: avatarByEmail[email] || null,
     });
   });
@@ -333,11 +341,13 @@ function FormalEventCard({
         hostEmail={item.host_email}
         title={item.title}
         startsAt={item.starts_at || ''}
+                endsAt={item.ends_at}
         location={item.location}
         coverImageUrl={item.cover_image_url || FALLBACK_IMAGE}
         gifKey={item.gif_key}
         fontFamily={item.font_family}
-        hostName={item.host_name}
+        hostName={nameByEmail[hostEmail] || item.host_name || 'Host'}
+        hostAvatarUrl={avatarByEmail[hostEmail] || null}
         status={status}
         actionLabel={actionLabel}
         unreadMessages={unreadMessages}
@@ -372,6 +382,7 @@ export default function EventsScreen() {
   const [isFinalizingWinner, setIsFinalizingWinner] = useState(false);
 
   const [avatarByEmail, setAvatarByEmail] = useState<Record<string, string>>({});
+  const [nameByEmail, setNameByEmail] = useState<Record<string, string>>({});
 
   const userEmail = normalizeEmail(sessionEmail);
 
@@ -423,7 +434,7 @@ export default function EventsScreen() {
   );
 
   useEffect(() => {
-    const loadAvatars = async () => {
+    const loadProfiles = async () => {
       const emailSet = new Set<string>();
 
       events.forEach((ev) => {
@@ -442,16 +453,15 @@ export default function EventsScreen() {
           .map((c: any) => [normalizeEmail(c.email_lc), c.avatar_uri || ''])
       );
 
-      const profileEmails = Array.from(emailSet).filter(
-        (email) => !contactAvatarByEmail[email]
-      );
+      const profileEmails = Array.from(emailSet);
 
       let profileAvatarByEmail: Record<string, string> = {};
+      let profileNameByEmail: Record<string, string> = {};
 
       if (profileEmails.length > 0) {
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('email_lc, avatar_url')
+          .select('email_lc, avatar_url, full_name')
           .in('email_lc', profileEmails);
 
         profileAvatarByEmail = Object.fromEntries(
@@ -459,15 +469,22 @@ export default function EventsScreen() {
             .filter((p: any) => normalizeEmail(p.email_lc) && p.avatar_url)
             .map((p: any) => [normalizeEmail(p.email_lc), p.avatar_url])
         );
+
+        profileNameByEmail = Object.fromEntries(
+          (profiles || [])
+            .filter((p: any) => normalizeEmail(p.email_lc) && p.full_name?.trim())
+            .map((p: any) => [normalizeEmail(p.email_lc), p.full_name.trim()])
+        );
       }
 
       setAvatarByEmail({
         ...contactAvatarByEmail,
         ...profileAvatarByEmail,
       });
+      setNameByEmail(profileNameByEmail);
     };
 
-    void loadAvatars();
+    void loadProfiles();
   }, [events, rsvps, contacts]);
 
   const derived = useMemo(() => {
@@ -762,6 +779,7 @@ export default function EventsScreen() {
                   key={String(item.id)}
                   item={item}
                   currentUserEmail={userEmail}
+                  nameByEmail={nameByEmail}
                   onHostOpenResults={(idea) => {
                     setSelectedIdea(idea);
                     setInsightModal(true);
@@ -778,6 +796,7 @@ export default function EventsScreen() {
                 variant="action"
                 rsvps={rsvps}
                 avatarByEmail={avatarByEmail}
+                nameByEmail={nameByEmail}
                 onPress={() => router.push(`/event/${item.slug}/details`)}
                 lang={language}
                 labels={cardLabels}
@@ -795,6 +814,7 @@ export default function EventsScreen() {
               variant="upcoming"
               rsvps={rsvps}
               avatarByEmail={avatarByEmail}
+              nameByEmail={nameByEmail}
               unreadMessages={0}
               onPress={() => router.push(`/event/${item.slug}/details`)}
               lang={language}
@@ -812,6 +832,7 @@ export default function EventsScreen() {
               key={String(item.id)}
               item={item}
               currentUserEmail={userEmail}
+              nameByEmail={nameByEmail}
               onHostOpenResults={(idea) => {
                 setSelectedIdea(idea);
                 setInsightModal(true);
@@ -829,6 +850,7 @@ export default function EventsScreen() {
               variant="past"
               rsvps={rsvps}
               avatarByEmail={avatarByEmail}
+              nameByEmail={nameByEmail}
               onPress={() => router.push(`/event/${item.slug}/details`)}
               lang={language}
               labels={cardLabels}

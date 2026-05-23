@@ -14,7 +14,6 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -43,7 +42,7 @@ type FormState = {
   whenMode: WhenMode;
   specificDate: Date;
   pollOptions: Date[];
-  durationMins: number | null;
+  endDate: Date | null;
   description: string;
   location: string;
   external_url: string;
@@ -161,29 +160,19 @@ export default function EditCreateScreen() {
         : "unsure";
 
   const initialEndsAt = endsAtParam ? new Date(endsAtParam) : null;
-  const initialDurationMins =
-    initialEndsAt && !Number.isNaN(initialEndsAt.getTime())
-      ? Math.max(
-          0,
-          Math.round(
-            (initialEndsAt.getTime() - initialStartsAt.getTime()) / 60000,
-          ),
-        )
-      : null;
+  const initialEndDate =
+    initialEndsAt && !Number.isNaN(initialEndsAt.getTime()) ? initialEndsAt : null;
 
   const [loading, setLoading] = useState(false);
 
   const [showPicker, setShowPicker] = useState(false);
-  const [showCustomDuration, setShowCustomDuration] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
 
   const [showVisibilityModal, setShowVisibilityModal] = useState(false);
 
   const [tempDate, setTempDate] = useState(initialStartsAt);
-  const [customHrs, setCustomHrs] = useState(
-    initialDurationMins ? String(Math.floor(initialDurationMins / 60)) : "1",
-  );
-  const [customMins, setCustomMins] = useState(
-    initialDurationMins ? String(initialDurationMins % 60) : "0",
+  const [tempEndDate, setTempEndDate] = useState(
+    initialEndDate || new Date(initialStartsAt.getTime() + 60 * 60 * 1000),
   );
 
   const [form, setForm] = useState<FormState>({
@@ -191,7 +180,7 @@ export default function EditCreateScreen() {
     whenMode: initialWhenMode,
     specificDate: initialStartsAt,
     pollOptions: initialPollOptions,
-    durationMins: initialDurationMins,
+    endDate: initialEndDate,
     description: descriptionParam,
     location: locationParam,
     external_url: externalUrlParam,
@@ -287,10 +276,56 @@ export default function EditCreateScreen() {
     });
   };
 
-  const setDuration = (hours: number, mins: number) => {
-    const total = hours * 60 + mins;
-    updateForm("durationMins", total > 0 ? total : null);
-    setShowCustomDuration(false);
+  const getDefaultEndDate = () =>
+    form.endDate || new Date(form.specificDate.getTime() + 60 * 60 * 1000);
+
+  const onIOSEndChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (selectedDate) setTempEndDate(selectedDate);
+  };
+
+  const confirmIOSEndDate = () => {
+    updateForm("endDate", tempEndDate);
+    setShowEndPicker(false);
+  };
+
+  const openEndPicker = () => {
+    setTempEndDate(getDefaultEndDate());
+    setShowEndPicker(true);
+  };
+
+  const clearEndDate = () => {
+    updateForm("endDate", null);
+    setShowEndPicker(false);
+  };
+
+  const showAndroidEndPicker = () => {
+    const baseDate = getDefaultEndDate();
+
+    DateTimePickerAndroid.open({
+      value: baseDate,
+      mode: "date",
+      onChange: (event, date) => {
+        if (event.type === "set" && date) {
+          DateTimePickerAndroid.open({
+            value: baseDate,
+            mode: "time",
+            is24Hour: true,
+            onChange: (timeEvent, timeDate) => {
+              if (timeEvent.type === "set" && timeDate) {
+                const merged = new Date(date);
+                merged.setHours(
+                  timeDate.getHours(),
+                  timeDate.getMinutes(),
+                  0,
+                  0,
+                );
+                updateForm("endDate", merged);
+              }
+            },
+          });
+        }
+      },
+    });
   };
 
   const openVisibilityConfig = () => {
@@ -330,11 +365,21 @@ export default function EditCreateScreen() {
       const startsAt =
         form.whenMode === "specific" ? form.specificDate.toISOString() : null;
 
+      if (
+        form.whenMode === "specific" &&
+        form.endDate &&
+        form.endDate.getTime() < form.specificDate.getTime()
+      ) {
+        Alert.alert(
+          t("create_when_end_before_start_title"),
+          t("create_when_end_before_start_body"),
+        );
+        return;
+      }
+
       const endsAt =
-        form.whenMode === "specific" && form.durationMins
-          ? new Date(
-              form.specificDate.getTime() + form.durationMins * 60 * 1000,
-            ).toISOString()
+        form.whenMode === "specific" && form.endDate
+          ? form.endDate.toISOString()
           : null;
 
       const proposedDates =
@@ -475,27 +520,40 @@ export default function EditCreateScreen() {
                 </StyledText>
               </TouchableOpacity>
 
-              <StyledText style={styles.label}>{t("manage_label_duration")}</StyledText>
+              <StyledText style={styles.label}>{t("create_when_end_time")}</StyledText>
               <TouchableOpacity
                 style={styles.pwaInput}
-                onPress={() => setShowCustomDuration(true)}
+                onPress={() =>
+                  Platform.OS === "android" ? showAndroidEndPicker() : openEndPicker()
+                }
               >
                 <StyledText
                   style={[
                     styles.pwaInputText,
-                    !form.durationMins && styles.placeholderText,
+                    !form.endDate && styles.placeholderText,
                   ]}
                 >
-                  {form.durationMins
-                    ? `${Math.floor(form.durationMins / 60)}h ${form.durationMins % 60}m`
-                    : t("duration_no_end_time")}
+                  {form.endDate
+                    ? form.endDate.toLocaleString(dateLocale, {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })
+                    : t("end_time_none")}
                 </StyledText>
                 <Ionicons
-                  name="chevron-down"
+                  name="time-outline"
                   size={18}
                   color={COLORS.textMuted}
                 />
               </TouchableOpacity>
+
+              {form.endDate && (
+                <TouchableOpacity onPress={clearEndDate}>
+                  <StyledText style={styles.clearEndText}>
+                    {t("create_when_clear_end_time")}
+                  </StyledText>
+                </TouchableOpacity>
+              )}
             </>
           )}
 
@@ -530,6 +588,33 @@ export default function EditCreateScreen() {
                 mode="datetime"
                 display="inline"
                 onChange={onIOSChange}
+                accentColor={COLORS.primary}
+                minuteInterval={15}
+              />
+            </View>
+          )}
+
+
+          {showEndPicker && Platform.OS === "ios" && (
+            <View style={styles.iosPickerContainer}>
+              <View style={styles.iosPickerHeader}>
+                <TouchableOpacity
+                  onPress={() => setShowEndPicker(false)}
+                  style={styles.iosHeaderBtn}
+                >
+                  <StyledText style={styles.iosCancelText}>{t("common_cancel")}</StyledText>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={confirmIOSEndDate}>
+                  <StyledText style={styles.iosConfirmText}>{t("common_confirm")}</StyledText>
+                </TouchableOpacity>
+              </View>
+
+              <DateTimePicker
+                value={tempEndDate}
+                mode="datetime"
+                display="inline"
+                onChange={onIOSEndChange}
                 accentColor={COLORS.primary}
                 minuteInterval={15}
               />
@@ -621,57 +706,6 @@ export default function EditCreateScreen() {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      <Modal visible={showCustomDuration} transparent animationType="fade">
-        <View style={styles.modalOverlayCenter}>
-          <View style={styles.durationModalContent}>
-            <StyledText style={styles.durationModalLabel}>
-              {t("manage_label_duration")}
-            </StyledText>
-
-            <View style={styles.durationInputRow}>
-              <View style={styles.inputGroup}>
-                <TextInput
-                  style={styles.modalInput}
-                  keyboardType="numeric"
-                  value={customHrs}
-                  onChangeText={(t: string) => setCustomHrs(t)}
-                  maxLength={2}
-                />
-                <StyledText style={styles.inlineFieldLabel}>{t("manage_hours")}</StyledText>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <TextInput
-                  style={styles.modalInput}
-                  keyboardType="numeric"
-                  value={customMins}
-                  onChangeText={(t: string) => setCustomMins(t)}
-                  maxLength={2}
-                />
-                <StyledText style={styles.inlineFieldLabel}>{t("manage_mins")}</StyledText>
-              </View>
-            </View>
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity onPress={() => setShowCustomDuration(false)}>
-                <StyledText style={styles.modalCancelText}>{t("common_cancel")}</StyledText>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() =>
-                  setDuration(
-                    parseInt(customHrs || "0", 10),
-                    parseInt(customMins || "0", 10),
-                  )
-                }
-              >
-                <StyledText style={styles.modalSetText}>{t("common_set")}</StyledText>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       <Modal visible={showVisibilityModal} transparent animationType="slide">
         <View style={styles.modalOverlayBottom}>
@@ -855,6 +889,12 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
   },
 
+  clearEndText: {
+    color: COLORS.primary,
+    fontWeight: "800",
+    marginBottom: 8,
+  },
+
   whenToggleRow: {
     flexDirection: "row",
     gap: 12,
@@ -952,60 +992,14 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
 
-  durationModalContent: {
-    backgroundColor: COLORS.surface,
-    padding: 25,
-    borderRadius: 20,
-    width: "80%",
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
 
-  durationModalLabel: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: COLORS.textMuted,
-    letterSpacing: 1,
-  },
 
-  durationInputRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginVertical: 20,
-  },
 
-  inputGroup: {
-    alignItems: "center",
-  },
 
-  inlineFieldLabel: {
-    color: COLORS.text,
-  },
 
-  modalInput: {
-    borderBottomWidth: 2,
-    borderBottomColor: COLORS.primary,
-    fontSize: 32,
-    textAlign: "center",
-    width: 60,
-    marginBottom: 5,
-    color: COLORS.text,
-  },
 
-  modalButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 20,
-  },
 
-  modalCancelText: {
-    color: COLORS.textMuted,
-  },
 
-  modalSetText: {
-    color: COLORS.primary,
-    fontWeight: "800",
-  },
 
   modalOverlayCenter: {
     flex: 1,

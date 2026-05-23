@@ -109,7 +109,6 @@ function getFirstName(value: string | null | undefined, fallback = 'Guest') {
 function getInviteName(inv: any) {
   return (
     inv.invitee_name ||
-    (inv.invitee_email_lc ? inv.invitee_email_lc.split('@')[0] : null) ||
     inv.invitee_phone_e164 ||
     'Guest'
   );
@@ -135,12 +134,19 @@ function formatEventTime(event: any, language: AppLanguage) {
   if (!event?.starts_at) return '';
 
   const date = new Date(event.starts_at);
-
-  return date.toLocaleTimeString(localeForLanguage(language), {
-    hour: 'numeric',
-    minute: '2-digit',
+  const formatOptions = {
+    hour: 'numeric' as const,
+    minute: '2-digit' as const,
     ...(event?.event_time_zone ? { timeZone: event.event_time_zone } : {}),
-  });
+  };
+  const startTime = date.toLocaleTimeString(localeForLanguage(language), formatOptions);
+
+  if (!event?.ends_at) return startTime;
+
+  const endDate = new Date(event.ends_at);
+  if (Number.isNaN(endDate.getTime())) return startTime;
+
+  return `${startTime}–${endDate.toLocaleTimeString(localeForLanguage(language), formatOptions)}`;
 }
 
 function getRsvpLabel(status: string | null | undefined, t: any) {
@@ -394,7 +400,7 @@ function PollDatesSection({
                       key={`${result.dateValue}-${voter.id || voter.user_email || index}`}
                       style={[styles.pollVoterName, { color: theme.text }]}
                     >
-                      {voter.guest_name || voter.user_email?.split('@')[0] || t('event_guest_fallback')}
+                      {voter.guest_name || t('event_guest_fallback')}
                     </Text>
                   ))
                 ) : (
@@ -606,7 +612,7 @@ setPollResponses([]);
       const seriesPromise = eventData.series_id
         ? supabase
             .from('events')
-            .select('id, slug, title, starts_at, event_time_zone, event_type, manage_handle, series_id')
+            .select('id, slug, title, starts_at, ends_at, event_time_zone, event_type, manage_handle, series_id')
             .eq('series_id', eventData.series_id)
             .order('starts_at', { ascending: true, nullsFirst: false })
         : Promise.resolve({ data: [], error: null });

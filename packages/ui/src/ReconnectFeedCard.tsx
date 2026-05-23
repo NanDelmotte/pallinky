@@ -69,7 +69,10 @@ const ReconnectFeedCard = ({
         <View style={styles.rightSide}>
           {onDismiss ? (
             <Pressable
-              onPress={onDismiss}
+              onPress={(e) => {
+                e.stopPropagation();
+                onDismiss?.();
+              }}
               hitSlop={10}
               style={styles.dismissButton}
             >

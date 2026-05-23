@@ -1,8 +1,8 @@
 /**
  * Path: apps/mobile/app/auth/verify.tsx
- * Version: v18.44
+ * Version: v18.45
  */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -22,6 +22,7 @@ import {
   completeSupabaseAuthFromUrl,
   getAuthCallbackUrl,
 } from '../../lib/authRedirect';
+import { useI18n } from '@pallinky/i18n/client';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -37,41 +38,161 @@ const COLORS = {
   secondaryBg: '#efe9f7',
 };
 
+const normalizeName = (name: string) => name.trim().toLowerCase();
+
 export default function VerifyOTPScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>();
 
   const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [nameTouched, setNameTouched] = useState(false);
   const [token, setToken] = useState('');
   const [loading, setLoading] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
+  const finishingAuthRef = useRef(false);
 
   const cleanEmail = useMemo(() => email.toLowerCase().trim(), [email]);
+  const cleanFullName = useMemo(() => fullName.trim(), [fullName]);
 
-  const goToDestination = () => {
+  const goToDestination = useCallback(() => {
     const destination = returnTo ? decodeURIComponent(returnTo) : '/(tabs)';
     router.replace(destination as any);
-  };
+  }, [returnTo, router]);
 
   useEffect(() => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
+      if (session && !finishingAuthRef.current) {
         goToDestination();
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [returnTo, router]);
+  }, [goToDestination]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadExistingName = async () => {
+      if (!cleanEmail) return;
+
+      const { data } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('email_lc', cleanEmail)
+        .maybeSingle();
+
+      if (!active) return;
+
+      const existingName = data?.full_name?.trim();
+      if (existingName && (!nameTouched || !cleanFullName)) {
+        setFullName(existingName);
+      }
+    };
+
+    void loadExistingName();
+
+    return () => {
+      active = false;
+    };
+  }, [cleanEmail, cleanFullName, nameTouched]);
+
+  const requireFullName = () => {
+    if (!cleanFullName) {
+      Alert.alert(t('profile_name_required_title'), t('profile_name_required_body'));
+      return null;
+    }
+
+    return cleanFullName;
+  };
+
+  const ensureProfileFullName = async ({
+    userId,
+    emailLc,
+    name,
+  }: {
+    userId?: string | null;
+    emailLc?: string | null;
+    name: string;
+  }) => {
+    const cleanEmailLc = emailLc?.toLowerCase().trim() || cleanEmail;
+    const cleanName = name.trim();
+
+    let resolvedUserId = userId || null;
+    if (!resolvedUserId) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      resolvedUserId = user?.id || null;
+    }
+
+    if (!resolvedUserId || !cleanEmailLc) return;
+
+    const { data: existingProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', resolvedUserId)
+      .maybeSingle();
+
+    if (profileError) throw profileError;
+
+    const existingName = existingProfile?.full_name?.trim();
+    if (existingName) {
+      if (normalizeName(existingName) === normalizeName(cleanName)) return;
+
+      const shouldUseEnteredName = await new Promise<boolean>((resolve) => {
+        Alert.alert(
+          t('identity_name_conflict_title'),
+          t('identity_name_conflict_body', {
+            existingName,
+            enteredName: cleanName,
+          }),
+          [
+            {
+              text: t('identity_name_conflict_keep', { existingName }),
+              style: 'cancel',
+              onPress: () => resolve(false),
+            },
+            {
+              text: t('identity_name_conflict_use', { enteredName: cleanName }),
+              onPress: () => resolve(true),
+            },
+          ],
+          {
+            cancelable: true,
+            onDismiss: () => resolve(false),
+          }
+        );
+      });
+
+      if (!shouldUseEnteredName) return;
+    }
+
+    const { error } = await supabase.from('profiles').upsert(
+      {
+        id: resolvedUserId,
+        email_lc: cleanEmailLc,
+        full_name: cleanName,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'id' }
+    );
+
+    if (error) throw error;
+  };
 
   const handleOAuthLogin = async (provider: 'apple' | 'google') => {
+    const name = requireFullName();
+    if (!name) return;
+
     setLoading(true);
+    finishingAuthRef.current = true;
 
     const redirectUrl = getAuthCallbackUrl();
 
-    console.log('[OAuth] provider:', provider);
-    console.log('[OAuth] redirectUrl:', redirectUrl);
 
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -89,38 +210,37 @@ export default function VerifyOTPScreen() {
         },
       });
 
-      console.log('[OAuth] signInWithOAuth error:', error);
-      console.log('[OAuth] provider url:', data?.url);
-
       if (error) throw error;
       if (!data?.url) throw new Error('No OAuth URL returned.');
 
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
 
-      console.log('[OAuth] browser result:', JSON.stringify(result, null, 2));
-
       if (result.type !== 'success' || !result.url) {
         return;
       }
 
-      console.log('[OAuth] returned url:', result.url);
-
       const session = await completeSupabaseAuthFromUrl(result.url);
 
-      console.log('[OAuth] completed session:', session);
-
       if (session) {
+        await ensureProfileFullName({
+          userId: session.user.id,
+          emailLc: session.user.email,
+          name,
+        });
         goToDestination();
       }
     } catch (error: any) {
-      console.log('[OAuth] caught error:', error);
       Alert.alert('Login Error', error.message ?? 'Could not complete login.');
     } finally {
+      finishingAuthRef.current = false;
       setLoading(false);
     }
   };
 
   const handleRequestCode = async () => {
+    const name = requireFullName();
+    if (!name) return;
+
     if (!cleanEmail) {
       Alert.alert('Email Required', 'Please enter your email.');
       return;
@@ -159,24 +279,37 @@ export default function VerifyOTPScreen() {
   };
 
   const handleVerifyCode = async () => {
+    const name = requireFullName();
+    if (!name) return;
+
     if (!cleanEmail || !token.trim()) {
       Alert.alert('Missing Info', 'Enter your email and 6-digit code.');
       return;
     }
 
     setLoading(true);
+    finishingAuthRef.current = true;
 
     try {
-      const { error } = await supabase.auth.verifyOtp({
+      const { data, error } = await supabase.auth.verifyOtp({
         email: cleanEmail,
         token: token.trim(),
         type: 'email',
       });
 
       if (error) throw error;
+
+      await ensureProfileFullName({
+        userId: data.user?.id,
+        emailLc: data.user?.email || cleanEmail,
+        name,
+      });
+
+      goToDestination();
     } catch (error: any) {
       Alert.alert('Verification Failed', error.message);
     } finally {
+      finishingAuthRef.current = false;
       setLoading(false);
     }
   };
@@ -194,14 +327,36 @@ export default function VerifyOTPScreen() {
       >
         <View style={styles.container}>
           <View style={styles.card}>
-            <View style={styles.iconWrap}>
+             <View style={styles.iconWrap}>
               <Ionicons name="shield-checkmark-outline" size={28} color={COLORS.secondary} />
-            </View>
+            </View> 
 
-            <StyledText style={styles.title}>Identify Yourself</StyledText>
-            <StyledText style={styles.subtitle}>
-              Sign in to create an event or to see your events and groups.
-            </StyledText>
+            <StyledText style={styles.title}>{t('identity_name_title')}</StyledText> 
+            
+            {/* <StyledText style={styles.subtitle}>
+              {t('identity_subtitle')}
+            </StyledText> */}
+
+            
+            <TextInput
+              style={styles.input}
+              placeholder={t('identity_name_label')}
+              placeholderTextColor={COLORS.textMuted}
+              value={fullName}
+              onChangeText={(value) => {
+                setNameTouched(true);
+                setFullName(value);
+              }}
+              autoCapitalize="words"
+              autoCorrect={false}
+              returnKeyType="next"
+            />
+            <StyledText style={styles.helper}>{t('identity_name_helper')}</StyledText>
+            {!!cleanFullName && (
+              <StyledText style={styles.preview}>
+                {t('identity_name_preview', { name: cleanFullName })}
+              </StyledText>
+            )}
 
             <View style={styles.socialRow}>
               <TouchableOpacity
@@ -227,7 +382,7 @@ export default function VerifyOTPScreen() {
               <>
                 <TextInput
                   style={styles.input}
-                  placeholder="Enter your email"
+                  placeholder={t('identity_email_required_body')}
                   placeholderTextColor={COLORS.textMuted}
                   value={email}
                   onChangeText={setEmail}
@@ -242,7 +397,7 @@ export default function VerifyOTPScreen() {
                   onPress={handleRequestCode}
                   disabled={loading}
                 >
-                  <StyledText style={styles.secondaryBtnText}>Send 100-digit code</StyledText>
+                  <StyledText style={styles.secondaryBtnText}>{t('identity_code_title')}</StyledText>
                 </TouchableOpacity>
               </>
             ) : (
@@ -314,13 +469,33 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: COLORS.text,
     textAlign: 'center',
+    marginBottom: 20,
   },
   subtitle: {
     fontSize: 16,
     color: COLORS.textMuted,
-    marginBottom: 30,
+    marginBottom: 24,
     textAlign: 'center',
     lineHeight: 22,
+  },
+  label: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+  helper: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: -8,
+    marginBottom: 8,
+  },
+  preview: {
+    color: COLORS.secondary,
+    fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 18,
   },
   socialRow: {
     flexDirection: 'row',
@@ -368,6 +543,7 @@ const styles = StyleSheet.create({
     color: COLORS.secondary,
     fontWeight: '800',
     fontSize: 16,
+    alignItems: 'center',
   },
   primaryBtn: {
     backgroundColor: COLORS.primary,

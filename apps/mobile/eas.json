@@ -7,11 +7,31 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "channel": "production"
+      "channel": "development",
+      "environment": "development",
+      "ios": {
+        "buildConfiguration": "Debug"
+      },
+      "android": {
+        "gradleCommand": ":app:assembleDebug"
+      },
+      "env": {
+        "EXPO_PUBLIC_APP_VARIANT": "development"
+      }
     },
     "production": {
       "autoIncrement": true,
-      "channel": "production"
+      "channel": "production",
+      "environment": "production",
+      "ios": {
+        "buildConfiguration": "Release"
+      },
+      "android": {
+        "gradleCommand": ":app:bundleRelease"
+      },
+      "env": {
+        "EXPO_PUBLIC_APP_VARIANT": "production"
+      }
     }
   },
   "submit": {

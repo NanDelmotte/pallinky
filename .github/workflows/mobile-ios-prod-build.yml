@@ -1,0 +1,44 @@
+name: Mobile iOS Prod Build (EAS)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_production:
+        description: "Type 'release' to allow production build"
+        required: true
+        default: ""
+
+jobs:
+  build-ios-prod:
+    name: Build iOS (production)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Guard production builds
+        if: ${{ inputs.confirm_production != 'release' }}
+        run: |
+          echo "Production build blocked. Re-run with confirm_production=release."
+          exit 1
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build iOS production with EAS
+        working-directory: apps/mobile
+        env:
+          EXPO_NO_CAPABILITY_SYNC: "1"
+        run: eas build --profile production --platform ios --non-interactive
