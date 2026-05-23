@@ -18,7 +18,17 @@ alter table public.events
 
 alter table public.events
   add constraint events_external_url_reasonable_length
-  check (external_url is null or length(external_url) <= 2048)
+  check (
+    external_url is null
+    or btrim(external_url) = ''
+    or (
+      length(external_url) <= 2048
+      and (
+        lower(btrim(external_url)) like 'http://%'
+        or lower(btrim(external_url)) like 'https://%'
+      )
+    )
+  )
   not valid;
 
 -- Remove every older create_event_draft overload so PostgREST exposes exactly one RPC signature.

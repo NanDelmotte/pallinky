@@ -139,10 +139,11 @@ export async function POST(
           });
 
         if (pendingConfirmError) {
-          return NextResponse.json(
-            { error: pendingConfirmError.message || 'Failed to queue guest confirmation.' },
-            { status: 500 }
-          );
+          console.warn('Failed to queue pending RSVP confirmation', {
+            eventId: event.id,
+            email: cleanEmail,
+            error: pendingConfirmError.message,
+          });
         }
       } else {
         const { data: rsvpRow } = await supabase
