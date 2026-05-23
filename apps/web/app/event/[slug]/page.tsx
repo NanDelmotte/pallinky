@@ -81,48 +81,8 @@ function getResponseLabel(status?: string | null, isDatePoll?: boolean) {
   if (clean === 'maybe') return 'Maybe';
   if (clean === 'no') return 'Not going';
   if (clean === 'interested') return 'Interested';
+  if (clean === 'pending') return 'Request pending';
   return 'Response saved';
-}
-
-function formatICSDate(isoString: string) {
-  const date = new Date(isoString);
-  return date
-    .toISOString()
-    .replace(/[-:]/g, '')
-    .replace(/\.\d{3}Z$/, 'Z');
-}
-
-function escapeICS(value?: string | null) {
-  return String(value || '')
-    .replace(/\\/g, '\\\\')
-    .replace(/\r?\n/g, '\\n')
-    .replace(/,/g, '\\,')
-    .replace(/;/g, '\\;');
-}
-
-function buildICS(event: any) {
-  if (!event?.starts_at) return '';
-
-  const startsAt = formatICSDate(event.starts_at);
-  const endsAt = event.ends_at ? formatICSDate(event.ends_at) : null;
-  const stamp = formatICSDate(new Date().toISOString());
-
-  return [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//Pallinky//Event//EN',
-    'BEGIN:VEVENT',
-    `UID:${event.id}@pallinky.com`,
-    `DTSTAMP:${stamp}`,
-    `DTSTART:${startsAt}`,
-    ...(endsAt ? [`DTEND:${endsAt}`] : []),
-    `SUMMARY:${escapeICS(event.title)}`,
-    `DESCRIPTION:${escapeICS(event.description || `Event details: https://pallinky.com/event/${event.slug}`)}`,
-    `LOCATION:${escapeICS(event.location || '')}`,
-    `URL:https://pallinky.com/event/${event.slug}`,
-    'END:VEVENT',
-    'END:VCALENDAR',
-  ].join('\r\n');
 }
 
 export default async function EventPage({ params, searchParams }: Props) {
@@ -172,6 +132,19 @@ if (guestToken) {
 
   if (tokenRow?.email_lc) {
     rememberedEmail = tokenRow.email_lc.toLowerCase().trim();
+  } else {
+    const { data: requestTokenRow } = await supabase
+      .from('rsvp_join_requests')
+      .select('requester_email_lc')
+      .eq('event_id', event.id)
+      .eq('guest_token', guestToken)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (requestTokenRow?.requester_email_lc) {
+      rememberedEmail = requestTokenRow.requester_email_lc.toLowerCase().trim();
+    }
   }
 }
 
@@ -214,12 +187,34 @@ if (guestToken) {
         selectedDates: existingVote?.selected_dates || [],
         respondedAt: existingRsvp?.responded_at || null,
       };
+    } else {
+      const { data: existingRequest } = await supabase
+        .from('rsvp_join_requests')
+        .select('requester_name, requester_email, requester_email_lc, requested_status, message, created_at')
+        .eq('event_id', event.id)
+        .eq('requester_email_lc', rememberedEmail)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingRequest) {
+        existingGuest = {
+          name:
+            existingRequest.requester_name ||
+            rememberedEmail.split('@')[0] ||
+            '',
+          email: existingRequest.requester_email || rememberedEmail,
+          status: 'pending',
+          note: existingRequest.message || '',
+          selectedDates: [],
+          respondedAt: existingRequest.created_at || null,
+        };
+      }
     }
   }
 
-  const icsHref = isFormal && event.starts_at
-    ? `data:text/calendar;charset=utf-8,${encodeURIComponent(buildICS(event))}`
-    : null;
+  const icsHref = isFormal && event.starts_at ? `/event/${event.slug}/ics` : null;
 
   return (
     <main

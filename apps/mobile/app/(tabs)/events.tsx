@@ -95,15 +95,25 @@ function getMyInviteRows(invites: InviteRow[], eventId: string, userEmail: strin
   });
 }
 
-function getMyRsvpRows(rsvps: RsvpRow[], eventId: string, userEmail: string) {
+function getMyRsvpRows(
+  rsvps: RsvpRow[],
+  eventId: string,
+  userEmail: string,
+  userPersonIds: string[] = []
+) {
+  const personIdSet = new Set(userPersonIds.map((id) => String(id)).filter(Boolean));
+
   return rsvps.filter((row) => {
     if (String(row.event_id) !== String(eventId)) return false;
-    return [
+    return (
+      [
       row.email_lc,
       row.email,
       row.user_email_lc,
       row.user_email,
-    ].some((v) => normalizeEmail(v) === userEmail);
+      ].some((v) => normalizeEmail(v) === userEmail) ||
+      (row.person_id && personIdSet.has(String(row.person_id)))
+    );
   });
 }
 
@@ -272,6 +282,7 @@ function CoordinatingPlanCard({
 function FormalEventCard({
   item,
   currentUserEmail,
+  currentUserPersonIds,
   variant,
   rsvps,
   avatarByEmail,
@@ -283,6 +294,7 @@ function FormalEventCard({
 }: {
   item: EventRow;
   currentUserEmail: string;
+  currentUserPersonIds: string[];
   variant: 'action' | 'upcoming' | 'past';
   rsvps: RsvpRow[];
   avatarByEmail: Record<string, string>;
@@ -314,8 +326,9 @@ function FormalEventCard({
 
   const participantAvatars = Array.from(participantMap.values());
 
-  const hasMyPositiveRsvp = hasQualifyingRsvp(getMyRsvpRows(rsvps, item.id, currentUserEmail));
-  const hasMyDeclinedRsvp = hasDeclinedRsvp(getMyRsvpRows(rsvps, item.id, currentUserEmail));
+  const myRsvpRows = getMyRsvpRows(rsvps, item.id, currentUserEmail, currentUserPersonIds);
+  const hasMyPositiveRsvp = hasQualifyingRsvp(myRsvpRows);
+  const hasMyDeclinedRsvp = hasDeclinedRsvp(myRsvpRows);
 
   const status =
     variant === 'past'
@@ -362,7 +375,7 @@ function FormalEventCard({
 }
 
 export default function EventsScreen() {
-  const { userEmail: sessionEmail } = useSession();
+  const { userEmail: sessionEmail, userId } = useSession();
   const { language, t } = useI18n();
   const cardLabels = useMemo(() => ({
     respond: t('common_respond'),
@@ -374,6 +387,7 @@ export default function EventsScreen() {
   const [rsvps, setRsvps] = useState<RsvpRow[]>([]);
   const [invites, setInvites] = useState<InviteRow[]>([]);
   const [contacts, setContacts] = useState<DeviceContactRow[]>([]);
+  const [userPersonIds, setUserPersonIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -414,6 +428,21 @@ export default function EventsScreen() {
       if (rsvpsRes.error) throw rsvpsRes.error;
       if (invitesRes.error) throw invitesRes.error;
 
+      if (userId) {
+        const { data: peopleRows } = await supabase
+          .from('people')
+          .select('id')
+          .or(`matched_user_id.eq.${userId},email_lc.eq.${cleanEmail}`);
+
+        setUserPersonIds(
+          Array.from(
+            new Set((peopleRows || []).map((row: any) => String(row.id)).filter(Boolean))
+          )
+        );
+      } else {
+        setUserPersonIds([]);
+      }
+
       setEvents(eventsRes.data || []);
       setRsvps(rsvpsRes.data || []);
       setInvites(invitesRes.data || []);
@@ -425,7 +454,7 @@ export default function EventsScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [sessionEmail]);
+  }, [sessionEmail, userId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -491,7 +520,7 @@ export default function EventsScreen() {
     const involvedEvents = events.filter((ev) => {
       const isHost = normalizeEmail(ev.host_email) === userEmail;
       const myInvites = getMyInviteRows(invites, ev.id, userEmail);
-      const myRsvps = getMyRsvpRows(rsvps, ev.id, userEmail);
+      const myRsvps = getMyRsvpRows(rsvps, ev.id, userEmail, userPersonIds);
       const myVibeResponses = getMyVibeResponseRows(
         ev.responses || [],
         ev.id,
@@ -511,7 +540,7 @@ export default function EventsScreen() {
       const vibe = isVibeEvent(ev);
 
       const myInvites = getMyInviteRows(invites, ev.id, userEmail);
-      const myRsvps = getMyRsvpRows(rsvps, ev.id, userEmail);
+      const myRsvps = getMyRsvpRows(rsvps, ev.id, userEmail, userPersonIds);
       const myVibeResponses = getMyVibeResponseRows(
         ev.responses || [],
         ev.id,
@@ -580,7 +609,7 @@ export default function EventsScreen() {
       if (normalizeEmail(ev.host_email) === userEmail) return false;
       if (isVibeEvent(ev)) return false;
       if (!isFuture(ev)) return false;
-      return hasQualifyingRsvp(getMyRsvpRows(rsvps, ev.id, userEmail));
+      return hasQualifyingRsvp(getMyRsvpRows(rsvps, ev.id, userEmail, userPersonIds));
     }).length;
 
     const pendingInviteCount = actionNeeded.filter((ev) => !isVibeEvent(ev)).length;
@@ -602,7 +631,7 @@ export default function EventsScreen() {
         coordinatingSorted.length === 0 &&
         pastSorted.length === 0,
     };
-  }, [events, invites, rsvps, userEmail]);
+  }, [events, invites, rsvps, userEmail, userPersonIds]);
 
   async function handlePickWinner(date: string) {
     if (!selectedIdea?.manage_handle) {
@@ -793,6 +822,7 @@ export default function EventsScreen() {
                 key={String(item.id)}
                 item={item}
                 currentUserEmail={userEmail}
+                currentUserPersonIds={userPersonIds}
                 variant="action"
                 rsvps={rsvps}
                 avatarByEmail={avatarByEmail}
@@ -811,6 +841,7 @@ export default function EventsScreen() {
               key={String(item.id)}
               item={item}
               currentUserEmail={userEmail}
+              currentUserPersonIds={userPersonIds}
               variant="upcoming"
               rsvps={rsvps}
               avatarByEmail={avatarByEmail}
@@ -847,6 +878,7 @@ export default function EventsScreen() {
               key={String(item.id)}
               item={item}
               currentUserEmail={userEmail}
+              currentUserPersonIds={userPersonIds}
               variant="past"
               rsvps={rsvps}
               avatarByEmail={avatarByEmail}

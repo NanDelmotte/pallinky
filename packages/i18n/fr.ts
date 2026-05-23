@@ -35,6 +35,12 @@ export const fr: Record<TranslationKey, string> = {
   poll_updated_support:
     "Vous pouvez revenir à tout moment pour voir les options ou modifier votre vote à nouveau.",
   poll_updated_subject: "Votre vote mis à jour pour {event} organisé par {host}",
+
+  rsvp_request_pending_headline: "Votre demande a été envoyée à l’hôte",
+  rsvp_request_pending_support:
+    "Nous vous préviendrons quand {host} aura approuvé votre demande.",
+  post_rsvp_install_hint:
+    "Après l’installation, ouvrez à nouveau ce lien pour ajouter l’événement dans Pallinky.",
   common_manage: "Gérer",
   common_view_event: "Voir l'événement",
   common_respond: "Répondre",

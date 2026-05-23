@@ -263,21 +263,26 @@ export default async function ThanksPage({ params, searchParams }: Props) {
 
   const eventTitle = event.title || 'your event';
   const hostName = event.host_name || 'Someone';
+  const isPendingRequest = String(response || '').toLowerCase() === 'pending';
 
   const eventContext = t(lang, copyKeys.eventContextKey, {
     event: eventTitle,
     host: hostName,
   });
 
-  const headline = t(lang, copyKeys.headlineKey, {
-    event: eventTitle,
-    host: hostName,
-  });
+  const headline = isPendingRequest
+    ? t(lang, 'rsvp_request_pending_headline', { event: eventTitle, host: hostName })
+    : t(lang, copyKeys.headlineKey, {
+        event: eventTitle,
+        host: hostName,
+      });
 
-  const support = t(lang, copyKeys.supportKey, {
-    event: eventTitle,
-    host: hostName,
-  });
+  const support = isPendingRequest
+    ? t(lang, 'rsvp_request_pending_support', { event: eventTitle, host: hostName })
+    : t(lang, copyKeys.supportKey, {
+        event: eventTitle,
+        host: hostName,
+      });
 
   const canOpenChat = true;
 
@@ -437,7 +442,7 @@ export default async function ThanksPage({ params, searchParams }: Props) {
             href={IOS_BETA_URL}
             icon="🍎"
             title="Get Pallinky for iPhone"
-            subtitle="Keep up with the invitation in the app."
+            subtitle={t(lang, 'post_rsvp_install_hint')}
           />
 
           {canOpenChat ? (

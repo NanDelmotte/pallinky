@@ -10,6 +10,7 @@ type Body = {
   status?: 'yes' | 'maybe' | 'no' | 'interested';
   selectedDates?: string[];
   note?: string;
+  lang?: string;
 };
 
 function normalizeEmail(value: string) {
@@ -68,6 +69,7 @@ export async function POST(
     }
 
     let guestToken: string | null = null;
+    let joinRequestCreated = false;
 
     if (isFormal) {
       const { data, error } = await supabase.rpc('submit_rsvp_enriched', {
@@ -101,16 +103,57 @@ export async function POST(
         return NextResponse.json({ error: data.error }, { status: 400 });
       }
 
+      joinRequestCreated = data?.join_request_created === true;
       guestToken = data?.guest_token || null;
 
-      const { data: rsvpRow } = await supabase
-        .from('rsvps')
-        .select('guest_token')
-        .eq('event_id', event.id)
-        .eq('email_lc', cleanEmail)
-        .maybeSingle();
+      if (joinRequestCreated) {
+        const { data: requestRow } = await supabase
+          .from('rsvp_join_requests')
+          .select('guest_token')
+          .eq('event_id', event.id)
+          .eq('requester_email_lc', cleanEmail)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-      guestToken = guestToken || rsvpRow?.guest_token || null;
+        guestToken = guestToken || requestRow?.guest_token || null;
+
+        const { error: pendingConfirmError } = await supabase
+          .from('notifications_outbox')
+          .insert({
+            event_id: event.id,
+            recipient_email: cleanEmail,
+            template: 'guest_rsvp_confirmation',
+            type: 'guest_rsvp_confirmation',
+            payload: {
+              slug: event.slug,
+              event_title: event.title,
+              host_name: event.host_name,
+              response: 'pending',
+              request_pending: true,
+              token: guestToken,
+              lang: body.lang || null,
+            },
+            status: 'pending',
+          });
+
+        if (pendingConfirmError) {
+          return NextResponse.json(
+            { error: pendingConfirmError.message || 'Failed to queue guest confirmation.' },
+            { status: 500 }
+          );
+        }
+      } else {
+        const { data: rsvpRow } = await supabase
+          .from('rsvps')
+          .select('guest_token')
+          .eq('event_id', event.id)
+          .eq('email_lc', cleanEmail)
+          .maybeSingle();
+
+        guestToken = guestToken || rsvpRow?.guest_token || null;
+      }
     } else {
       const { data, error } = await supabase.rpc('submit_vibe_rsvp', {
         p_slug: slug,
@@ -160,6 +203,7 @@ export async function POST(
             host_name: event.host_name,
             response: status,
             token: guestToken,
+            lang: body.lang || null,
           },
           status: 'pending',
         });
@@ -175,10 +219,11 @@ export async function POST(
     return NextResponse.json({
       ok: true,
       deadline_passed: false,
+      join_request_created: joinRequestCreated,
       guest_token: guestToken,
       redirectTo: guestToken
-        ? `/event/${event.slug}/thanks?status=${status}&token=${guestToken}`
-        : `/event/${event.slug}/thanks?status=${status}`,
+        ? `/event/${event.slug}/thanks?status=${joinRequestCreated ? 'pending' : status}&token=${guestToken}`
+        : `/event/${event.slug}/thanks?status=${joinRequestCreated ? 'pending' : status}`,
     });
   } catch {
     return NextResponse.json({ error: 'Unexpected server error.' }, { status: 500 });

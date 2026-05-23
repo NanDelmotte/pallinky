@@ -36,6 +36,11 @@ export const nl: Record<TranslationKey, string> = {
   poll_updated_support:
     "Je kunt altijd terugkomen om de opties te bekijken of je stem opnieuw te wijzigen.",
   poll_updated_subject: "Je bijgewerkte stem voor {event} van {host}",
+  rsvp_request_pending_headline: "Je verzoek is naar de host gestuurd",
+  rsvp_request_pending_support:
+    "We laten je weten wanneer {host} je verzoek heeft goedgekeurd.",
+  post_rsvp_install_hint:
+    "Open deze link na het installeren opnieuw om het event in Pallinky te zetten.",
   common_manage: "Beheren",
   common_view_event: "Bekijk event",
   common_respond: "Reageren",

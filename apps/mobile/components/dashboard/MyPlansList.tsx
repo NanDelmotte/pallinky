@@ -23,6 +23,7 @@ interface MyPlansListProps {
     rsvps: any[];
     chatSummaries?: Record<string, any>;
     userEmail: string;
+    userPersonIds?: string[];
     contacts?: any[];
     accessByEventId?: Record<string, any>;
   };
@@ -97,11 +98,16 @@ export default function MyPlansList({
     rsvps = [],
     chatSummaries = {},
     userEmail = '',
+    userPersonIds = [],
     contacts = [],
     accessByEventId = {},
   } = data;
 
   const emailLower = userEmail.toLowerCase().trim();
+  const personIdSet = useMemo(
+    () => new Set((userPersonIds || []).map((id: any) => String(id)).filter(Boolean)),
+    [userPersonIds]
+  );
   const [avatarByEmail, setAvatarByEmail] = useState<Record<string, string>>({});
   const [dismissedKeys, setDismissedKeys] = useState<string[]>([]);
 
@@ -150,7 +156,8 @@ useEffect(() => {
           const hasJoined = rsvps.some(
             (r) =>
               String(r.event_id) === String(ev.id) &&
-              normalizeEmail(r.email_lc || r.email) === emailLower &&
+              (normalizeEmail(r.email_lc || r.email) === emailLower ||
+                (r.person_id && personIdSet.has(String(r.person_id)))) &&
               isPositiveRsvpStatus(r.status)
           );
           return isHost || hasJoined;
@@ -366,7 +373,10 @@ useEffect(() => {
 
 const viewerRsvp = rsvps.find((r) => {
   if (!siblingIds.has(String(r.event_id))) return false;
-  return normalizeEmail(r.email_lc || r.email) === emailLower;
+  return (
+    normalizeEmail(r.email_lc || r.email) === emailLower ||
+    (r.person_id && personIdSet.has(String(r.person_id)))
+  );
 });
 
 const viewerHasJoined = isPositiveRsvpStatus(viewerRsvp?.status);

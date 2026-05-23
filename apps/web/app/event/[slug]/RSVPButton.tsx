@@ -226,6 +226,7 @@ export default function RSVPButton({
       }
 
       const guestToken = result?.guest_token || null;
+      const confirmationStatus = result?.join_request_created ? 'pending' : finalStatus;
 
       if (guestToken) {
         document.cookie = `pallinky_guest_token=${guestToken}; path=/; max-age=31536000`;
@@ -234,7 +235,7 @@ export default function RSVPButton({
 
       const fallbackThanksUrl = buildThanksUrl({
         slug: event.slug,
-        finalStatus,
+        finalStatus: confirmationStatus,
         token: guestToken,
         isUpdate: wasExistingGuest,
       });
@@ -242,7 +243,7 @@ export default function RSVPButton({
       if (result?.redirectTo) {
         try {
           const redirectUrl = new URL(result.redirectTo, window.location.origin);
-          redirectUrl.searchParams.set('status', finalStatus);
+          redirectUrl.searchParams.set('status', confirmationStatus);
           redirectUrl.searchParams.set('lang', navigator.language || 'en');
           redirectUrl.searchParams.set('is_update', String(wasExistingGuest));
 

@@ -515,7 +515,7 @@ function PendingApprovalsPreviewSection({
 
 export default function EventDetailsPage() {
   const { language, t } = useI18n();
-  const { slug } = useLocalSearchParams<{ slug: string }>();
+  const { slug, token } = useLocalSearchParams<{ slug: string; token?: string }>();
   const router = useRouter();
   const { session } = useSession();
 
@@ -533,6 +533,7 @@ const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
   const [profileAvatarsByEmail, setProfileAvatarsByEmail] = useState<Record<string, string>>({});
   const [hostAvatarUrl, setHostAvatarUrl] = useState<string | null>(null);
   const [myRsvp, setMyRsvp] = useState<any>(null);
+  const [myPersonIds, setMyPersonIds] = useState<string[]>([]);
   const [chatSummary, setChatSummary] = useState<any>(null);
   const [accessDecision, setAccessDecision] = useState<any>(null);
   const [blocked, setBlocked] = useState(false);
@@ -573,14 +574,86 @@ setPollResponses([]);
         return;
       }
 
+      let claimedPersonId: string | null = null;
+      const cleanToken = typeof token === 'string' ? token.trim() : '';
+
+      if (cleanToken && session?.user?.id) {
+        const { data: claimData, error: claimError } = await supabase.rpc(
+          'claim_guest_event_token',
+          {
+            p_slug: slug,
+            p_guest_token: cleanToken,
+          }
+        );
+
+        if (claimError) {
+          console.error('Guest token claim failed', claimError);
+        } else {
+          const claimRow = Array.isArray(claimData) ? claimData[0] : claimData;
+          claimedPersonId = claimRow?.person_id ? String(claimRow.person_id) : null;
+        }
+      }
+
+      const { data: personRows } = session?.user?.id
+        ? await supabase
+            .from('people')
+            .select('id')
+            .or(`matched_user_id.eq.${session.user.id},email_lc.eq.${viewerEmail}`)
+        : { data: [] as any[] };
+
+      const nextMyPersonIds = Array.from(
+        new Set(
+          [
+            claimedPersonId,
+            ...((personRows || []).map((row: any) => (row?.id ? String(row.id) : null))),
+          ].filter(Boolean) as string[]
+        )
+      );
+
+      setMyPersonIds(nextMyPersonIds);
+
       const decision = await getEventAccessDecision({
         eventId: String(eventData.id),
         viewerEmail: viewerEmail || null,
+        guestToken: cleanToken || null,
       });
 
-      setAccessDecision(decision);
+      const [claimedRsvpAccess, claimedRequestAccess] = nextMyPersonIds.length > 0
+        ? await Promise.all([
+            supabase
+              .from('rsvps')
+              .select('id')
+              .eq('event_id', eventData.id)
+              .in('person_id', nextMyPersonIds)
+              .limit(1),
+            supabase
+              .from('rsvp_join_requests')
+              .select('id')
+              .eq('event_id', eventData.id)
+              .eq('status', 'pending')
+              .in('person_id', nextMyPersonIds)
+              .limit(1),
+          ])
+        : [{ data: [] as any[] }, { data: [] as any[] }];
 
-      if (decision.can_see !== true) {
+      const hasClaimedAccess =
+        (claimedRsvpAccess.data || []).length > 0 ||
+        (claimedRequestAccess.data || []).length > 0;
+
+      const effectiveDecision =
+        decision.can_see === true || hasClaimedAccess
+          ? {
+              ...decision,
+              can_see: true,
+              has_existing_rsvp:
+                decision.has_existing_rsvp === true ||
+                (claimedRsvpAccess.data || []).length > 0,
+            }
+          : decision;
+
+      setAccessDecision(effectiveDecision);
+
+      if (effectiveDecision.can_see !== true) {
         setBlocked(true);
         setEvent(eventData);
         setSeriesEvents([]);
@@ -660,7 +733,7 @@ if (invitesRes.error) throw invitesRes.error;
       setSeriesEvents(seriesRes.data || []);
 
       const rsvps = rsvpRes.data || [];
-      const guestList = decision.can_see_guest_list === true ? guestListRes.data || [] : [];
+      const guestList = effectiveDecision.can_see_guest_list === true ? guestListRes.data || [] : [];
 
     setAllRsvps(rsvps);
 setPollResponses(pollResponsesRes.data || []);
@@ -712,7 +785,13 @@ setInvites(invitesRes.data || []);
       }
 
       const nextMyRsvp =
-        rsvps.find((rsvp: any) => normalizeEmail(rsvp.email_lc || rsvp.email) === viewerEmail) ||
+        rsvps.find((rsvp: any) => {
+          const rsvpPersonId = rsvp.person_id ? String(rsvp.person_id) : '';
+          return (
+            normalizeEmail(rsvp.email_lc || rsvp.email) === viewerEmail ||
+            (!!rsvpPersonId && nextMyPersonIds.includes(rsvpPersonId))
+          );
+        }) ||
         null;
 
       setMyRsvp(nextMyRsvp);
@@ -744,7 +823,7 @@ setInvites(invitesRes.data || []);
     } finally {
       setLoading(false);
     }
-  }, [slug, viewerEmail]);
+  }, [session?.user?.id, slug, token, viewerEmail]);
 
   const handleResolveApproval = useCallback(
     async (requestId: string, decision: 'approved' | 'denied') => {
@@ -909,7 +988,10 @@ setInvites(invitesRes.data || []);
     ['yes', 'going', 'interested', 'maybe'].includes(myStatus) ||
     allRsvps.some(
       (rsvp: any) =>
-        normalizeEmail(rsvp.email_lc || rsvp.email) === viewerEmail &&
+        (
+          normalizeEmail(rsvp.email_lc || rsvp.email) === viewerEmail ||
+          (rsvp.person_id && myPersonIds.includes(String(rsvp.person_id)))
+        ) &&
         ['yes', 'going', 'interested', 'maybe'].includes(
           (rsvp.status || '').toLowerCase().trim()
         )
