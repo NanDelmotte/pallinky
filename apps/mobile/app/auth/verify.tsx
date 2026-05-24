@@ -17,9 +17,12 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
+import * as SecureStore from 'expo-secure-store';
 import { supabase } from '@pallinky/core';
 import { StyledText } from '@pallinky/ui';
 import {
+  AUTH_PENDING_NAME_KEY,
+  AUTH_RETURN_KEY,
   completeSupabaseAuthFromUrl,
   getAuthCallbackUrl,
 } from '../../lib/authRedirect';
@@ -49,7 +52,10 @@ type NameConflict = {
 export default function VerifyOTPScreen() {
   const router = useRouter();
   const { t } = useI18n();
-  const { returnTo } = useLocalSearchParams<{ returnTo?: string }>();
+  const { resumeAuth, returnTo } = useLocalSearchParams<{
+    resumeAuth?: string;
+    returnTo?: string;
+  }>();
 
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
@@ -60,6 +66,7 @@ export default function VerifyOTPScreen() {
   const [nameConflict, setNameConflict] = useState<NameConflict | null>(null);
   const finishingAuthRef = useRef(false);
   const nameConflictResolverRef = useRef<((useEnteredName: boolean) => void) | null>(null);
+  const lastHandledResumeAuthRef = useRef<string | null>(null);
 
   const cleanEmail = useMemo(() => email.toLowerCase().trim(), [email]);
   const cleanFullName = useMemo(() => fullName.trim(), [fullName]);
@@ -68,18 +75,6 @@ export default function VerifyOTPScreen() {
     const destination = returnTo ? decodeURIComponent(returnTo) : '/(tabs)';
     router.replace(destination as any);
   }, [returnTo, router]);
-
-  useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session && !finishingAuthRef.current) {
-        goToDestination();
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [goToDestination]);
 
   useEffect(() => {
     let active = true;
@@ -140,57 +135,139 @@ export default function VerifyOTPScreen() {
     };
   }, []);
 
-  const ensureProfileFullName = async ({
-    userId,
-    emailLc,
-    name,
-  }: {
-    userId?: string | null;
-    emailLc?: string | null;
-    name: string;
-  }) => {
-    const cleanEmailLc = emailLc?.toLowerCase().trim() || cleanEmail;
-    const cleanName = name.trim();
+  const storeOAuthResume = useCallback(async (name: string) => {
+    const destination = returnTo ? decodeURIComponent(returnTo) : '/(tabs)';
 
-    let resolvedUserId = userId || null;
-    if (!resolvedUserId) {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      resolvedUserId = user?.id || null;
-    }
+    await SecureStore.setItemAsync(AUTH_PENDING_NAME_KEY, name);
+    await SecureStore.setItemAsync(AUTH_RETURN_KEY, destination);
+  }, [returnTo]);
 
-    if (!resolvedUserId || !cleanEmailLc) return;
+  const clearOAuthResume = useCallback(async () => {
+    await SecureStore.deleteItemAsync(AUTH_PENDING_NAME_KEY);
+    await SecureStore.deleteItemAsync(AUTH_RETURN_KEY);
+  }, []);
 
-    const { data: existingProfile, error: profileError } = await supabase
-      .from('profiles')
-      .select('full_name')
-      .eq('id', resolvedUserId)
-      .maybeSingle();
+  const ensureProfileFullName = useCallback(
+    async ({
+      userId,
+      emailLc,
+      name,
+    }: {
+      userId?: string | null;
+      emailLc?: string | null;
+      name: string;
+    }) => {
+      const cleanEmailLc = emailLc?.toLowerCase().trim() || cleanEmail;
+      const cleanName = name.trim();
 
-    if (profileError) throw profileError;
+      let resolvedUserId = userId || null;
+      if (!resolvedUserId) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        resolvedUserId = user?.id || null;
+      }
 
-    const existingName = existingProfile?.full_name?.trim();
-    if (existingName) {
-      if (normalizeName(existingName) === normalizeName(cleanName)) return;
+      if (!resolvedUserId || !cleanEmailLc) return;
 
-      const shouldUseEnteredName = await requestNameConflictChoice(existingName, cleanName);
+      const { data: profileById, error: profileError } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', resolvedUserId)
+        .maybeSingle();
 
-      if (!shouldUseEnteredName) return;
-    }
+      if (profileError) throw profileError;
 
-    const { error } = await supabase.from('profiles').upsert(
-      {
-        id: resolvedUserId,
-        email_lc: cleanEmailLc,
-        full_name: cleanName,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'id' }
-    );
+      let existingProfile = profileById;
+      if (!existingProfile?.full_name?.trim() && cleanEmailLc) {
+        const { data: profileByEmail, error: emailProfileError } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('email_lc', cleanEmailLc)
+          .maybeSingle();
 
-    if (error) throw error;
-  };
+        if (emailProfileError) throw emailProfileError;
+        existingProfile = profileByEmail;
+      }
+
+      const existingName = existingProfile?.full_name?.trim();
+      if (existingName) {
+        if (normalizeName(existingName) === normalizeName(cleanName)) return;
+
+        const shouldUseEnteredName = await requestNameConflictChoice(existingName, cleanName);
+
+        if (!shouldUseEnteredName) return;
+      }
+
+      const { error } = await supabase.from('profiles').upsert(
+        {
+          id: resolvedUserId,
+          email_lc: cleanEmailLc,
+          full_name: cleanName,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'id' }
+      );
+
+      if (error) throw error;
+    },
+    [cleanEmail, requestNameConflictChoice]
+  );
+
+  useEffect(() => {
+    const resumeAuthKey = Array.isArray(resumeAuth) ? resumeAuth[0] : resumeAuth;
+    if (!resumeAuthKey || lastHandledResumeAuthRef.current === resumeAuthKey) return;
+
+    let active = true;
+    lastHandledResumeAuthRef.current = resumeAuthKey;
+
+    const resumeOAuthProfile = async () => {
+      setLoading(true);
+      finishingAuthRef.current = true;
+
+      try {
+        const pendingName = (await SecureStore.getItemAsync(AUTH_PENDING_NAME_KEY))?.trim();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!active) return;
+
+        if (!session) {
+          await clearOAuthResume();
+          return;
+        }
+
+        if (pendingName) {
+          setFullName(pendingName);
+          setNameTouched(true);
+          await ensureProfileFullName({
+            userId: session.user.id,
+            emailLc: session.user.email,
+            name: pendingName,
+          });
+        }
+
+        await clearOAuthResume();
+        if (active) {
+          goToDestination();
+        }
+      } catch (error: any) {
+        Alert.alert('Login Error', error.message ?? 'Could not complete login.');
+      } finally {
+        finishingAuthRef.current = false;
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void resumeOAuthProfile();
+
+    return () => {
+      active = false;
+    };
+  }, [clearOAuthResume, ensureProfileFullName, goToDestination, resumeAuth]);
 
   const handleOAuthLogin = async (provider: 'apple' | 'google') => {
     const name = requireFullName();
@@ -198,11 +275,14 @@ export default function VerifyOTPScreen() {
 
     setLoading(true);
     finishingAuthRef.current = true;
+    lastHandledResumeAuthRef.current = null;
 
     const redirectUrl = getAuthCallbackUrl();
 
 
     try {
+      await storeOAuthResume(name);
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
@@ -224,6 +304,22 @@ export default function VerifyOTPScreen() {
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
 
       if (result.type !== 'success' || !result.url) {
+        const {
+          data: { session: recoveredSession },
+        } = await supabase.auth.getSession();
+
+        if (recoveredSession) {
+          await ensureProfileFullName({
+            userId: recoveredSession.user.id,
+            emailLc: recoveredSession.user.email,
+            name,
+          });
+          await clearOAuthResume();
+          goToDestination();
+          return;
+        }
+
+        await clearOAuthResume();
         return;
       }
 
@@ -235,9 +331,11 @@ export default function VerifyOTPScreen() {
           emailLc: session.user.email,
           name,
         });
+        await clearOAuthResume();
         goToDestination();
       }
     } catch (error: any) {
+      await clearOAuthResume();
       Alert.alert('Login Error', error.message ?? 'Could not complete login.');
     } finally {
       finishingAuthRef.current = false;

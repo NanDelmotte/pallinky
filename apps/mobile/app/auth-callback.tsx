@@ -11,7 +11,11 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import * as Linking from 'expo-linking';
 import * as SecureStore from 'expo-secure-store';
-import { completeSupabaseAuthFromUrl, AUTH_RETURN_KEY } from '../lib/authRedirect';
+import {
+  AUTH_PENDING_NAME_KEY,
+  AUTH_RETURN_KEY,
+  completeSupabaseAuthFromUrl,
+} from '../lib/authRedirect';
 
 export default function AuthCallback() {
   useEffect(() => {
@@ -27,12 +31,26 @@ export default function AuthCallback() {
 
         const storedReturnTo = await SecureStore.getItemAsync(AUTH_RETURN_KEY);
         const destination = storedReturnTo?.trim() || '/(tabs)';
+        const pendingName = await SecureStore.getItemAsync(AUTH_PENDING_NAME_KEY);
 
-        await SecureStore.deleteItemAsync(AUTH_RETURN_KEY);
+        if (!pendingName) {
+          await SecureStore.deleteItemAsync(AUTH_RETURN_KEY);
+        }
 
         if (!active) return;
 
         setTimeout(() => {
+          if (pendingName) {
+            router.replace({
+              pathname: '/auth/verify',
+              params: {
+                resumeAuth: Date.now().toString(),
+                returnTo: encodeURIComponent(destination),
+              },
+            } as any);
+            return;
+          }
+
           router.replace(destination as any);
         }, 300);
       } catch {

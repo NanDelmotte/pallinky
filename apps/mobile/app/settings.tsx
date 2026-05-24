@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import LanguageSelector from '../components/LanguageSelector';
 import { useI18n } from '@pallinky/i18n/client';
 import { clearDismissedPeopleSuggestions } from '../lib/dismissedPeopleSuggestions';
+import { AUTH_PENDING_NAME_KEY, AUTH_RETURN_KEY } from '../lib/authRedirect';
 
 export default function SettingsScreen() {
   const { session } = useSession();
@@ -37,6 +38,8 @@ export default function SettingsScreen() {
         text: t('settings_sign_out'),
         style: 'destructive',
         onPress: async () => {
+          await SecureStore.deleteItemAsync(AUTH_PENDING_NAME_KEY);
+          await SecureStore.deleteItemAsync(AUTH_RETURN_KEY);
           await supabase.auth.signOut();
           router.replace('/auth');
         },

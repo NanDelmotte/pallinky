@@ -4,6 +4,7 @@ import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@pallinky/core';
 
 export const AUTH_RETURN_KEY = 'pallinky_auth_return_to';
+export const AUTH_PENDING_NAME_KEY = 'pallinky_auth_pending_name';
 
 export function getAppVariant() {
   return (
