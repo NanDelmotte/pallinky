@@ -13,6 +13,7 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  Share,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -23,7 +24,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import * as Clipboard from 'expo-clipboard';
 
 import { StyledText } from '@pallinky/ui';
 import { useI18n } from '@pallinky/i18n/client';
@@ -47,7 +47,7 @@ const COLORS = {
   secondaryBg: '#efe9f7',
 };
 
-type PendingAction = 'share' | 'circles' | null;
+type PendingAction = 'share' | 'circles' | 'native' | null;
 
 const ConfettiPiece = ({ delay, color }: { delay: number; color: string }) => {
   const fallAnim = useRef(new Animated.Value(-20)).current;
@@ -109,11 +109,12 @@ export default function SuccessScreen() {
   const [showConfetti, setShowConfetti] = useState(true);
   const [identityVisible, setIdentityVisible] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
-   const shareLink = useMemo(() => `https://pallinky.com/event/${slug}`, [slug]);
-   
-   const [customMessage, setCustomMessage] = useState(
-  default_message || buildInviteMessage({ title, link: shareLink })
-);
+  const [qrExpanded, setQrExpanded] = useState(false);
+  const shareLink = useMemo(() => `https://pallinky.com/event/${slug}`, [slug]);
+
+  const [customMessage, setCustomMessage] = useState(
+    default_message || buildInviteMessage({ title, link: shareLink })
+  );
 
   const colors = [COLORS.primary, '#7aa340', COLORS.secondary, '#ffd700', '#ff7a59'];
  
@@ -146,9 +147,15 @@ export default function SuccessScreen() {
       });
     }
 
+    if (pendingAction === 'native') {
+      Share.share({ message: `${customMessage}\n${shareLink}` }).catch(() => {
+        Alert.alert(t('create_success_share_error'), t('create_success_share_sheet_error'));
+      });
+    }
+
     setPendingAction(null);
     setIdentityVisible(false);
-  }, [isHost, pendingAction, slug, title, circleId]);
+  }, [isHost, pendingAction, slug, title, circleId, customMessage, shareLink, t]);
 
   const requireHost = (action: PendingAction) => {
     if (isHost) {
@@ -173,9 +180,22 @@ export default function SuccessScreen() {
     setIdentityVisible(true);
   };
 
-  const copyToClipboard = async () => {
-    await Clipboard.setStringAsync(shareLink);
-    Alert.alert(t('create_success_link_copied'), t('create_success_link_copied_body'));
+  const requireNativeShare = () => {
+    if (isHost) {
+      shareNative();
+      return;
+    }
+
+    setPendingAction('native');
+    setIdentityVisible(true);
+  };
+
+  const shareNative = async () => {
+    try {
+      await Share.share({ message: `${customMessage}\n${shareLink}` });
+    } catch {
+      Alert.alert(t('create_success_share_error'), t('create_success_share_sheet_error'));
+    }
   };
 
   const handleStudioNav = () => {
@@ -208,11 +228,107 @@ export default function SuccessScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
+            <TouchableOpacity
+              style={styles.backBtn}
+              onPress={() => router.replace(`/event/${slug}/details`)}
+              accessibilityRole="button"
+              accessibilityLabel={t('create_success_back_event')}
+            >
+              <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+            </TouchableOpacity>
+
             <View style={styles.header}>
               <View style={styles.iconCircle}>
                 <Ionicons name="checkmark-circle" size={60} color={COLORS.primary} />
               </View>
               <StyledText style={styles.title}>{t('create_success_title')}</StyledText>
+            </View>
+
+{/*
+            <TouchableOpacity style={styles.circlesCard} onPress={() => requireHost('circles')}>
+              <View style={styles.circlesIcon}>
+                <Ionicons name="people" size={24} color="#fff" />
+              </View>
+
+              <View style={styles.cardTextContent}>
+                <StyledText style={styles.cardTitle}>Invite People</StyledText>
+                <StyledText style={styles.cardDesc}>
+                  Select Pallinky friends or upload contacts.
+                </StyledText>
+              </View>
+
+              <Ionicons
+                name={isHost ? 'chevron-forward' : 'lock-closed'}
+                size={20}
+                color={COLORS.primary}
+              />
+            </TouchableOpacity>
+*/}
+            
+            <View style={styles.card}>
+              <StyledText style={styles.label}>{t('event_share')}</StyledText>
+
+              <View style={styles.previewBox}>
+                <TextInput
+                  style={styles.messageInput}
+                  value={customMessage}
+                  onChangeText={setCustomMessage}
+                  multiline
+                  placeholder={t('create_success_add_message')}
+                  placeholderTextColor={COLORS.textMuted}
+                />
+              </View>
+
+              <View style={styles.buttonRow}>
+                <TouchableOpacity style={styles.shareBtn} onPress={() => requireHost('share')}>
+                  <Ionicons
+                    name={isHost ? 'people' : 'lock-closed'}
+                    size={20}
+                    color="#fff"
+                  />
+                  <StyledText style={styles.btnText}>
+                    {t('create_success_share_pallinky_friends')}
+                  </StyledText>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.nativeShareBtn}
+                  onPress={requireNativeShare}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('create_success_share_native')}
+                >
+                  <Ionicons
+                    name={isHost ? 'share-outline' : 'lock-closed'}
+                    size={22}
+                    color={COLORS.primary}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              {isPublicEvent ? (
+                <View style={styles.qrDisclosure}>
+                  <TouchableOpacity
+                    style={styles.qrToggle}
+                    onPress={() => setQrExpanded((current) => !current)}
+                  >
+                    <StyledText style={styles.qrTitle}>
+                      {qrExpanded ? t('create_success_hide_qr') : t('create_success_show_qr')}
+                    </StyledText>
+                    <Ionicons
+                      name={qrExpanded ? 'chevron-up' : 'chevron-down'}
+                      size={20}
+                      color={COLORS.primary}
+                    />
+                  </TouchableOpacity>
+
+                  {qrExpanded ? (
+                    <View style={styles.qrContent}>
+                      <Image source={{ uri: qrImageUri }} style={styles.qrImage} />
+                      <StyledText style={styles.qrSub}>{t('create_success_qr_body')}</StyledText>
+                    </View>
+                  ) : null}
+                </View>
+              ) : null}
             </View>
 
             <View style={styles.temptationCard}>
@@ -237,88 +353,7 @@ export default function SuccessScreen() {
                 </View>
               </TouchableOpacity>
             </View>
-{/*
-            <TouchableOpacity style={styles.circlesCard} onPress={() => requireHost('circles')}>
-              <View style={styles.circlesIcon}>
-                <Ionicons name="people" size={24} color="#fff" />
-              </View>
 
-              <View style={styles.cardTextContent}>
-                <StyledText style={styles.cardTitle}>Invite People</StyledText>
-                <StyledText style={styles.cardDesc}>
-                  Select Pallinky friends or upload contacts.
-                </StyledText>
-              </View>
-
-              <Ionicons
-                name={isHost ? 'chevron-forward' : 'lock-closed'}
-                size={20}
-                color={COLORS.primary}
-              />
-            </TouchableOpacity>
-*/}
-            
-              <View style={styles.card}>
-                <StyledText style={styles.label}>{t('create_success_invite_link')}</StyledText>
-
-                <View style={styles.previewBox}>
-                  <TextInput
-                    style={styles.messageInput}
-                    value={customMessage}
-                    onChangeText={setCustomMessage}
-                    multiline
-                    placeholder={t('create_success_add_message')}
-                    placeholderTextColor={COLORS.textMuted}
-                  />
-                  <StyledText style={styles.linkTextPreview}>{shareLink}</StyledText>
-                </View>
-
-                <View style={styles.buttonRow}>
-                  <TouchableOpacity style={styles.shareBtn} onPress={() => requireHost('share')}>
-                    <Ionicons
-                      name={isHost ? 'share-social' : 'lock-closed'}
-                      size={20}
-                      color="#fff"
-                    />
-                    <StyledText style={styles.btnText}>{t('create_success_share_link')}</StyledText>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.copyBtn} onPress={copyToClipboard}>
-                    <Ionicons name="copy-outline" size={20} color={COLORS.primary} />
-                  </TouchableOpacity>
-                </View>
-
-                <View style={styles.qrCard}>
-                  <Image source={{ uri: qrImageUri }} style={styles.qrImage} />
-                  <StyledText style={styles.qrTitle}>{t('create_success_qr_title')}</StyledText>
-                  <StyledText style={styles.qrSub}>
-                    {t('create_success_qr_body')}
-                  </StyledText>
-                </View>
-              </View>
-           
-
-            <TouchableOpacity
-              style={styles.circlesCard}
-              onPress={() => router.push(`/event/${slug}/details`)}
-            >
-              <View style={styles.circlesIcon}>
-                <Ionicons name="eye-outline" size={24} color="#fff" />
-              </View>
-
-              <View style={styles.cardTextContent}>
-                <StyledText style={styles.cardTitle}>{t('create_success_open_event')}</StyledText>
-                <StyledText style={styles.cardDesc}>
-                  {t('create_success_open_event_body')}
-                </StyledText>
-              </View>
-
-              <Ionicons name="chevron-forward" size={20} color={COLORS.primary} />
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.homeBtn} onPress={() => router.replace('/(tabs)')}>
-              <StyledText style={styles.homeBtnText}>{t('create_success_back_hub')}</StyledText>
-            </TouchableOpacity>
           </ScrollView>
         </KeyboardAvoidingView>
 
@@ -346,9 +381,22 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   container: { flex: 1, backgroundColor: COLORS.background },
   confettiPiece: { position: 'absolute', width: 8, height: 8, zIndex: 100, top: 0 },
-  scrollContent: { padding: 25, paddingTop: 20, paddingBottom: 60, alignItems: 'center' },
+  scrollContent: { padding: 25, paddingTop: 16, paddingBottom: 60, alignItems: 'center' },
 
-  header: { alignItems: 'center', marginBottom: 20 },
+  backBtn: {
+    alignSelf: 'flex-start',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.borderSoft,
+    marginBottom: 10,
+  },
+
+  header: { alignItems: 'center', marginBottom: 18 },
   iconCircle: {
     width: 90,
     height: 90,
@@ -400,30 +448,29 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
 
-  linkTextPreview: {
-    fontSize: 14,
-    color: COLORS.primary,
-    fontWeight: '700',
-    marginTop: 10,
-    opacity: 0.9,
-  },
-
-  qrCard: {
-    alignItems: 'center',
+  qrDisclosure: {
     backgroundColor: '#f9faf7',
     borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    marginBottom: 15,
+    marginTop: 14,
     borderWidth: 1,
     borderColor: COLORS.borderSoft,
   },
+
+  qrToggle: {
+    minHeight: 50,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  qrContent: { alignItems: 'center', paddingHorizontal: 12, paddingBottom: 16 },
 
   qrImage: {
     width: 180,
     height: 180,
     borderRadius: 12,
-    marginBottom: 10,
+    marginBottom: 12,
     backgroundColor: COLORS.surface,
   },
 
@@ -447,7 +494,9 @@ const styles = StyleSheet.create({
   shareBtn: {
     flex: 1,
     backgroundColor: COLORS.primary,
-    height: 50,
+    minHeight: 52,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
@@ -455,9 +504,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
 
-  copyBtn: {
-    width: 50,
-    height: 50,
+  nativeShareBtn: {
+    width: 52,
+    height: 52,
     borderRadius: 14,
     borderWidth: 1.5,
     borderColor: COLORS.primary,
@@ -466,7 +515,14 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
   },
 
-  btnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  btnText: {
+    color: '#fff',
+    flexShrink: 1,
+    fontWeight: '800',
+    fontSize: 15,
+    lineHeight: 18,
+    textAlign: 'center',
+  },
 
   guestPreviewLink: {
     flexDirection: 'row',
@@ -558,12 +614,4 @@ const styles = StyleSheet.create({
 
   studioTextWrap: { flex: 1 },
   studioBtnTitle: { fontSize: 15, fontWeight: '800', color: COLORS.text },
-
-  homeBtn: { marginTop: 30, padding: 15 },
-  homeBtnText: {
-    color: COLORS.text,
-    fontWeight: '700',
-    textDecorationLine: 'underline',
-    opacity: 0.5,
-  },
 });

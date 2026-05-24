@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Platform } from "react-native";
 import * as Updates from "expo-updates";
 
 type EasUpdateState = {
@@ -16,6 +17,10 @@ export function useEasUpdate(): EasUpdateState {
     let mounted = true;
 
     const checkForUpdate = async () => {
+      if (Platform.OS === "android") {
+        return;
+      }
+
       if (__DEV__) {
         console.log("Updates: skipping EAS update check in development.");
         return;
@@ -48,6 +53,11 @@ export function useEasUpdate(): EasUpdateState {
   }, []);
 
   const applyUpdate = useCallback(async () => {
+    if (Platform.OS === "android") {
+      setUpdateAvailable(false);
+      return;
+    }
+
     if (__DEV__) {
       console.log("Updates: skipping EAS update fetch in development.");
       setUpdateAvailable(false);
