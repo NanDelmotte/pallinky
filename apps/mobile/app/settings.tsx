@@ -14,7 +14,6 @@ import { Ionicons } from '@expo/vector-icons';
 import LanguageSelector from '../components/LanguageSelector';
 import { useI18n } from '@pallinky/i18n/client';
 import { clearDismissedPeopleSuggestions } from '../lib/dismissedPeopleSuggestions';
-import { AUTH_PENDING_NAME_KEY, AUTH_RETURN_KEY } from '../lib/authRedirect';
 
 export default function SettingsScreen() {
   const { session } = useSession();
@@ -30,22 +29,6 @@ export default function SettingsScreen() {
       setEmail(session.user.email);
     }
   }, [session?.user?.email]);
-
-  function handleSignOut() {
-    Alert.alert(t('settings_sign_out'), t('settings_sign_out_confirm'), [
-      { text: t('common_cancel'), style: 'cancel' },
-      {
-        text: t('settings_sign_out'),
-        style: 'destructive',
-        onPress: async () => {
-          await SecureStore.deleteItemAsync(AUTH_PENDING_NAME_KEY);
-          await SecureStore.deleteItemAsync(AUTH_RETURN_KEY);
-          await supabase.auth.signOut();
-          router.replace('/auth');
-        },
-      },
-    ]);
-  }
 
   async function clearDismissedCardState(userEmail: string) {
     await SecureStore.deleteItemAsync('dismissed_vibes');
@@ -148,11 +131,6 @@ export default function SettingsScreen() {
           <StyledText style={styles.deleteAccountBtnText}>{t('settings_delete_account')}</StyledText>
         </TouchableOpacity>
       </View>
-
-      <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
-        <Ionicons name="log-out-outline" size={20} color="#e63946" />
-        <StyledText style={styles.signOutBtnText}>{t('settings_sign_out')}</StyledText>
-      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -241,22 +219,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   deleteAccountBtnText: {
-    color: '#e63946',
-    fontWeight: 'bold',
-  },
-  signOutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    marginTop: 40,
-    padding: 15,
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ffd6d6',
-  },
-  signOutBtnText: {
     color: '#e63946',
     fontWeight: 'bold',
   },
