@@ -52,7 +52,10 @@ type PlaceDetailsResponse = {
     name?: string;
   };
   status?: string;
+  error_message?: string;
 };
+
+type SearchStatus = "idle" | "missing-key" | "search-error" | "no-results";
 
 export default function LocationSearch({ value, onChange }: Props) {
   const { t } = useI18n();
@@ -62,6 +65,7 @@ export default function LocationSearch({ value, onChange }: Props) {
   const [isFocused, setIsFocused] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isResolvingPlace, setIsResolvingPlace] = useState(false);
+  const [searchStatus, setSearchStatus] = useState<SearchStatus>("idle");
   const requestIdRef = useRef(0);
 
   useEffect(() => {
@@ -101,20 +105,18 @@ export default function LocationSearch({ value, onChange }: Props) {
     };
   }, []);
 
-  const searchUrl = useMemo(() => {
-    if (!GOOGLE_MAPS_KEY) {
-      return null;
-    }
-
-    const url = new URL("https://maps.googleapis.com/maps/api/place/autocomplete/json");
-    url.searchParams.set("key", GOOGLE_MAPS_KEY);
-    url.searchParams.set("language", "en");
-    url.searchParams.set("input", inputValue.trim());
-    url.searchParams.set("location", `${coords.latitude},${coords.longitude}`);
-    url.searchParams.set("radius", String(SEARCH_RADIUS_METERS));
-    url.searchParams.set("strictbounds", "false");
-    return url.toString();
-  }, [coords.latitude, coords.longitude, inputValue]);
+  const searchUrl = useMemo(
+    () =>
+      buildGooglePlacesUrl("autocomplete", {
+        key: GOOGLE_MAPS_KEY,
+        language: "en",
+        input: inputValue.trim(),
+        location: `${coords.latitude},${coords.longitude}`,
+        radius: String(SEARCH_RADIUS_METERS),
+        strictbounds: "false",
+      }),
+    [coords.latitude, coords.longitude, inputValue]
+  );
 
   useEffect(() => {
     const trimmedInput = inputValue.trim();
@@ -122,12 +124,14 @@ export default function LocationSearch({ value, onChange }: Props) {
     if (!searchUrl || trimmedInput.length < MIN_QUERY_LENGTH) {
       setPredictions([]);
       setIsSearching(false);
+      setSearchStatus(!GOOGLE_MAPS_KEY && trimmedInput.length >= MIN_QUERY_LENGTH ? "missing-key" : "idle");
       return;
     }
 
     const currentRequestId = requestIdRef.current + 1;
     requestIdRef.current = currentRequestId;
     setIsSearching(true);
+    setSearchStatus("idle");
 
     const timeoutId = setTimeout(async () => {
       try {
@@ -138,10 +142,13 @@ export default function LocationSearch({ value, onChange }: Props) {
           return;
         }
 
-        setPredictions(json.predictions ?? []);
+        const nextPredictions = json.status === "OK" ? json.predictions ?? [] : [];
+        setPredictions(nextPredictions);
+        setSearchStatus(nextPredictions.length > 0 ? "idle" : json.status === "ZERO_RESULTS" ? "no-results" : "search-error");
       } catch {
         if (requestIdRef.current === currentRequestId) {
           setPredictions([]);
+          setSearchStatus("search-error");
         }
       } finally {
         if (requestIdRef.current === currentRequestId) {
@@ -158,6 +165,7 @@ export default function LocationSearch({ value, onChange }: Props) {
   const handleTextChange = useCallback(
     (nextValue: string) => {
       setInputValue(nextValue);
+      setSearchStatus("idle");
       onChange(nextValue);
     },
     [onChange]
@@ -177,13 +185,14 @@ export default function LocationSearch({ value, onChange }: Props) {
       setIsResolvingPlace(true);
 
       try {
-        const url = new URL("https://maps.googleapis.com/maps/api/place/details/json");
-        url.searchParams.set("key", GOOGLE_MAPS_KEY);
-        url.searchParams.set("place_id", prediction.place_id);
-        url.searchParams.set("fields", "formatted_address,name");
-        url.searchParams.set("language", "en");
+        const url = buildGooglePlacesUrl("details", {
+          key: GOOGLE_MAPS_KEY,
+          place_id: prediction.place_id,
+          fields: "formatted_address,name",
+          language: "en",
+        });
 
-        const response = await fetch(url.toString());
+        const response = await fetch(url);
         const json = (await response.json()) as PlaceDetailsResponse;
         const exactLocation =
           json.result?.formatted_address || json.result?.name || fallbackLocation;
@@ -243,8 +252,28 @@ export default function LocationSearch({ value, onChange }: Props) {
           ))}
         </View>
       )}
+
+      {isFocused && searchStatus !== "idle" && (
+        <Text style={styles.statusText}>
+          {searchStatus === "no-results"
+            ? "No places found nearby."
+            : "Place search is unavailable right now."}
+        </Text>
+      )}
     </View>
   );
+}
+
+function buildGooglePlacesUrl(
+  endpoint: "autocomplete" | "details",
+  params: Record<string, string | undefined>
+) {
+  const query = Object.entries(params)
+    .filter(([, value]) => Boolean(value))
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value ?? "")}`)
+    .join("&");
+
+  return `https://maps.googleapis.com/maps/api/place/${endpoint}/json?${query}`;
 }
 
 const styles = StyleSheet.create({
@@ -301,5 +330,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     marginTop: 2,
+  },
+  statusText: {
+    color: "#64748b",
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 8,
+    paddingHorizontal: 2,
   },
 });
