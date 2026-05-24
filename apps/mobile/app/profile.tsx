@@ -15,15 +15,15 @@ import {
   Image,
   Alert,
   TextInput,
-  Modal,
 } from 'react-native';
 import { StyledText } from '@pallinky/ui';
 import { supabase, useSession } from '@pallinky/core';
 import { useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-import QRCode from 'react-native-qrcode-svg';
 import { useI18n } from '@pallinky/i18n/client';
+import { AUTH_PENDING_NAME_KEY, AUTH_RETURN_KEY } from '../lib/authRedirect';
 interface ProfileRow {
   id: string;
   email_lc: string | null;
@@ -99,7 +99,6 @@ export default function ProfileScreen() {
 
   const [editingName, setEditingName] = useState(false);
   const [draftName, setDraftName] = useState('');
-  const [qrVisible, setQrVisible] = useState(false);
   const emailLower = normalizeEmail(session?.user?.email);
 
   const displayName = useMemo(() => {
@@ -109,9 +108,6 @@ export default function ProfileScreen() {
   }, [profile?.full_name]);
 
   const avatarUrl = profile?.avatar_url || avatarFallback(displayName);
-  const qrValue = profile?.id
-    ? `https://pallinky.com/add?profileId=${profile.id}`
-    : '';
   const joinedDate = useMemo(() => {
     const fromProfile = profile?.created_at || null;
     const fromAuth = (session?.user as any)?.created_at || null;
@@ -346,6 +342,22 @@ export default function ProfileScreen() {
     }
   }
 
+  function handleSignOut() {
+    Alert.alert(t('settings_sign_out'), t('settings_sign_out_confirm'), [
+      { text: t('common_cancel'), style: 'cancel' },
+      {
+        text: t('settings_sign_out'),
+        style: 'destructive',
+        onPress: async () => {
+          await SecureStore.deleteItemAsync(AUTH_PENDING_NAME_KEY);
+          await SecureStore.deleteItemAsync(AUTH_RETURN_KEY);
+          await supabase.auth.signOut();
+          router.replace('/auth');
+        },
+      },
+    ]);
+  }
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -442,12 +454,10 @@ export default function ProfileScreen() {
         )}
 
         {joinedDate ? <StyledText style={styles.joined}>{t('profile_joined', { date: joinedDate })}</StyledText> : null}
-        {qrValue ? (
-          <TouchableOpacity style={styles.qrButton} onPress={() => setQrVisible(true)}>
-            <Ionicons name="qr-code-outline" size={18} color="#43691b" />
-            <StyledText style={styles.qrButtonText}>{t('profile_show_qr')}</StyledText>
-          </TouchableOpacity>
-        ) : null}
+        <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
+          <Ionicons name="log-out-outline" size={16} color="#e63946" />
+          <StyledText style={styles.signOutBtnText}>{t('settings_sign_out')}</StyledText>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.statsRow}>
@@ -500,26 +510,7 @@ export default function ProfileScreen() {
           ))
         )}
       </View>
-      <Modal visible={qrVisible} transparent animationType="fade">
-        <View style={styles.qrOverlay}>
-          <View style={styles.qrCard}>
-            <TouchableOpacity style={styles.qrClose} onPress={() => setQrVisible(false)}>
-              <Ionicons name="close" size={26} color="#1f2a1b" />
-            </TouchableOpacity>
 
-            <Image source={{ uri: avatarUrl }} style={styles.qrAvatar} />
-
-            <StyledText style={styles.qrTitle}>{t('profile_qr_title', { name: displayName })}</StyledText>
-            <StyledText style={styles.qrSubtitle}>
-              {t('profile_qr_subtitle')}
-            </StyledText>
-
-            <View style={styles.qrBox}>
-              <QRCode value={qrValue} size={220} />
-            </View>
-          </View>
-        </View>
-      </Modal>
     </ScrollView>
   );
 }
@@ -743,68 +734,22 @@ const styles = StyleSheet.create({
   rsvpedBadgeText: {
     color: '#6A4C93',
   },
-  qrButton: {
-    marginTop: 16,
+  signOutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#f3f8ed',
-    borderWidth: 1,
-    borderColor: '#bac9ad',
-    borderRadius: 999,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  qrButtonText: {
-    color: '#43691b',
-    fontWeight: '800',
-    fontSize: 14,
-  },
-  qrOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
+    gap: 6,
+    marginTop: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: '#fff8f8',
+    borderWidth: 1,
+    borderColor: '#ffd6d6',
   },
-  qrCard: {
-    width: '100%',
-    maxWidth: 360,
-    backgroundColor: '#fff',
-    borderRadius: 28,
-    padding: 24,
-    alignItems: 'center',
-  },
-  qrClose: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    zIndex: 2,
-  },
-  qrAvatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: '#eee',
-    marginBottom: 12,
-  },
-  qrTitle: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#1f2a1b',
-    textAlign: 'center',
-  },
-  qrSubtitle: {
-    marginTop: 6,
-    fontSize: 14,
-    color: '#6b7280',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  qrBox: {
-    marginTop: 20,
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 18,
+  signOutBtnText: {
+    color: '#e63946',
+    fontSize: 13,
+    fontWeight: '800',
   },
 });
