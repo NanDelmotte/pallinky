@@ -125,6 +125,10 @@ function getRowTitle(row: InboxRow, eventTitle: string, t: any) {
       return t('inbox_message_from_host');
     case 'reach_out_suggestion':
       return t('inbox_plan_suggestion');
+    case 'friend_event_created':
+      return t('inbox_friend_event_created', {
+        host: payload.host_name || t('inbox_someone'),
+      });
     case 'rsvp_deadline_reminder':
       return t('inbox_rsvp_reminder');
     case 'guest_rsvp_confirmation':
@@ -164,6 +168,11 @@ function getRowBody(row: InboxRow, eventTitle: string, t: any) {
       return t('inbox_request_declined_body', { event: eventTitle });
     case 'reach_out_suggestion':
   return t('inbox_suggested_body', { name: payload.guest_name || t('inbox_someone'), event: eventTitle });
+    case 'friend_event_created':
+      return t('inbox_friend_event_created_body', {
+        host: payload.host_name || t('inbox_someone'),
+        event: eventTitle,
+      });
     case 'event_cancelled':
       return payload.message
         ? `${eventTitle} — ${payload.message}`
@@ -203,6 +212,8 @@ function getRowIcon(row: InboxRow) {
       return <MaterialCommunityIcons name="calendar-remove" size={20} color={COLORS.secondary} />;
     case 'host_message':
       return <Ionicons name="chatbox-ellipses-outline" size={20} color={COLORS.secondary} />;
+    case 'friend_event_created':
+      return <MaterialCommunityIcons name="calendar-plus" size={20} color={COLORS.secondary} />;
     case 'rsvp_deadline_reminder':
       return <Ionicons name="alarm-outline" size={20} color={COLORS.secondary} />;
     case 'guest_rsvp_confirmation':
