@@ -1,85 +1,53 @@
 /**
  * Path: packages/core/src/supabase.ts
  * Description: Universal Supabase client with AsyncStorage persistence for Expo.
- * Updated: avoid startup crashes when public Supabase env is absent from a release bundle.
+ * Updated: fail closed when the selected app variant and Supabase project disagree.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 
-const PRODUCTION_SUPABASE_URL = 'https://nfoshumnlfsjtfxkyqrq.supabase.co';
+const SUPABASE_URL_BY_VARIANT = {
+  development: 'https://picgzvmhevhznzowkdhv.supabase.co',
+  production: 'https://nfoshumnlfsjtfxkyqrq.supabase.co',
+} as const;
 
-const appVariant = process.env.EXPO_PUBLIC_APP_VARIANT ?? 'production';
+type AppVariant = keyof typeof SUPABASE_URL_BY_VARIANT;
+
+const appVariant = process.env.EXPO_PUBLIC_APP_VARIANT?.toLowerCase();
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+function isKnownAppVariant(value: string | undefined): value is AppVariant {
+  return value === 'development' || value === 'production';
+}
 
-if (
-  appVariant === 'production' &&
-  supabaseUrl &&
-  supabaseUrl !== PRODUCTION_SUPABASE_URL
-) {
+if (!isKnownAppVariant(appVariant)) {
   throw new Error(
-    `Production Supabase URL mismatch. Expected ${PRODUCTION_SUPABASE_URL}, got ${supabaseUrl}.`
+    `Missing or invalid EXPO_PUBLIC_APP_VARIANT. Expected "development" or "production", got ${appVariant ?? 'unset'}.`
   );
 }
 
-const missingConfigError = {
-  name: 'SupabaseConfigurationError',
-  message:
-    'Missing Supabase configuration. Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY for the mobile release build.',
-};
-
-const missingConfigResult = Promise.resolve({ data: null, error: missingConfigError });
-
-function createDisabledQuery() {
-  return new Proxy(missingConfigResult, {
-    get(target, prop) {
-      if (prop in target) {
-        const value = target[prop as keyof typeof target];
-        return typeof value === 'function' ? value.bind(target) : value;
-      }
-
-      return () => createDisabledQuery();
-    },
-  });
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error(
+    `Missing Supabase configuration for ${appVariant}. Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY.`
+  );
 }
 
-function createDisabledSupabaseClient(): SupabaseClient {
-  return {
-    auth: {
-      getSession: () =>
-        Promise.resolve({ data: { session: null }, error: missingConfigError }),
-      getUser: () => Promise.resolve({ data: { user: null }, error: missingConfigError }),
-      onAuthStateChange: () => ({
-        data: {
-          subscription: {
-            unsubscribe: () => undefined,
-          },
-        },
-      }),
-      signInWithOtp: () => missingConfigResult,
-      verifyOtp: () => missingConfigResult,
-      signInWithOAuth: () => missingConfigResult,
-      setSession: () => missingConfigResult,
-      exchangeCodeForSession: () => missingConfigResult,
-      signOut: () => missingConfigResult,
-    },
-    from: () => createDisabledQuery(),
-    rpc: () => missingConfigResult,
-    storage: {
-      from: () => createDisabledQuery(),
-    },
-  } as unknown as SupabaseClient;
+const expectedSupabaseUrl = SUPABASE_URL_BY_VARIANT[appVariant];
+
+if (supabaseUrl !== expectedSupabaseUrl) {
+  throw new Error(
+    `${appVariant} Supabase URL mismatch. Expected ${expectedSupabaseUrl}, got ${supabaseUrl}.`
+  );
 }
 
-export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl!, supabaseAnonKey!, {
-      auth: {
-        storage: AsyncStorage,
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true,
-      },
-    })
-  : createDisabledSupabaseClient();
+export const isSupabaseConfigured = true;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: AsyncStorage,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+  },
+});

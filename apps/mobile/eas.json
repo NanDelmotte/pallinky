@@ -16,7 +16,9 @@
         "gradleCommand": ":app:assembleDebug"
       },
       "env": {
-        "EXPO_PUBLIC_APP_VARIANT": "development"
+        "EXPO_PUBLIC_APP_VARIANT": "development",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://picgzvmhevhznzowkdhv.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_-XpUrOe1JzhKZ_dv-PMnzA_8UN5NioX"
       }
     },
     "production": {
@@ -30,7 +32,9 @@
         "gradleCommand": ":app:bundleRelease"
       },
       "env": {
-        "EXPO_PUBLIC_APP_VARIANT": "production"
+        "EXPO_PUBLIC_APP_VARIANT": "production",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://nfoshumnlfsjtfxkyqrq.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_tV5Yx4MiEokwXvjW15geJQ_9qcV_RI_"
       }
     }
   },
