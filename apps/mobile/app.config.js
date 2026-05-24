@@ -9,9 +9,9 @@ if (!['development', 'production'].includes(appVariant)) {
 const appName = 'Pallinky';
 const iosBundleIdentifier = 'com.nancy.pallinky';
 const androidPackage = 'com.nancy.pallinky';
+
 export default {
   expo: {
-<<<<<<< Updated upstream
     name: appName,
     slug: 'pallinky',
     owner: 'nanbowles',
@@ -20,12 +20,6 @@ export default {
     version: '1.1.5',
     runtimeVersion: '1.1.5',
 
-=======
-    name: CURRENT_APP.name,
-    slug: 'pallinky',
-    scheme: CURRENT_APP.scheme,
-    version: '1.1.3',
->>>>>>> Stashed changes
     orientation: 'portrait',
     userInterfaceStyle: 'light',
 
@@ -40,8 +34,8 @@ export default {
     assetBundlePatterns: ['**/*'],
 
     updates: {
-  url: 'https://u.expo.dev/3a13b9ce-13b3-48f4-88b4-e4945d9698dc',
-},
+      url: 'https://u.expo.dev/3a13b9ce-13b3-48f4-88b4-e4945d9698dc',
+    },
     ios: {
       supportsTablet: true,
       bundleIdentifier: iosBundleIdentifier,
@@ -142,18 +136,7 @@ export default {
         projectId: '3a13b9ce-13b3-48f4-88b4-e4945d9698dc',
       },
 
-<<<<<<< Updated upstream
       router: {},
-=======
-    owner: 'nanbowles',
-    runtimeVersion: '1.1.3',
-
-    updates: {
-      url: 'https://u.expo.dev/3a13b9ce-13b3-48f4-88b4-e4945d9698dc',
-      requestHeaders: {
-        'expo-channel-name': CURRENT_APP.updatesChannel,
-      },
->>>>>>> Stashed changes
     },
 
     plugins: [

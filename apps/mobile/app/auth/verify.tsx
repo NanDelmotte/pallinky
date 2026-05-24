@@ -6,6 +6,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -40,6 +41,11 @@ const COLORS = {
 
 const normalizeName = (name: string) => name.trim().toLowerCase();
 
+type NameConflict = {
+  existingName: string;
+  enteredName: string;
+};
+
 export default function VerifyOTPScreen() {
   const router = useRouter();
   const { t } = useI18n();
@@ -51,7 +57,9 @@ export default function VerifyOTPScreen() {
   const [token, setToken] = useState('');
   const [loading, setLoading] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
+  const [nameConflict, setNameConflict] = useState<NameConflict | null>(null);
   const finishingAuthRef = useRef(false);
+  const nameConflictResolverRef = useRef<((useEnteredName: boolean) => void) | null>(null);
 
   const cleanEmail = useMemo(() => email.toLowerCase().trim(), [email]);
   const cleanFullName = useMemo(() => fullName.trim(), [fullName]);
@@ -109,6 +117,29 @@ export default function VerifyOTPScreen() {
     return cleanFullName;
   };
 
+  const resolveNameConflict = useCallback((useEnteredName: boolean) => {
+    nameConflictResolverRef.current?.(useEnteredName);
+    nameConflictResolverRef.current = null;
+    setNameConflict(null);
+  }, []);
+
+  const requestNameConflictChoice = useCallback(
+    (existingName: string, enteredName: string) =>
+      new Promise<boolean>((resolve) => {
+        nameConflictResolverRef.current?.(false);
+        nameConflictResolverRef.current = resolve;
+        setNameConflict({ existingName, enteredName });
+      }),
+    []
+  );
+
+  useEffect(() => {
+    return () => {
+      nameConflictResolverRef.current?.(false);
+      nameConflictResolverRef.current = null;
+    };
+  }, []);
+
   const ensureProfileFullName = async ({
     userId,
     emailLc,
@@ -143,30 +174,7 @@ export default function VerifyOTPScreen() {
     if (existingName) {
       if (normalizeName(existingName) === normalizeName(cleanName)) return;
 
-      const shouldUseEnteredName = await new Promise<boolean>((resolve) => {
-        Alert.alert(
-          t('identity_name_conflict_title'),
-          t('identity_name_conflict_body', {
-            existingName,
-            enteredName: cleanName,
-          }),
-          [
-            {
-              text: t('identity_name_conflict_keep', { existingName }),
-              style: 'cancel',
-              onPress: () => resolve(false),
-            },
-            {
-              text: t('identity_name_conflict_use', { enteredName: cleanName }),
-              onPress: () => resolve(true),
-            },
-          ],
-          {
-            cancelable: true,
-            onDismiss: () => resolve(false),
-          }
-        );
-      });
+      const shouldUseEnteredName = await requestNameConflictChoice(existingName, cleanName);
 
       if (!shouldUseEnteredName) return;
     }
@@ -424,6 +432,53 @@ export default function VerifyOTPScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <Modal
+        visible={!!nameConflict}
+        transparent
+        animationType="fade"
+        onRequestClose={() => resolveNameConflict(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <StyledText style={styles.modalTitle}>
+              {t('identity_name_conflict_title')}
+            </StyledText>
+            {!!nameConflict && (
+              <>
+                <StyledText style={styles.modalBody}>
+                  {t('identity_name_conflict_body', {
+                    existingName: nameConflict.existingName,
+                    enteredName: nameConflict.enteredName,
+                  })}
+                </StyledText>
+                <View style={styles.modalActions}>
+                  <TouchableOpacity
+                    style={styles.modalSecondaryBtn}
+                    onPress={() => resolveNameConflict(false)}
+                  >
+                    <StyledText style={styles.modalSecondaryText}>
+                      {t('identity_name_conflict_keep', {
+                        existingName: nameConflict.existingName,
+                      })}
+                    </StyledText>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.modalPrimaryBtn}
+                    onPress={() => resolveNameConflict(true)}
+                  >
+                    <StyledText style={styles.modalPrimaryText}>
+                      {t('identity_name_conflict_use', {
+                        enteredName: nameConflict.enteredName,
+                      })}
+                    </StyledText>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -555,5 +610,68 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '900',
     fontSize: 16,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(31, 42, 27, 0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: COLORS.surface,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: COLORS.borderSoft,
+    padding: 22,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  modalTitle: {
+    color: COLORS.text,
+    fontSize: 24,
+    fontWeight: '900',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  modalBody: {
+    color: COLORS.textMuted,
+    fontSize: 16,
+    lineHeight: 22,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalActions: {
+    gap: 12,
+  },
+  modalSecondaryBtn: {
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 15,
+    padding: 15,
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+  },
+  modalSecondaryText: {
+    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  modalPrimaryBtn: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 15,
+    padding: 15,
+    alignItems: 'center',
+  },
+  modalPrimaryText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '900',
+    textAlign: 'center',
   },
 });
