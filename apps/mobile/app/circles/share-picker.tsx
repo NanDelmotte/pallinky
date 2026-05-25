@@ -59,6 +59,44 @@ interface HiddenPersonRow {
   matched_user_id: string | null;
 }
 
+interface RelationshipRow {
+  related_person_id: string;
+  relationship_type: string;
+  source: string | null;
+  people:
+    | {
+    id: string;
+    email_lc: string | null;
+    phone_e164: string | null;
+    matched_user_id: string | null;
+      }
+    | {
+        id: string;
+        email_lc: string | null;
+        phone_e164: string | null;
+        matched_user_id: string | null;
+      }[]
+    | null;
+}
+
+interface EventRow {
+  id: string;
+  title: string | null;
+  starts_at: string | null;
+  host_name: string | null;
+  host_email: string | null;
+}
+
+interface RsvpRow {
+  id: string;
+  event_id: string;
+  person_id: string | null;
+  email_lc: string | null;
+  email: string | null;
+  name: string | null;
+  status: string | null;
+}
+
 interface UnifiedPerson {
   key: string;
   selection_id: string;
@@ -105,6 +143,15 @@ function normalizePhone(value: string | null | undefined) {
   return value.trim().replace(/[\s\-()]/g, '');
 }
 
+function isPositiveRsvpStatus(value: string | null | undefined) {
+  return ['yes', 'going', 'interested', 'maybe'].includes(normalizeEmail(value));
+}
+
+function getRelationshipPerson(relationship: RelationshipRow) {
+  const people = relationship.people;
+  return Array.isArray(people) ? people[0] || null : people;
+}
+
 function firstName(value: string | null | undefined) {
   return value?.trim().split(/\s+/)[0] || '';
 }
@@ -120,15 +167,6 @@ function phoneToFallbackName(phone: string) {
   return tail ? `Contact ${tail}` : 'Contact';
 }
 
-function initialsFor(name: string | null | undefined) {
-  const words = (name || 'Friend')
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2);
-  return words.map((w) => w[0]?.toUpperCase() || '').join('') || 'FR';
-}
-
 function avatarFor(name: string | null | undefined, avatarUrl: string | null | undefined) {
   if (avatarUrl) return avatarUrl;
   const safeName = name?.trim() || 'Friend';
@@ -141,6 +179,7 @@ function getSelectionId(input: {
   device_contact_id?: string | null;
   phone_e164?: string | null;
   email_lc?: string | null;
+  person_id?: string | null;
 }) {
   const deviceContactId = input.device_contact_id?.trim();
   if (deviceContactId) return `device:${deviceContactId}`;
@@ -150,6 +189,9 @@ function getSelectionId(input: {
 
   const email = normalizeEmail(input.email_lc);
   if (email) return `email:${email}`;
+
+  const personId = input.person_id?.trim();
+  if (personId) return `person:${personId}`;
 
   return '';
 }
@@ -163,6 +205,7 @@ function dedupePeople(people: UnifiedPerson[]) {
       person.selection_id ? `selection:${person.selection_id}` : '',
       person.email_lc ? `email:${person.email_lc}` : '',
       person.phone_e164 ? `phone:${person.phone_e164}` : '',
+      person.person_id ? `person:${person.person_id}` : '',
     ].filter(Boolean);
 
     const match = keys.find((key) => seen.has(key));
@@ -213,6 +256,7 @@ export default function CircleSharePickerScreen() {
 
   const [circles, setCircles] = useState<Circle[]>([]);
   const [people, setPeople] = useState<UnifiedPerson[]>([]);
+  const [recentConnections, setRecentConnections] = useState<UnifiedPerson[]>([]);
 
   const [selectedCircleIds, setSelectedCircleIds] = useState<string[]>([]);
   const [selectedPersonIds, setSelectedPersonIds] = useState<string[]>([]);
@@ -227,8 +271,8 @@ export default function CircleSharePickerScreen() {
   const [showWhatsAppHelp, setShowWhatsAppHelp] = useState(false);
 
   const [circleManagerVisible, setCircleManagerVisible] = useState(false);
-  const [circleManagerMode, setCircleManagerMode] = useState<'create' | 'edit'>('create');
-  const [circleManagerInitialCircle, setCircleManagerInitialCircle] = useState<Circle | null>(null);
+  const circleManagerMode: 'create' | 'edit' = 'create';
+  const circleManagerInitialCircle: Circle | null = null;
 
   const [confirmVisible, setConfirmVisible] = useState(false);
 
@@ -247,6 +291,7 @@ export default function CircleSharePickerScreen() {
   const buildMergedPeople = useCallback(
     (
       predictedFriends: PredictedFriend[],
+      relationships: RelationshipRow[],
       deviceContacts: DeviceContactRow[],
       profileRows: ProfileAvatarRow[],
       hiddenRows: HiddenPersonRow[],
@@ -254,9 +299,9 @@ export default function CircleSharePickerScreen() {
     ): UnifiedPerson[] => {
       const personMap = new Map<string, UnifiedPerson>();
       const profileAvatarByEmail = new Map<string, string>();
-const profileAvatarById = new Map<string, string>();
-const profileNameByEmail = new Map<string, string>();
-const profileNameById = new Map<string, string>();
+      const profileAvatarById = new Map<string, string>();
+      const profileNameByEmail = new Map<string, string>();
+      const profileNameById = new Map<string, string>();
 
       const hiddenEmailSet = new Set(
         hiddenRows.map((row) => normalizeEmail(row.email_lc)).filter(Boolean),
@@ -269,16 +314,65 @@ const profileNameById = new Map<string, string>();
       );
 
       profileRows.forEach((profile) => {
-  const email = normalizeEmail(profile.email_lc);
-  const avatar = profile.avatar_url?.trim() || '';
-  const fullName = profile.full_name?.trim() || '';
+        const email = normalizeEmail(profile.email_lc);
+        const avatar = profile.avatar_url?.trim() || '';
+        const fullName = profile.full_name?.trim() || '';
 
-  if (email && avatar) profileAvatarByEmail.set(email, avatar);
-  if (profile.id && avatar) profileAvatarById.set(profile.id, avatar);
+        if (email && avatar) profileAvatarByEmail.set(email, avatar);
+        if (profile.id && avatar) profileAvatarById.set(profile.id, avatar);
 
-  if (email && fullName) profileNameByEmail.set(email, fullName);
-  if (profile.id && fullName) profileNameById.set(profile.id, fullName);
-});
+        if (email && fullName) profileNameByEmail.set(email, fullName);
+        if (profile.id && fullName) profileNameById.set(profile.id, fullName);
+      });
+
+      relationships
+        .filter((relationship) => relationship.relationship_type === 'direct')
+        .forEach((relationship) => {
+          const person = getRelationshipPerson(relationship);
+          const email = normalizeEmail(person?.email_lc) || null;
+          const phone = normalizePhone(person?.phone_e164) || null;
+          const matchedUserId = person?.matched_user_id || null;
+          const personId = relationship.related_person_id || person?.id || null;
+
+          if (!personId && !email && !phone) return;
+          if (email && (email === userEmail || hiddenEmailSet.has(email))) return;
+          if (phone && hiddenPhoneSet.has(phone)) return;
+          if (matchedUserId && hiddenMatchedUserIdSet.has(matchedUserId)) return;
+
+          const selectionId = getSelectionId({
+            email_lc: email,
+            phone_e164: phone,
+            person_id: personId,
+          });
+
+          if (!selectionId) return;
+
+          const key = email
+            ? `email:${email}`
+            : personId
+              ? `person:${personId}`
+              : `phone:${phone}`;
+
+          personMap.set(key, {
+            key,
+            selection_id: selectionId,
+            email_lc: email,
+            name:
+              (matchedUserId ? profileNameById.get(matchedUserId) : '') ||
+              (email ? profileNameByEmail.get(email) : '') ||
+              (email ? emailToFallbackName(email) : phoneToFallbackName(phone || '')),
+            avatar_url:
+              (matchedUserId ? profileAvatarById.get(matchedUserId) : null) ||
+              (email ? profileAvatarByEmail.get(email) : null) ||
+              null,
+            source: matchedUserId || email ? 'pallinky' : 'contact',
+            total_hangouts: 0,
+            device_contact_id: null,
+            phone_e164: phone,
+            matched_user_id: matchedUserId,
+            person_id: personId,
+          });
+        });
 
       predictedFriends
         .filter((friend) => {
@@ -422,6 +516,148 @@ const profileNameById = new Map<string, string>();
     [],
   );
 
+  const buildRecentConnections = useCallback(
+    (
+      events: EventRow[],
+      rsvps: RsvpRow[],
+      relationships: RelationshipRow[],
+      profileRows: ProfileAvatarRow[],
+      hiddenRows: HiddenPersonRow[],
+      userEmail: string,
+      userPersonIds: string[],
+    ): UnifiedPerson[] => {
+      const profileAvatarByEmail = new Map<string, string>();
+      const profileNameByEmail = new Map<string, string>();
+      const hiddenEmailSet = new Set(
+        hiddenRows.map((row) => normalizeEmail(row.email_lc)).filter(Boolean),
+      );
+      const directEmailSet = new Set<string>();
+      const directPersonIdSet = new Set<string>();
+      const viewerPersonIdSet = new Set(userPersonIds.filter(Boolean));
+
+      profileRows.forEach((profile) => {
+        const email = normalizeEmail(profile.email_lc);
+        const avatar = profile.avatar_url?.trim() || '';
+        const fullName = profile.full_name?.trim() || '';
+
+        if (email && avatar) profileAvatarByEmail.set(email, avatar);
+        if (email && fullName) profileNameByEmail.set(email, fullName);
+      });
+
+      relationships.forEach((relationship) => {
+        const person = getRelationshipPerson(relationship);
+        const email = normalizeEmail(person?.email_lc);
+        const personId = relationship.related_person_id || person?.id || '';
+        if (email) directEmailSet.add(email);
+        if (personId) directPersonIdSet.add(personId);
+      });
+
+      const recentMap = new Map<
+        string,
+        {
+          email: string | null;
+          personId: string | null;
+          name: string;
+          sharedEvents: number;
+          lastSeenAtMs: number;
+        }
+      >();
+
+      function upsertRecent(input: {
+        email?: string | null;
+        personId?: string | null;
+        name?: string | null;
+        event?: EventRow | null;
+      }) {
+        const email = normalizeEmail(input.email) || null;
+        const personId = input.personId?.trim() || null;
+
+        if (!email && !personId) return;
+        if (email && email === userEmail) return;
+        if (personId && viewerPersonIdSet.has(personId)) return;
+        if (email && hiddenEmailSet.has(email)) return;
+        if (email && directEmailSet.has(email)) return;
+        if (personId && directPersonIdSet.has(personId)) return;
+
+        const profile = email ? profileNameByEmail.get(email) : '';
+        const key = personId ? `person:${personId}` : `email:${email}`;
+        const ms = input.event?.starts_at ? new Date(input.event.starts_at).getTime() : 0;
+        const safeMs = Number.isFinite(ms) ? ms : 0;
+        const existing = recentMap.get(key);
+
+        recentMap.set(key, {
+          email,
+          personId,
+          name:
+            profile ||
+            input.name?.trim() ||
+            (email ? emailToFallbackName(email) : 'Recent connection'),
+          sharedEvents: (existing?.sharedEvents || 0) + 1,
+          lastSeenAtMs: Math.max(existing?.lastSeenAtMs || 0, safeMs),
+        });
+      }
+
+      const rsvpsByEventId = new Map<string, RsvpRow[]>();
+      rsvps.forEach((rsvp) => {
+        const current = rsvpsByEventId.get(rsvp.event_id) || [];
+        current.push(rsvp);
+        rsvpsByEventId.set(rsvp.event_id, current);
+      });
+
+      events.forEach((event) => {
+        upsertRecent({
+          email: event.host_email,
+          name: event.host_name,
+          event,
+        });
+
+        (rsvpsByEventId.get(event.id) || [])
+          .filter((rsvp) => isPositiveRsvpStatus(rsvp.status))
+          .forEach((rsvp) => {
+            upsertRecent({
+              email: rsvp.email_lc || rsvp.email,
+              personId: rsvp.person_id,
+              name: rsvp.name,
+              event,
+            });
+          });
+      });
+
+      return Array.from(recentMap.values())
+        .map((person) => {
+          const selectionId = getSelectionId({
+            email_lc: person.email,
+            person_id: person.personId,
+          });
+
+          return {
+            key: person.personId ? `person:${person.personId}` : `email:${person.email}`,
+            selection_id: selectionId,
+            email_lc: person.email,
+            name: person.name,
+            avatar_url: person.email ? profileAvatarByEmail.get(person.email) || null : null,
+            source: 'pallinky' as const,
+            total_hangouts: person.sharedEvents,
+            device_contact_id: null,
+            phone_e164: null,
+            matched_user_id: null,
+            person_id: person.personId,
+          };
+        })
+        .filter((person) => person.selection_id)
+        .sort((a, b) => {
+          if (b.total_hangouts !== a.total_hangouts) return b.total_hangouts - a.total_hangouts;
+
+          const aRaw = recentMap.get(a.key)?.lastSeenAtMs || 0;
+          const bRaw = recentMap.get(b.key)?.lastSeenAtMs || 0;
+          if (bRaw !== aRaw) return bRaw - aRaw;
+
+          return a.name.localeCompare(b.name);
+        });
+    },
+    [],
+  );
+
   const fetchData = useCallback(async (): Promise<UnifiedPerson[]> => {
     try {
       setLoading(true);
@@ -441,7 +677,7 @@ const profileNameById = new Map<string, string>();
 
       setUserId(nextUserId);
 
-      const [eventRes, circleRes, predictedRes, deviceContactsRes] = await Promise.all([
+      const [eventRes, circleRes, predictedRes, deviceContactsRes, mePeopleRes] = await Promise.all([
         supabase.from('events').select('id, title').eq('slug', slug).single(),
         supabase
           .from('social_circles')
@@ -450,7 +686,27 @@ const profileNameById = new Map<string, string>();
           .order('created_at', { ascending: false }),
  Promise.resolve({ data: [], error: null }), 
         supabase.rpc('get_my_device_contacts'),
+        supabase
+          .from('people')
+          .select('id, email_lc, matched_user_id')
+          .or(`matched_user_id.eq.${nextUserId},email_lc.eq.${userEmail}`),
       ]);
+
+      const relationshipRes = await supabase
+        .from('relationships')
+        .select(`
+          related_person_id,
+          relationship_type,
+          source,
+          people:related_person_id (
+            id,
+            email_lc,
+            phone_e164,
+            matched_user_id
+          )
+        `)
+        .eq('owner_user_id', nextUserId)
+        .eq('relationship_type', 'direct');
 
       const hiddenRes = await supabase
         .from('hidden_people')
@@ -461,13 +717,71 @@ const profileNameById = new Map<string, string>();
       if (circleRes.error) throw circleRes.error;
       if (predictedRes.error) throw predictedRes.error;
       if (deviceContactsRes.error) throw deviceContactsRes.error;
+      if (mePeopleRes.error) throw mePeopleRes.error;
+      if (relationshipRes.error) throw relationshipRes.error;
       if (hiddenRes.error) throw hiddenRes.error;
 
       setEventTitle(eventRes.data?.title || 'this event');
 
       const predictedFriends = (predictedRes.data as PredictedFriend[]) || [];
+      const relationships = (relationshipRes.data as RelationshipRow[]) || [];
       const deviceContacts = (deviceContactsRes.data as DeviceContactRow[]) || [];
       const hiddenRows = (hiddenRes.data as HiddenPersonRow[]) || [];
+      const userPersonIds = Array.from(
+        new Set(
+          ((mePeopleRes.data as { id: string }[]) || [])
+            .map((person) => person.id?.trim())
+            .filter(Boolean),
+        ),
+      );
+
+      const [myRsvpsByEmailRes, myRsvpsByPersonRes] = await Promise.all([
+        supabase.from('rsvps').select('id, event_id, person_id, email_lc, email, name, status').eq('email_lc', userEmail),
+        userPersonIds.length > 0
+          ? supabase
+              .from('rsvps')
+              .select('id, event_id, person_id, email_lc, email, name, status')
+              .in('person_id', userPersonIds)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+
+      if (myRsvpsByEmailRes.error) throw myRsvpsByEmailRes.error;
+      if (myRsvpsByPersonRes.error) throw myRsvpsByPersonRes.error;
+
+      const myRsvps = Array.from(
+        new Map(
+          [
+            ...((myRsvpsByEmailRes.data as RsvpRow[]) || []),
+            ...((myRsvpsByPersonRes.data as RsvpRow[]) || []),
+          ].map((row) => [row.id, row]),
+        ).values(),
+      ).filter((row) => isPositiveRsvpStatus(row.status));
+
+      const sharedEventIds = Array.from(
+        new Set(myRsvps.map((row) => row.event_id).filter(Boolean)),
+      );
+
+      let sharedEvents: EventRow[] = [];
+      let sharedEventRsvps: RsvpRow[] = [];
+
+      if (sharedEventIds.length > 0) {
+        const [sharedEventsRes, sharedEventRsvpsRes] = await Promise.all([
+          supabase
+            .from('events')
+            .select('id, title, starts_at, host_name, host_email')
+            .in('id', sharedEventIds),
+          supabase
+            .from('rsvps')
+            .select('id, event_id, person_id, email_lc, email, name, status')
+            .in('event_id', sharedEventIds),
+        ]);
+
+        if (sharedEventsRes.error) throw sharedEventsRes.error;
+        if (sharedEventRsvpsRes.error) throw sharedEventRsvpsRes.error;
+
+        sharedEvents = (sharedEventsRes.data as EventRow[]) || [];
+        sharedEventRsvps = (sharedEventRsvpsRes.data as RsvpRow[]) || [];
+      }
 
       const profileEmailSet = new Set<string>();
       const profileIdSet = new Set<string>();
@@ -477,11 +791,29 @@ const profileNameById = new Map<string, string>();
         if (email) profileEmailSet.add(email);
       });
 
+      relationships.forEach((relationship) => {
+        const person = getRelationshipPerson(relationship);
+        const email = normalizeEmail(person?.email_lc);
+        const matchedId = person?.matched_user_id || '';
+        if (email) profileEmailSet.add(email);
+        if (matchedId) profileIdSet.add(matchedId);
+      });
+
       deviceContacts.forEach((contact) => {
         const email = normalizeEmail(contact.email_lc);
         const matchedId = contact.matched_user_id || contact.matched_user_id || '';
         if (email) profileEmailSet.add(email);
         if (matchedId) profileIdSet.add(matchedId);
+      });
+
+      sharedEvents.forEach((event) => {
+        const email = normalizeEmail(event.host_email);
+        if (email) profileEmailSet.add(email);
+      });
+
+      sharedEventRsvps.forEach((rsvp) => {
+        const email = normalizeEmail(rsvp.email_lc || rsvp.email);
+        if (email) profileEmailSet.add(email);
       });
 
       let profileRows: ProfileAvatarRow[] = [];
@@ -537,14 +869,26 @@ const profileNameById = new Map<string, string>();
 
       const mergedPeople = buildMergedPeople(
         predictedFriends,
+        relationships,
         deviceContacts,
         profileRows,
         hiddenRows,
         userEmail,
       );
 
+      const mergedRecentConnections = buildRecentConnections(
+        sharedEvents,
+        sharedEventRsvps,
+        relationships,
+        profileRows,
+        hiddenRows,
+        userEmail,
+        userPersonIds,
+      );
+
       setCircles(safeCircles);
       setPeople(mergedPeople);
+      setRecentConnections(mergedRecentConnections);
 
       return mergedPeople;
     } catch (e: any) {
@@ -553,7 +897,7 @@ const profileNameById = new Map<string, string>();
     } finally {
       setLoading(false);
     }
-  }, [buildMergedPeople, slug]);
+  }, [buildMergedPeople, buildRecentConnections, slug]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -606,6 +950,7 @@ const profileNameById = new Map<string, string>();
           device_contact_id: member.device_contact_id,
           phone_e164: phone,
           email_lc: email,
+          person_id: member.person_id,
         });
 
         out.push({
@@ -630,8 +975,11 @@ const profileNameById = new Map<string, string>();
   }, [circles, people, selectedCircleSet]);
 
   const selectedDirectPeople = useMemo(
-    () => people.filter((person) => selectedPersonSet.has(person.selection_id)),
-    [people, selectedPersonSet],
+    () =>
+      dedupePeople([...people, ...recentConnections]).filter((person) =>
+        selectedPersonSet.has(person.selection_id),
+      ),
+    [people, recentConnections, selectedPersonSet],
   );
 
   const allSelectedPeople = useMemo(
@@ -674,20 +1022,18 @@ const profileNameById = new Map<string, string>();
       : people;
   }, [people, search]);
 
-  const filteredCircles = useMemo(() => {
+  const filteredRecentConnections = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return circles;
-
-    return circles.filter((circle) => {
-      if (circle.circle_name.toLowerCase().includes(q)) return true;
-      return circle.members.some((member) => {
-        const name = (member.member_name || '').toLowerCase();
-        const email = (member.member_email_lc || '').toLowerCase();
-        const phone = (member.member_phone_e164 || '').toLowerCase();
-        return name.includes(q) || email.includes(q) || phone.includes(q);
-      });
-    });
-  }, [circles, search]);
+    return q
+      ? recentConnections.filter((person) => {
+          return (
+            person.name.toLowerCase().includes(q) ||
+            (person.email_lc || '').toLowerCase().includes(q) ||
+            (person.phone_e164 || '').toLowerCase().includes(q)
+          );
+        })
+      : recentConnections;
+  }, [recentConnections, search]);
 
   const filteredRawContacts = useMemo(() => {
     const q = rawContactsSearch.trim().toLowerCase();
@@ -701,14 +1047,6 @@ const profileNameById = new Map<string, string>();
       );
     });
   }, [rawContacts, rawContactsSearch]);
-
-  function toggleCircle(circleIdValue: string) {
-    setSelectedCircleIds((prev) =>
-      prev.includes(circleIdValue)
-        ? prev.filter((item) => item !== circleIdValue)
-        : [...prev, circleIdValue],
-    );
-  }
 
   function togglePerson(selectionId: string) {
     Keyboard.dismiss();
@@ -746,18 +1084,6 @@ const profileNameById = new Map<string, string>();
     }
 
     setSelectedPersonIds((prev) => prev.filter((id) => id !== item.personSelectionId));
-  }
-
-  function openNewCircle() {
-    setCircleManagerMode('create');
-    setCircleManagerInitialCircle(null);
-    setCircleManagerVisible(true);
-  }
-
-  function openManageCircle(circle: Circle) {
-    setCircleManagerMode('edit');
-    setCircleManagerInitialCircle(circle);
-    setCircleManagerVisible(true);
   }
 
   async function ensureLimitedContactsAccess() {
@@ -971,15 +1297,24 @@ const profileNameById = new Map<string, string>();
 
       const seenEmails = new Set<string>();
       const seenPhones = new Set<string>();
+      const seenPersonIds = new Set<string>();
 
       const peopleToInvite = dedupePeople(allSelectedPeople).filter((person) => {
         const email = normalizeEmail(person.email_lc);
         const phone = normalizePhone(person.phone_e164);
+        const personId = person.person_id || '';
 
-        if ((email && seenEmails.has(email)) || (phone && seenPhones.has(phone))) return false;
+        if (
+          (email && seenEmails.has(email)) ||
+          (phone && seenPhones.has(phone)) ||
+          (personId && seenPersonIds.has(personId))
+        ) {
+          return false;
+        }
 
         if (email) seenEmails.add(email);
         if (phone) seenPhones.add(phone);
+        if (personId) seenPersonIds.add(personId);
         return true;
       });
 
@@ -1052,23 +1387,40 @@ const profileNameById = new Map<string, string>();
         ),
       );
 
-      let existingInviteRows: { invitee_email_lc: string | null; invitee_phone_e164: string | null }[] =
-        [];
+      const existingPersonIds = Array.from(
+        new Set(
+          inviteRows.map((row) => row.person_id).filter((value): value is string => Boolean(value)),
+        ),
+      );
 
-      if (existingEmails.length || existingPhones.length) {
+      let existingInviteRows: {
+        invitee_email_lc: string | null;
+        invitee_phone_e164: string | null;
+        person_id: string | null;
+      }[] = [];
+
+      if (existingEmails.length || existingPhones.length || existingPersonIds.length) {
         let existingQuery = supabase
           .from('event_invites')
-          .select('invitee_email_lc, invitee_phone_e164')
+          .select('invitee_email_lc, invitee_phone_e164, person_id')
           .eq('event_id', eventData.id);
 
-        if (existingEmails.length && existingPhones.length) {
+        if (existingEmails.length + existingPhones.length + existingPersonIds.length > 1) {
+          const filters = [
+            existingEmails.length ? `invitee_email_lc.in.(${existingEmails.join(',')})` : '',
+            existingPhones.length ? `invitee_phone_e164.in.(${existingPhones.join(',')})` : '',
+            existingPersonIds.length ? `person_id.in.(${existingPersonIds.join(',')})` : '',
+          ].filter(Boolean);
+
           existingQuery = existingQuery.or(
-            `invitee_email_lc.in.(${existingEmails.join(',')}),invitee_phone_e164.in.(${existingPhones.join(',')})`,
+            filters.join(','),
           );
         } else if (existingEmails.length) {
           existingQuery = existingQuery.in('invitee_email_lc', existingEmails);
-        } else {
+        } else if (existingPhones.length) {
           existingQuery = existingQuery.in('invitee_phone_e164', existingPhones);
+        } else {
+          existingQuery = existingQuery.in('person_id', existingPersonIds);
         }
 
         const { data: existingData, error: existingError } = await existingQuery;
@@ -1088,9 +1440,16 @@ const profileNameById = new Map<string, string>();
           .filter((value): value is string => Boolean(value)),
       );
 
+      const existingPersonIdSet = new Set(
+        existingInviteRows
+          .map((row) => row.person_id)
+          .filter((value): value is string => Boolean(value)),
+      );
+
       const rowsToInsert = inviteRows.filter((row) => {
         if (row.invitee_email_lc && existingEmailSet.has(row.invitee_email_lc)) return false;
         if (row.invitee_phone_e164 && existingPhoneSet.has(row.invitee_phone_e164)) return false;
+        if (row.person_id && existingPersonIdSet.has(row.person_id)) return false;
         return true;
       });
 
@@ -1126,63 +1485,6 @@ const profileNameById = new Map<string, string>();
       setSending(false);
     }
   }
-
-  const renderCircleCard = ({ item }: { item: Circle }) => {
-    const isSelected = selectedCircleSet.has(item.id);
-    const previewMembers = item.members.slice(0, 3);
-
-    return (
-      <Pressable
-        onPress={() => toggleCircle(item.id)}
-        onLongPress={() => openManageCircle(item)}
-        style={[styles.circleCard, isSelected && styles.circleCardSelected]}
-      >
-        <View style={styles.circleCardTop}>
-          <View style={styles.avatarStack}>
-            {previewMembers.length > 0 ? (
-              previewMembers.map((member, index) => (
-                <View
-                  key={member.id}
-                  style={[
-                    styles.avatarStackItem,
-                    { marginLeft: index === 0 ? 0 : -10, zIndex: 10 - index },
-                  ]}
-                >
-                  <StyledText style={styles.avatarStackText}>
-                    {initialsFor(
-                      member.member_name || member.member_email_lc || member.member_phone_e164,
-                    )}
-                  </StyledText>
-                </View>
-              ))
-            ) : (
-              <View style={styles.avatarStackItem}>
-                <MaterialCommunityIcons name="account-group" size={18} color={COLORS.secondary} />
-              </View>
-            )}
-          </View>
-
-          <TouchableOpacity style={styles.circleMenuButton} onPress={() => openManageCircle(item)}>
-            <Ionicons name="ellipsis-horizontal" size={18} color={COLORS.textMuted} />
-          </TouchableOpacity>
-        </View>
-
-        <StyledText style={styles.circleCardTitle}>{item.circle_name}</StyledText>
-        <StyledText style={styles.circleCardMeta}>
-          {item.members.length} {item.members.length === 1 ? 'member' : 'members'}
-        </StyledText>
-
-        {isSelected ? (
-          <View style={styles.circleSelectedBadge}>
-            <Ionicons name="checkmark" size={14} color="#fff" />
-            <StyledText style={styles.circleSelectedBadgeText}>Selected</StyledText>
-          </View>
-        ) : (
-          <StyledText style={styles.circleActionHint}>Tap to invite</StyledText>
-        )}
-      </Pressable>
-    );
-  };
 
   const renderSelectedPill = ({ item }: { item: (typeof selectedPills)[number] }) => (
     <TouchableOpacity style={styles.selectedPill} onPress={() => removeSelectedPill(item)}>
@@ -1225,33 +1527,9 @@ const profileNameById = new Map<string, string>();
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
-              <View style={styles.sectionBlock}>
-                <View style={styles.sectionHeaderRow}>
-                  <StyledText style={styles.sectionTitle}>Circles</StyledText>
-                </View>
-
-                <FlatList
-                  horizontal
-                  data={[{ id: 'new-circle' } as any, ...filteredCircles]}
-                  keyExtractor={(item) => item.id}
-                  renderItem={({ item }) => {
-                    if (item.id === 'new-circle') {
-                      return (
-                        <TouchableOpacity style={styles.newCircleCard} onPress={openNewCircle}>
-                          <View style={styles.newCircleIcon}>
-                            <Ionicons name="add" size={26} color={COLORS.primary} />
-                          </View>
-                          <StyledText style={styles.newCircleTitle}>New Circle</StyledText>
-                          <StyledText style={styles.newCircleMeta}>Create and invite fast</StyledText>
-                        </TouchableOpacity>
-                      );
-                    }
-
-                    return renderCircleCard({ item });
-                  }}
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.circlesList}
-                />
+              <View style={styles.eventContext}>
+                <StyledText style={styles.eventContextLabel}>Inviting to</StyledText>
+                <StyledText style={styles.eventContextTitle}>{eventTitle}</StyledText>
               </View>
 
               {selectedPills.length > 0 && (
@@ -1272,7 +1550,7 @@ const profileNameById = new Map<string, string>();
                 <TextInput
                   value={search}
                   onChangeText={setSearch}
-                  placeholder="Search circles, people, email, or number..."
+                  placeholder="Search people, email, or number..."
                   placeholderTextColor={COLORS.textMuted}
                   style={styles.searchInput}
                 />
@@ -1282,6 +1560,7 @@ const profileNameById = new Map<string, string>();
                 <View style={styles.sectionCardHeaderRow}>
                   <StyledText style={styles.sectionTitle}>My People</StyledText>
                 </View>
+                <StyledText style={styles.sectionHint}>Long press to remove</StyledText>
 
                 {filteredPeople.length === 0 ? (
                   <StyledText style={styles.emptyText}>
@@ -1330,11 +1609,6 @@ const profileNameById = new Map<string, string>();
             )}
           </View>
 
-          {index === 0 && (
-            <StyledText style={styles.personRowHint}>
-              Long press to remove
-            </StyledText>
-          )}
         </View>
 
         <Ionicons
@@ -1348,6 +1622,71 @@ const profileNameById = new Map<string, string>();
 </View>
                 )}
               </View>
+
+              {filteredRecentConnections.length > 0 && (
+                <View style={styles.sectionCard}>
+                  <View style={styles.sectionCardHeaderRow}>
+                    <StyledText style={styles.sectionTitle}>Recent connections</StyledText>
+                  </View>
+
+                  <View style={styles.peopleList}>
+                    {filteredRecentConnections.map((item, index) => {
+                      const isSelected = selectedPersonSet.has(item.selection_id);
+
+                      return (
+                        <TouchableOpacity
+                          key={item.key}
+                          style={styles.personRow}
+                          onPress={() => togglePerson(item.selection_id)}
+                          onLongPress={() => {
+                            Alert.alert(
+                              'Hide recent connection',
+                              `Hide ${item.name} from your invite suggestions?`,
+                              [
+                                { text: 'Cancel', style: 'cancel' },
+                                {
+                                  text: 'Hide',
+                                  style: 'destructive',
+                                  onPress: () => {
+                                    void handleHidePerson(item);
+                                  },
+                                },
+                              ],
+                            );
+                          }}
+                        >
+                          <Image
+                            source={{ uri: avatarFor(item.name, item.avatar_url) }}
+                            style={styles.personRowAvatar}
+                          />
+
+                          <View style={styles.personRowMain}>
+                            <View style={styles.personRowTop}>
+                              <StyledText style={styles.personRowName}>
+                                {item.name}
+                              </StyledText>
+
+                              <Ionicons name="time-outline" size={14} color={COLORS.secondary} />
+                            </View>
+
+                            {index === 0 && (
+                              <StyledText style={styles.personRowHint}>
+                                Shared event history
+                              </StyledText>
+                            )}
+                          </View>
+
+                          <Ionicons
+                            name={isSelected ? 'checkbox' : 'square-outline'}
+                            size={22}
+                            color={isSelected ? COLORS.primary : '#b0b7c3'}
+                          />
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
             </ScrollView>
 
             <View style={styles.bottomBar}>
@@ -1472,6 +1811,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 18,
     paddingBottom: 180,
+  },
+  eventContext: {
+    marginBottom: 14,
+    paddingHorizontal: 2,
+  },
+  eventContextLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: COLORS.textMuted,
+    textTransform: 'uppercase',
+  },
+  eventContextTitle: {
+    marginTop: 4,
+    fontSize: 22,
+    fontWeight: '900',
+    color: COLORS.text,
   },
   sectionBlock: {
     marginBottom: 14,
@@ -1710,10 +2065,16 @@ personRowHint: {
   },
   sectionCardHeaderRow: {
     paddingHorizontal: 16,
-    marginBottom: 10,
+    marginBottom: 4,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  sectionHint: {
+    paddingHorizontal: 16,
+    marginBottom: 10,
+    fontSize: 11,
+    color: COLORS.textMuted,
   },
   addPeopleButton: {
     width: 40,
