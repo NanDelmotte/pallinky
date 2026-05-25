@@ -101,6 +101,7 @@ export default function FormalRSVP() {
     : event?.location;
 
   const requiresApproval =
+    event?.requires_approval === true ||
     event?.forwarding_mode === 'approval_required' ||
     event?.forwarding_mode === 'host_approval';
 

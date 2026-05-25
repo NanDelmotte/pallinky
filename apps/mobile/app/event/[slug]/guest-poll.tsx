@@ -369,6 +369,7 @@ const syncingGridHorizontalRef = useRef(false);
   );
 
   const requiresApproval =
+    event?.requires_approval === true ||
     event?.forwarding_mode === 'approval_required' ||
     event?.forwarding_mode === 'host_approval';
 

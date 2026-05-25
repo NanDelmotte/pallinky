@@ -169,6 +169,10 @@ function isPositiveParticipationStatus(status: string | null | undefined) {
   return isPositiveRsvpStatus(normalized) || normalized === 'voted';
 }
 
+function isCancelledEvent(event: any) {
+  return toEmailLc(event?.status) === 'cancelled';
+}
+
 function makePersonFeedFields(identity: FeedIdentity): FeedPersonRef {
   return {
     personId: identity.personId,
@@ -205,7 +209,8 @@ export function deriveFeedSignals(input: {
  
 
   const events = rawEvents.filter(
-    (ev: any) => accessByEventId[String(ev?.id)]?.can_see === true
+    (ev: any) =>
+      accessByEventId[String(ev?.id)]?.can_see === true && !isCancelledEvent(ev)
   );
 
   const invites = (Array.isArray(data.invites) ? data.invites : []).filter(
@@ -253,22 +258,13 @@ export function deriveFeedSignals(input: {
   const directIdentityMap = new Map<string, FeedIdentity>();
   const directIdentityNameMap = new Map<string, string>();
 
-  for (const circle of socialCircles) {
-    const members = Array.isArray(circle?.members) ? circle.members : [];
-    for (const member of members) {
-      const identity = resolveIdentity(member);
-      if (!identity.key || isViewerIdentity(identity)) continue;
-      directIdentityMap.set(identity.key, identity);
-
-      const name = resolveDisplayName(member);
-      if (name) directIdentityNameMap.set(identity.key, name);
-    }
-  }
-
   for (const relationship of relationships) {
     const identity = resolveIdentity(relationship);
     if (!identity.key || isViewerIdentity(identity)) continue;
     directIdentityMap.set(identity.key, identity);
+
+    const name = resolveDisplayName(relationship);
+    if (name) directIdentityNameMap.set(identity.key, name);
   }
 const secondDegreeEventIds = new Set(
   secondDegreeEvents
@@ -490,6 +486,7 @@ const secondDegreeEventIds = new Set(
 
   for (const ev of rawEvents) {
     if (accessByEventId[String(ev?.id)]?.can_see !== true) continue;
+    if (isCancelledEvent(ev)) continue;
 
     const evId = String(ev.id);
     const evMs = eventStartMs(ev);
@@ -634,13 +631,10 @@ const secondDegreeEventIds = new Set(
       return (b.lastSeenAtMs ?? 0) - (a.lastSeenAtMs ?? 0);
     });
 
-  directRelationshipCount = relationshipEntries.length;
-
-  const innerCircleTopKeys = new Set(
-    relationshipEntries.slice(0, 6).map((person) => person.key)
-  );
+  directRelationshipCount = directIdentityMap.size;
 
   for (const person of relationshipEntries) {
+    const isDirectRelationship = directIdentityMap.has(person.key);
     const personRef = person.personId
       ? `person:${person.personId}`
       : person.personEmail || person.key;
@@ -660,7 +654,7 @@ const secondDegreeEventIds = new Set(
       });
     }
 
-    if (person.sharedEvents >= 3 || innerCircleTopKeys.has(person.key)) {
+    if (isDirectRelationship || person.sharedEvents >= 3) {
       items.push({
         id: `inner_circle_person:${personRef}`,
         type: 'inner_circle_person',
@@ -685,13 +679,9 @@ const secondDegreeEventIds = new Set(
 
   const directRelationshipIdentityMap = new Map<string, FeedIdentity>();
 
-  for (const person of relationshipEntries) {
-    if (!person.key) continue;
-    directRelationshipIdentityMap.set(person.key, {
-      key: person.key,
-      personId: person.personId,
-      personEmail: person.personEmail,
-    });
+  for (const identity of directIdentityMap.values()) {
+    if (!identity.key) continue;
+    directRelationshipIdentityMap.set(identity.key, identity);
   }
 
   const directRelationshipNameMap = new Map<string, string>();

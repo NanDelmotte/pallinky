@@ -80,30 +80,12 @@ export default function AddPersonScreen() {
     setAdding(true);
 
     try {
-      const { data: personId, error: personError } = await supabase.rpc(
-        'resolve_or_create_person',
+      const { error: relationshipError } = await supabase.rpc(
+        'add_direct_relationship_from_qr',
         {
-          p_email_lc: profile.email_lc,
-          p_phone_e164: null,
-          p_matched_user_id: profile.id,
+          p_target_profile_id: profile.id,
         },
       );
-
-      if (personError) throw personError;
-      if (!personId) throw new Error('Could not resolve this contact.');
-
-      const { error: relationshipError } = await supabase
-        .from('relationships')
-        .upsert(
-          {
-            owner_user_id: currentUserId,
-            related_person_id: personId,
-            relationship_type: 'direct',
-            source: 'qr',
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'owner_user_id,related_person_id' },
-        );
 
       if (relationshipError) throw relationshipError;
 
