@@ -478,6 +478,8 @@ export const nl: Record<TranslationKey, string> = {
   inbox_event_cancelled: "Event geannuleerd",
   inbox_message_from_host: "Bericht van host",
   inbox_plan_suggestion: "Nieuw planvoorstel",
+  inbox_friend_event_created: "{host} gaat eropuit - ga je mee?",
+  inbox_friend_event_created_body: "{host} heeft {event} aangemaakt",
   inbox_rsvp_reminder: "RSVP-reminder",
   inbox_rsvp_recorded: "RSVP opgeslagen",
   inbox_notification: "Melding",

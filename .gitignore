@@ -14,6 +14,11 @@ yarn-error.log*
 .expo-shared/
 dist/
 web-build/
+/android/
+/ios/
+/app.json
+/ios-dev-build-qr.png
+apps/mobile/dist-google-key-check/
 
 # Metro bundler cache
 .cache/

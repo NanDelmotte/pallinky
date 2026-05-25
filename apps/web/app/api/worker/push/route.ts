@@ -108,6 +108,10 @@ function renderNotification(job: Job, badgeCount: number) {
       title: `${senderName} sent you a message about ${eventTitle}`,
       body: dmPreview,
     },
+    friend_event_created: {
+      title: `${hostName} is going out - want to join?`,
+      body: `${hostName} created ${eventTitle}`,
+    },
   };
 
   const key = job.type || job.payload?.type || job.payload?.template;

@@ -18,8 +18,8 @@
     "validate-env:production": "node ./scripts/validate-public-env.js production",
     "export:development": "npm run validate-env:development && expo export",
     "export:production": "npm run validate-env:production && expo export",
-    "update:development": "EXPO_PUBLIC_APP_VARIANT=development EXPO_PUBLIC_SUPABASE_URL=https://picgzvmhevhznzowkdhv.supabase.co EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_-XpUrOe1JzhKZ_dv-PMnzA_8UN5NioX npm run validate-env:development && EXPO_PUBLIC_APP_VARIANT=development EXPO_PUBLIC_SUPABASE_URL=https://picgzvmhevhznzowkdhv.supabase.co EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_-XpUrOe1JzhKZ_dv-PMnzA_8UN5NioX eas update --branch development --environment development",
-    "update:production": "EXPO_PUBLIC_APP_VARIANT=production EXPO_PUBLIC_SUPABASE_URL=https://nfoshumnlfsjtfxkyqrq.supabase.co EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_tV5Yx4MiEokwXvjW15geJQ_9qcV_RI_ npm run validate-env:production && EXPO_PUBLIC_APP_VARIANT=production EXPO_PUBLIC_SUPABASE_URL=https://nfoshumnlfsjtfxkyqrq.supabase.co EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_tV5Yx4MiEokwXvjW15geJQ_9qcV_RI_ eas update --branch production --environment production",
+    "update:development": "set -a && . ./.env.development && set +a && EXPO_PUBLIC_APP_VARIANT=development npm run validate-env:development && EXPO_PUBLIC_APP_VARIANT=development eas update --branch development --environment development --auto",
+    "update:production": "set -a && . ./.env.production && set +a && EXPO_PUBLIC_APP_VARIANT=production npm run validate-env:production && EXPO_PUBLIC_APP_VARIANT=production eas update --branch production --environment production --auto",
     "reset-project": "node ./scripts/reset-project.js"
   },
   "expo": {

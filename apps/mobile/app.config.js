@@ -9,6 +9,7 @@ if (!['development', 'production'].includes(appVariant)) {
 const appName = 'Pallinky';
 const iosBundleIdentifier = 'com.nancy.pallinky';
 const androidPackage = 'com.nancy.pallinky';
+const googleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 export default {
   expo: {
@@ -132,6 +133,7 @@ export default {
 
     extra: {
       appVariant,
+      googleMapsApiKey,
       eas: {
         projectId: '3a13b9ce-13b3-48f4-88b4-e4945d9698dc',
       },

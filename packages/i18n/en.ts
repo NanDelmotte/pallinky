@@ -443,6 +443,8 @@ export const en: Record<TranslationKey, string> = {
   inbox_event_cancelled: "Event cancelled",
   inbox_message_from_host: "Message from host",
   inbox_plan_suggestion: "New plan suggestion",
+  inbox_friend_event_created: "{host} is going out - want to join?",
+  inbox_friend_event_created_body: "{host} created {event}",
   inbox_rsvp_reminder: "RSVP reminder",
   inbox_rsvp_recorded: "RSVP recorded",
   inbox_notification: "Notification",

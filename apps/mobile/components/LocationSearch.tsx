@@ -13,10 +13,13 @@ import {
   TextInput,
   View,
 } from "react-native";
+import Constants from "expo-constants";
 import * as Location from "expo-location";
 import { useI18n } from "@pallinky/i18n/client";
 
-const GOOGLE_MAPS_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
+const GOOGLE_MAPS_KEY =
+  Constants.expoConfig?.extra?.googleMapsApiKey ||
+  process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 const DEFAULT_COORDS = { latitude: 52.3676, longitude: 4.9041 }; // Amsterdam center
 const SEARCH_RADIUS_METERS = 100000;
 const MIN_QUERY_LENGTH = 3;

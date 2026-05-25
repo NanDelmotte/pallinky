@@ -404,6 +404,8 @@ export type TranslationKey =
   | "inbox_event_cancelled"
   | "inbox_message_from_host"
   | "inbox_plan_suggestion"
+  | "inbox_friend_event_created"
+  | "inbox_friend_event_created_body"
   | "inbox_rsvp_reminder"
   | "inbox_rsvp_recorded"
   | "inbox_notification"
