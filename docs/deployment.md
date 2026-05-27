@@ -30,6 +30,18 @@ Set this repository secret for Actions:
 
 - `FLY_API_TOKEN`: Fly.io deploy token with access to `pallinky-prod`
 
+### Required Fly secrets
+
+The deployed web app also runs the scheduled push worker. Set these secrets on the Fly app:
+
+- `SUPABASE_URL`: production Supabase URL
+- `NEXT_PUBLIC_SUPABASE_URL`: production Supabase URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: production Supabase publishable anon key
+- `SUPABASE_SERVICE_ROLE_KEY`: production Supabase service role key
+- `CRON_SECRET`: shared secret used by the scheduled worker request
+
+Push delivery is processed by `/api/worker/push` once per minute from inside the web container.
+
 ## Mobile App (Expo / EAS iOS)
 
 Note: This repo currently commits native projects (`apps/mobile/ios` and `apps/mobile/android`), so native settings are source of truth for install identifiers. `app.config.js` identifier values may be ignored when native folders are present. We can revisit and migrate to a managed/CNG strategy later if desired.
