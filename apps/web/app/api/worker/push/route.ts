@@ -15,6 +15,19 @@ type Job = {
   device_token: string;
 };
 
+type ExpoPushResult = {
+  ok: boolean;
+  details?: unknown;
+};
+
+type OutboxDiagnosticRow = {
+  id: string;
+  recipient_email: string | null;
+  type: string | null;
+  status: string | null;
+  created_at: string | null;
+};
+
 function getSupabaseAdmin() {
   const url =
     process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -45,12 +58,52 @@ async function getBadgeCount(supabase: any, recipientEmail: string): Promise<num
   return typeof data === "number" ? data : 0;
 }
 
+function maskEmail(email: string | null | undefined) {
+  const value = email?.toLowerCase().trim();
+
+  if (!value) return null;
+
+  const [name, domain] = value.split("@");
+
+  if (!domain) return "***";
+
+  return `${name.slice(0, 2)}***@${domain}`;
+}
+
+async function logNoPendingPushDiagnostics(supabase: any) {
+  const { data, error } = await supabase
+    .from("notifications_outbox")
+    .select("id, recipient_email, type, status, created_at")
+    .eq("type", "friend_event_created")
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  if (error) {
+    console.warn("Push diagnostics failed", { error: error.message });
+    return;
+  }
+
+  const rows = ((data || []) as OutboxDiagnosticRow[]).map((row) => ({
+    id: row.id,
+    recipient_email: maskEmail(row.recipient_email),
+    type: row.type,
+    status: row.status,
+    created_at: row.created_at,
+  }));
+
+  console.log("Push diagnostics: no pending jobs", {
+    recent_friend_event_created_count: rows.length,
+    recent_friend_event_created: rows,
+  });
+}
+
 function renderNotification(job: Job, badgeCount: number) {
   const eventTitle = job.payload?.event_title || "your event";
   const hostName = job.payload?.host_name || "Someone";
   const guestName = job.payload?.guest_name || "Someone";
   const senderName = job.payload?.sender_name || "Someone";
   const dmPreview = job.payload?.body || "Sent you a message";
+  const message = job.payload?.message || "";
 
   const contentMap: Record<string, { title: string; body: string }> = {
     invite_created: {
@@ -108,6 +161,14 @@ function renderNotification(job: Job, badgeCount: number) {
       title: `${senderName} sent you a message about ${eventTitle}`,
       body: dmPreview,
     },
+    guest_rsvp_confirmation: {
+      title: "RSVP recorded",
+      body: `You're on the list for ${eventTitle}`,
+    },
+    reach_out_suggestion: {
+      title: "New plan suggestion",
+      body: message || `${guestName} suggested something for ${eventTitle}`,
+    },
     friend_event_created: {
       title: `${hostName} is going out - want to join?`,
       body: `${hostName} created ${eventTitle}`,
@@ -136,6 +197,38 @@ function renderNotification(job: Job, badgeCount: number) {
       message_id: job.payload?.message_id || null,
     },
   };
+}
+
+async function sendExpoPush(message: ReturnType<typeof renderNotification>): Promise<ExpoPushResult> {
+  const response = await fetch("https://exp.host/--/api/v2/push/send", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(message),
+  });
+
+  let body: any = null;
+
+  try {
+    body = await response.json();
+  } catch {
+    body = null;
+  }
+
+  if (!response.ok) {
+    return { ok: false, details: body || response.statusText };
+  }
+
+  const data = body?.data;
+  const tickets = Array.isArray(data) ? data : data ? [data] : [];
+  const failedTicket = tickets.find((ticket: any) => ticket?.status && ticket.status !== "ok");
+
+  if (failedTicket) {
+    return { ok: false, details: failedTicket };
+  }
+
+  return { ok: true, details: body };
 }
 
 export async function POST(request: Request) {
@@ -170,40 +263,66 @@ export async function POST(request: Request) {
 
   const jobs = (data || []) as Job[];
 
+  if (jobs.length === 0) {
+    await logNoPendingPushDiagnostics(supabase);
+  }
+
   let sent = 0;
   let failed = 0;
+  let skipped = 0;
 
   const seen = new Set<string>();
 
-for (const job of jobs) {
-  if (seen.has(job.id)) continue;
-  seen.add(job.id);
+  for (const job of jobs) {
+    if (seen.has(job.id)) continue;
+    seen.add(job.id);
 
-  try {
-    const { data: claimed } = await supabase.rpc("mark_push_sent", { p_id: job.id });
-    if (!claimed) continue;
+    try {
+      const badgeCount = await getBadgeCount(supabase, job.recipient_email);
+      const message = renderNotification(job, badgeCount);
+      const delivery = await sendExpoPush(message);
 
-    const badgeCount = await getBadgeCount(supabase, job.recipient_email);
-  const message = renderNotification(job, badgeCount);
-console.log("IS ARRAY:", Array.isArray(message));
-    await fetch("https://exp.host/--/api/v2/push/send", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(message),
-    });
+      if (!delivery.ok) {
+        console.warn("Push delivery rejected", {
+          id: job.id,
+          type: job.type,
+          event_id: job.event_id,
+          details: delivery.details,
+        });
+        failed++;
+        continue;
+      }
 
-    sent++;
-  } catch {
-    failed++;
+      const { data: markedSent, error: markError } = await supabase.rpc("mark_push_sent", { p_id: job.id });
+
+      if (markError || !markedSent) {
+        console.warn("Push delivered but not marked sent", {
+          id: job.id,
+          type: job.type,
+          event_id: job.event_id,
+          error: markError?.message,
+        });
+        skipped++;
+        continue;
+      }
+
+      sent++;
+    } catch (err: any) {
+      console.warn("Push delivery failed", {
+        id: job.id,
+        type: job.type,
+        event_id: job.event_id,
+        error: err?.message || String(err),
+      });
+      failed++;
+    }
   }
-}
 
   return NextResponse.json({
     ok: true,
     processed: jobs.length,
     sent,
     failed,
+    skipped,
   });
 }
