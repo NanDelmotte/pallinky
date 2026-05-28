@@ -86,6 +86,7 @@ export const fr: Record<TranslationKey, string> = {
   people_may_know_create_placeholder: "Ou créer un nouveau cercle...",
   people_may_know_create_add: "Créer et ajouter",
   common_start: "Commencer",
+  common_next: "Suivant",
 
   home_title: "Fil social",
   home_subtitle: "Les plans et les personnes qui bougent autour de vous.",
@@ -237,6 +238,29 @@ export const fr: Record<TranslationKey, string> = {
   welcome_body:
     "Rendons l’organisation en groupe plus simple.\n\nPallinky ressemble un peu aux réseaux sociaux, mais pour la vraie vie, et nous aide à développer nos cercles sociaux de façon humaine.\n\nLa vie est meilleure quand on fait des choses intéressantes, qu’on sort et qu’on s’amuse.",
   welcome_primary: "Entrez !",
+  welcome_language_headline: "Choisissez votre langue.",
+  welcome_language_body:
+    "Choisissez d’abord la langue que vous voulez utiliser dans Pallinky.",
+  welcome_value_headline: "Faire des plans avec ses amis devrait être simple.",
+  welcome_value_body:
+    "Créez des événements, invitez via WhatsApp ou Pallinky, et gardez tout au même endroit.",
+  welcome_invite_headline:
+    "Vos amis n’ont pas besoin de l’app pour participer.",
+  welcome_invite_body:
+    "Créez un dîner, envoyez une invitation WhatsApp, puis laissez vos amis répondre.",
+  welcome_invite_flow_key: "Invitez via WhatsApp ou dans l’app.",
+  welcome_invite_flow_detail:
+    "Les invités répondent dans Pallinky ou sur le web, donc vous pouvez l’utiliser dès aujourd’hui.",
+  welcome_network_headline:
+    "Certaines des meilleures connexions passent par les amis d’amis.",
+  welcome_network_body:
+    "Quand les hôtes partagent des événements avec leur cercle élargi, de nouvelles personnes de confiance peuvent les découvrir et participer. C’est comme ça que les cercles sociaux grandissent naturellement.",
+  onboarding_create_first_event: "Créer votre premier événement",
+  rsvp_gate_title: "Vous participez.",
+  rsvp_gate_body:
+    "Nous avons trouvé votre RSVP pour {event}, organisé par {host}. Que voulez-vous faire ensuite ?",
+  rsvp_gate_view_event: "Voir qui vient",
+  rsvp_gate_learn_more: "Découvrir Pallinky",
   settings_title: "Paramètres",
   settings_admin_tools: "Outils admin",
   settings_manage_tester_photos: "Gérer les photos testeurs",
@@ -284,6 +308,7 @@ export const fr: Record<TranslationKey, string> = {
   profile_error_update_photo: "Impossible de mettre à jour la photo.",
   profile_login_required: "Connectez-vous pour voir votre profil.",
   profile_go_welcome: "Aller à l’accueil",
+  profile_view_onboarding: "Découvrir Pallinky",
   profile_updating: "Mise à jour...",
   profile_change_photo: "Changer la photo",
   profile_saving: "Enregistrement...",

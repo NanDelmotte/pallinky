@@ -515,7 +515,11 @@ function PendingApprovalsPreviewSection({
 
 export default function EventDetailsPage() {
   const { language, t } = useI18n();
-  const { slug, token } = useLocalSearchParams<{ slug: string; token?: string }>();
+  const { slug, token, fromOnboardingGate } = useLocalSearchParams<{
+    slug: string;
+    token?: string;
+    fromOnboardingGate?: string;
+  }>();
   const router = useRouter();
   const { session } = useSession();
 
@@ -983,6 +987,7 @@ setInvites(invitesRes.data || []);
   const hostNameFirst = getFirstName(event.host_name);
   const eventDateText = formatEventDate(event, language, t);
   const eventTimeText = formatEventTime(event, language);
+  const showOnboardingReturn = fromOnboardingGate === '1';
 
   const hasRsvpAccess =
     ['yes', 'going', 'interested', 'maybe'].includes(myStatus) ||
@@ -1154,6 +1159,30 @@ setInvites(invitesRes.data || []);
             onOpenHostDm={() => handleOpenOrCreateDm(hostEmailLc)}
             t={t}
           />
+
+          {showOnboardingReturn ? (
+            <TouchableOpacity
+              style={[
+                styles.onboardingReturn,
+                {
+                  backgroundColor: theme.isDark ? 'rgba(255,255,255,0.08)' : SYSTEM.surface,
+                  borderColor: theme.isDark ? 'rgba(255,255,255,0.10)' : SYSTEM.borderSoft,
+                },
+              ]}
+              onPress={() =>
+                router.push({
+                  pathname: '/onboarding',
+                  params: { destination: encodeURIComponent('/create') },
+                } as any)
+              }
+            >
+              <Ionicons name="sparkles-outline" size={18} color={theme.accent} />
+              <Text style={[styles.onboardingReturnText, { color: theme.text }]}>
+                {t('rsvp_gate_learn_more')}
+              </Text>
+              <Ionicons name="arrow-forward" size={18} color={theme.accent} />
+            </TouchableOpacity>
+          ) : null}
 
           {isFixedDate && event.starts_at ? (
             <EventInfoSection
@@ -1777,5 +1806,23 @@ eventLinkUrl: {
   marginTop: 2,
   fontSize: 13,
   fontWeight: '700',
+},
+
+onboardingReturn: {
+  alignItems: 'center',
+  borderRadius: 16,
+  borderWidth: 1,
+  flexDirection: 'row',
+  gap: 10,
+  marginBottom: 18,
+  minHeight: 54,
+  paddingHorizontal: 14,
+  paddingVertical: 12,
+},
+
+onboardingReturnText: {
+  flex: 1,
+  fontSize: 15,
+  fontWeight: '900',
 },
 });

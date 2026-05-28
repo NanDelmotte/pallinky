@@ -87,6 +87,7 @@ export const en: Record<TranslationKey, string> = {
   people_may_know_create_placeholder: "Or create a new circle...",
   people_may_know_create_add: "Create & Add",
   common_start: "Start",
+  common_next: "Next",
 
   home_title: "Social Feed",
   home_subtitle: "Plans and people moving around you.",
@@ -230,6 +231,28 @@ export const en: Record<TranslationKey, string> = {
   welcome_body:
     "Let's make group planning easier.\n\nPallinky is kind of like social media but for real life and helps us grow our social circles in a human way.\n\nLife is better when we do interesting things, go out and have fun.",
   welcome_primary: "Come on in!",
+  welcome_language_headline: "Choose your language.",
+  welcome_language_body:
+    "First, pick the language you want to use in Pallinky.",
+  welcome_value_headline: "Making plans with friends should feel easy.",
+  welcome_value_body:
+    "Create events, invite people through WhatsApp or Pallinky, and keep everything in one place.",
+  welcome_invite_headline: "Your friends don't need the app to join.",
+  welcome_invite_body:
+    "Create dinner, send a WhatsApp invite, and let friends RSVP.",
+  welcome_invite_flow_key: "Invite through WhatsApp or in-app.",
+  welcome_invite_flow_detail:
+    "Guests RSVP in Pallinky or on the web, so you can use this today.",
+  welcome_network_headline:
+    "Some of the best connections happen through friends of friends.",
+  welcome_network_body:
+    "When hosts choose to share events with their extended circle, trusted new people can discover and join. That's how social circles grow naturally.",
+  onboarding_create_first_event: "Create your first event",
+  rsvp_gate_title: "You are in.",
+  rsvp_gate_body:
+    "We found your RSVP for {event}, hosted by {host}. What would you like to do next?",
+  rsvp_gate_view_event: "See who is going",
+  rsvp_gate_learn_more: "Find out more about Pallinky",
   settings_title: "Settings",
   settings_admin_tools: "Admin Tools",
   settings_manage_tester_photos: "Manage Tester Photos",
@@ -276,6 +299,7 @@ export const en: Record<TranslationKey, string> = {
   profile_error_update_photo: "Could not update photo.",
   profile_login_required: "Please log in to view your profile.",
   profile_go_welcome: "Go to welcome",
+  profile_view_onboarding: "Learn more about Pallinky",
   profile_updating: "Updating...",
   profile_change_photo: "Change Photo",
   profile_saving: "Saving...",

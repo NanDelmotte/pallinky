@@ -19,6 +19,8 @@ import { isAppLanguage } from '@pallinky/i18n';
 import EasUpdateModal from '../components/EasUpdateModal';
 import { useEasUpdate } from '../lib/useEasUpdate';
 
+const PENDING_INVITE_DESTINATION_KEY = 'pallinky_pending_invite_destination_v1';
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true,
@@ -251,6 +253,11 @@ function AppNavigator() {
         const eventTarget = extractEventTargetFromUrl(url);
 
         if (eventTarget) {
+          const pendingDestination = `/event/${encodeURIComponent(eventTarget.slug)}/details${
+            eventTarget.token ? `?token=${encodeURIComponent(eventTarget.token)}` : ''
+          }`;
+          await AsyncStorage.setItem(PENDING_INVITE_DESTINATION_KEY, pendingDestination);
+
           router.push({
             pathname: '/event/[slug]/details',
             params: {

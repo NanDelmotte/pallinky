@@ -18,6 +18,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@pallinky/core';
 import { StyledText } from '@pallinky/ui';
 import {
@@ -41,6 +42,8 @@ const COLORS = {
   secondary: '#6A4C93',
   secondaryBg: '#efe9f7',
 };
+
+const PENDING_INVITE_DESTINATION_KEY = 'pallinky_pending_invite_destination_v1';
 
 const normalizeName = (name: string) => name.trim().toLowerCase();
 
@@ -73,6 +76,7 @@ export default function VerifyOTPScreen() {
 
   const goToDestination = useCallback(() => {
     const destination = returnTo ? decodeURIComponent(returnTo) : '/(tabs)';
+    void AsyncStorage.removeItem(PENDING_INVITE_DESTINATION_KEY);
     router.replace(destination as any);
   }, [returnTo, router]);
 
