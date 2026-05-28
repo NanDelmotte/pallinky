@@ -283,6 +283,7 @@ export const fr: Record<TranslationKey, string> = {
   settings_support_body:
     "Bonjour l’assistance Pallinky,\n\nJ’ai besoin d’aide avec mon compte ou un problème de sécurité.\n\nE-mail du compte : {email}\n\nProblème :\n",
   tab_events: "Événements",
+  tab_chat: "Chats",
   tab_share: "Partager",
   tab_people: "Personnes",
   tab_create: "Créer",

@@ -46,6 +46,7 @@ credentials.json
 # Supabase
 # =========================
 supabase/.temp/
+apps/mobile/supabase/.temp/
 supabase/dev_schema.sql
 supabase/.branches/
 supabase/.cache/

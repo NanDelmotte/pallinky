@@ -14,6 +14,7 @@ import { useI18n } from '@pallinky/i18n/client';
 export default function TabLayout() {
   const { t } = useI18n();
   const [inboxBadgeCount, setInboxBadgeCount] = useState(0);
+  const [chatBadgeCount, setChatBadgeCount] = useState(0);
 
   const loadInboxBadgeCount = useCallback(async () => {
     try {
@@ -30,8 +31,28 @@ export default function TabLayout() {
     }
   }, []);
 
+  const loadChatBadgeCount = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_my_notifications_inbox');
+
+      if (error) {
+        console.log('Chat badge load error:', error);
+        return;
+      }
+
+      const total = ((data || []) as any[])
+        .filter((row) => row.notification_type === 'chat_message_batch' && row.is_read === false)
+        .reduce((sum, row) => sum + Number(row.unread_count || 0), 0);
+
+      setChatBadgeCount(total);
+    } catch (err) {
+      console.log('Chat badge load exception:', err);
+    }
+  }, []);
+
   useEffect(() => {
   void loadInboxBadgeCount();
+  void loadChatBadgeCount();
 
   const existing = supabase
     .getChannels()
@@ -48,6 +69,7 @@ export default function TabLayout() {
       { event: '*', schema: 'public', table: 'notifications_inbox' },
       () => {
         void loadInboxBadgeCount();
+        void loadChatBadgeCount();
       }
     )
     .subscribe();
@@ -55,7 +77,7 @@ export default function TabLayout() {
   return () => {
     void supabase.removeChannel(channel);
   };
-}, [loadInboxBadgeCount]);
+}, [loadInboxBadgeCount, loadChatBadgeCount]);
 
   return (
     <Tabs
@@ -81,6 +103,20 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'calendar' : 'calendar-outline'}
+              size={24}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="chat"
+        options={{
+          title: t('tab_chat'),
+          tabBarBadge: chatBadgeCount > 0 ? chatBadgeCount : undefined,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'chatbubbles' : 'chatbubbles-outline'}
               size={24}
               color={color}
             />

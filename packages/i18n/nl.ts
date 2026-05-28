@@ -318,6 +318,7 @@ export const nl: Record<TranslationKey, string> = {
     "Hallo Pallinky Support,\n\nIk heb hulp nodig met mijn account of een veiligheidsprobleem.\n\nAccount-e-mail: {email}\n\nProbleem:\n",
 
   tab_events: "Events",
+  tab_chat: "Chats",
   tab_share: "Delen",
   tab_people: "Mensen",
   tab_create: "Maken",
