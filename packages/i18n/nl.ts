@@ -54,6 +54,7 @@ export const nl: Record<TranslationKey, string> = {
   common_error: "Fout",
   common_hide_card_error: "Kon kaart niet verbergen.",
   common_start: "Start",
+  common_next: "Volgende",
   common_create: "Maken",
   common_tbd: "Nog te bepalen",
   common_done: "Klaar",
@@ -265,6 +266,28 @@ export const nl: Record<TranslationKey, string> = {
   welcome_body:
     "Laten we groepsplannen makkelijker maken.\n\nPallinky lijkt een beetje op social media, maar dan voor het echte leven. Het helpt je sociale kringen op een natuurlijke manier te laten groeien.\n\nHet leven is leuker als we eropuit gaan, dingen doen en plezier maken.",
   welcome_primary: "Kom binnen!",
+  welcome_language_headline: "Kies je taal.",
+  welcome_language_body:
+    "Kies eerst de taal waarin je Pallinky wilt gebruiken.",
+  welcome_value_headline: "Plannen maken met vrienden moet makkelijk voelen.",
+  welcome_value_body:
+    "Maak events, nodig mensen uit via WhatsApp of Pallinky, en houd alles op één plek.",
+  welcome_invite_headline: "Je vrienden hebben de app niet nodig om mee te doen.",
+  welcome_invite_body:
+    "Maak een diner aan, stuur een WhatsApp-uitnodiging en laat vrienden RSVP’en.",
+  welcome_invite_flow_key: "Nodig uit via WhatsApp of in de app.",
+  welcome_invite_flow_detail:
+    "Gasten RSVP’en in Pallinky of op het web, dus je kunt dit vandaag al gebruiken.",
+  welcome_network_headline:
+    "Sommige van de beste connecties ontstaan via vrienden van vrienden.",
+  welcome_network_body:
+    "Wanneer hosts events delen met hun bredere kring, kunnen vertrouwde nieuwe mensen ze ontdekken en meedoen. Zo groeien sociale kringen natuurlijk.",
+  onboarding_create_first_event: "Maak je eerste event",
+  rsvp_gate_title: "Je bent erbij.",
+  rsvp_gate_body:
+    "We hebben je RSVP gevonden voor {event}, gehost door {host}. Wat wil je nu doen?",
+  rsvp_gate_view_event: "Bekijk wie er komt",
+  rsvp_gate_learn_more: "Meer over Pallinky",
   welcome_modal_title: "Welkom bij Pallinky!",
   welcome_modal_hatchery: "Hatchery: bewaar losse ideeën.",
   welcome_modal_connections: "Connecties: zie wie wil afspreken.",
@@ -321,6 +344,7 @@ export const nl: Record<TranslationKey, string> = {
   profile_error_update_photo: "Kon foto niet bijwerken.",
   profile_login_required: "Log in om je profiel te bekijken.",
   profile_go_welcome: "Ga naar welkom",
+  profile_view_onboarding: "Meer over Pallinky",
   profile_updating: "Bijwerken...",
   profile_change_photo: "Foto wijzigen",
   profile_saving: "Opslaan...",

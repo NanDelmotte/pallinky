@@ -16,38 +16,30 @@ export default function WelcomeScreen() {
   const router = useRouter();
   const { t } = useI18n();
 
-  const complete = async (destination: string) => {
+  const continueToLogin = async () => {
     await AsyncStorage.setItem(WELCOME_KEY, 'true');
-    router.replace(destination);
+    router.replace({
+      pathname: '/auth/verify',
+      params: { returnTo: encodeURIComponent('/onboarding-gate') },
+    } as any);
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{t('welcome_title')}</Text>
-
-      <Text style={styles.body}>{t('welcome_body')}</Text>
+      <Text style={styles.brand}>{t('welcome_title')}</Text>
+      <Text style={styles.title}>{t('welcome_language_headline')}</Text>
+      <Text style={styles.body}>{t('welcome_language_body')}</Text>
 
       <LanguageSelector />
 
-      <View style={styles.buttons}>
-        <TouchableOpacity
-          style={styles.primary}
-          onPress={() => complete('/auth/verify')}
-        >
-<Text style={styles.primaryText}>{t('welcome_primary')}</Text>
-        </TouchableOpacity>
- {/*         <TouchableOpacity
-          style={styles.secondary}
-          onPress={() => complete('/create/startervideo')}
-        >
-          <Text style={styles.secondaryText}>
-            I want to discover Pallinky
-          </Text>
-        </TouchableOpacity>
-*/}
-
-       
-      </View>
+      <TouchableOpacity
+        style={styles.primary}
+        onPress={() => {
+          void continueToLogin();
+        }}
+      >
+        <Text style={styles.primaryText}>{t('common_next')}</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -56,7 +48,6 @@ const SYSTEM = {
   background: '#F6F7F9',
   text: '#1f2a1b',
   primary: '#43691b',
-  border: '#bac9ad',
 };
 
 const styles = StyleSheet.create({
@@ -66,20 +57,24 @@ const styles = StyleSheet.create({
     padding: 24,
     justifyContent: 'center',
   },
+  brand: {
+    color: SYSTEM.text,
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 42,
+  },
   title: {
-    fontSize: 34,
+    fontSize: 32,
     fontWeight: '700',
     color: SYSTEM.text,
     marginBottom: 16,
+    lineHeight: 38,
   },
   body: {
     fontSize: 16,
-    lineHeight: 22,
+    lineHeight: 24,
     color: '#66715f',
-    marginBottom: 40,
-  },
-  buttons: {
-    gap: 12,
+    marginBottom: 30,
   },
   primary: {
     backgroundColor: SYSTEM.primary,
@@ -89,24 +84,6 @@ const styles = StyleSheet.create({
   primaryText: {
     color: '#fff',
     textAlign: 'center',
-    fontWeight: '600',
-  },
-  secondary: {
-    borderWidth: 1,
-    borderColor: SYSTEM.border,
-    padding: 16,
-    borderRadius: 12,
-  },
-  secondaryText: {
-    textAlign: 'center',
-    fontWeight: '600',
-    color: SYSTEM.text,
-  },
-  ghost: {
-    padding: 12,
-  },
-  ghostText: {
-    textAlign: 'center',
-    color: '#66715f',
+    fontWeight: '700',
   },
 });

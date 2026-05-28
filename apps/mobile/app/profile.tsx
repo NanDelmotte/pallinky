@@ -454,6 +454,20 @@ export default function ProfileScreen() {
         )}
 
         {joinedDate ? <StyledText style={styles.joined}>{t('profile_joined', { date: joinedDate })}</StyledText> : null}
+
+        <TouchableOpacity
+          style={styles.onboardingBtn}
+          onPress={() =>
+            router.push({
+              pathname: '/onboarding',
+              params: { destination: encodeURIComponent('/create') },
+            } as any)
+          }
+        >
+          <Ionicons name="sparkles-outline" size={16} color="#43691b" />
+          <StyledText style={styles.onboardingBtnText}>{t('profile_view_onboarding')}</StyledText>
+        </TouchableOpacity>
+
         <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
           <Ionicons name="log-out-outline" size={16} color="#e63946" />
           <StyledText style={styles.signOutBtnText}>{t('settings_sign_out')}</StyledText>
@@ -749,6 +763,24 @@ const styles = StyleSheet.create({
   },
   signOutBtnText: {
     color: '#e63946',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  onboardingBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: '#f1f6ec',
+    borderWidth: 1,
+    borderColor: '#bac9ad',
+  },
+  onboardingBtnText: {
+    color: '#43691b',
     fontSize: 13,
     fontWeight: '800',
   },
