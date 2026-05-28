@@ -1,12 +1,12 @@
 import React from 'react';
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useI18n } from '@pallinky/i18n/client';
 import type { TranslationKey } from '@pallinky/i18n/types';
@@ -38,6 +38,11 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
     body: 'welcome_network_body',
   },
 ];
+
+const YOGA_SCENE = require('../assets/onboarding1a.png');
+const DRINKS_SCENE = require('../assets/onboarding1b.png');
+const INVITE_SCENE = require('../assets/onboarding2.png');
+const DANCING_SCENE = require('../assets/onboarding3.png');
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -73,30 +78,15 @@ export default function OnboardingScreen() {
 
         <OnboardingVisual kind={screen.kind} />
         <Text style={styles.title}>{t(screen.headline)}</Text>
-        <Text style={styles.body}>{t(screen.body)}</Text>
 
         {screen.kind === 'invite' ? (
           <View style={styles.callout}>
-            <Text style={styles.calloutTitle}>{t('welcome_invite_flow_key')}</Text>
-            <Text style={styles.calloutBody}>{t('welcome_invite_flow_detail')}</Text>
+            <Text style={styles.calloutBody}>{t(screen.body)}</Text>
           </View>
-        ) : null}
+        ) : (
+          <Text style={styles.body}>{t(screen.body)}</Text>
+        )}
 
-        {screen.kind === 'network' ? (
-          <View style={styles.networkPreview}>
-            <View style={styles.personNode}>
-              <Text style={styles.personInitial}>Y</Text>
-            </View>
-            <View style={styles.connector} />
-            <View style={[styles.personNode, styles.friendNode]}>
-              <Text style={styles.personInitial}>R</Text>
-            </View>
-            <View style={styles.connector} />
-            <View style={[styles.personNode, styles.secondNode]}>
-              <Text style={styles.personInitial}>2°</Text>
-            </View>
-          </View>
-        ) : null}
       </ScrollView>
 
       <View style={styles.footer}>
@@ -133,51 +123,28 @@ export default function OnboardingScreen() {
 function OnboardingVisual({ kind }: { kind: 'value' | 'invite' | 'network' }) {
   if (kind === 'invite') {
     return (
-      <View style={styles.flowVisual}>
-        <VisualStep icon="restaurant-outline" label="Dinner" />
-        <Ionicons name="arrow-forward" size={20} color={SYSTEM.primary} />
-        <VisualStep icon="logo-whatsapp" label="Invite" />
-        <Ionicons name="arrow-forward" size={20} color={SYSTEM.primary} />
-        <VisualStep icon="checkmark-circle-outline" label="RSVP" />
+      <View style={styles.inviteSceneCard}>
+        <Image source={INVITE_SCENE} style={IMAGE_FILL} resizeMode="cover" />
       </View>
     );
   }
 
   if (kind === 'network') {
     return (
-      <View style={styles.magicVisual}>
-        <Ionicons name="sparkles-outline" size={34} color={SYSTEM.primary} />
-        <Text style={styles.magicText}>friends of friends</Text>
+      <View style={styles.dancingSceneCard}>
+        <Image source={DANCING_SCENE} style={IMAGE_FILL} resizeMode="cover" />
       </View>
     );
   }
 
   return (
     <View style={styles.valueVisual}>
-      <View style={styles.eventCard}>
-        <Text style={styles.eventTitle}>Dinner Friday</Text>
-        <View style={styles.avatarRow}>
-          <View style={styles.avatar} />
-          <View style={[styles.avatar, styles.avatarOverlap]} />
-          <View style={[styles.avatar, styles.avatarOverlap, styles.avatarAccent]} />
-        </View>
+      <View style={styles.sceneCard}>
+        <Image source={YOGA_SCENE} style={IMAGE_FILL} resizeMode="cover" />
       </View>
-      <Ionicons name="chatbubble-ellipses-outline" size={30} color={SYSTEM.primary} />
-    </View>
-  );
-}
-
-function VisualStep({
-  icon,
-  label,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-}) {
-  return (
-    <View style={styles.visualStep}>
-      <Ionicons name={icon} size={24} color={SYSTEM.primary} />
-      <Text style={styles.visualStepText}>{label}</Text>
+      <View style={[styles.sceneCard, styles.sceneCardLower]}>
+        <Image source={DRINKS_SCENE} style={IMAGE_FILL} resizeMode="cover" />
+      </View>
     </View>
   );
 }
@@ -189,21 +156,26 @@ const SYSTEM = {
   border: '#bac9ad',
 };
 
+const IMAGE_FILL = {
+  height: '100%' as const,
+  width: '100%' as const,
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: SYSTEM.background,
   },
   content: {
-    padding: 24,
-    paddingTop: 70,
+    padding: 22,
+    paddingTop: 44,
     flexGrow: 1,
   },
   brandRow: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 42,
+    marginBottom: 22,
   },
   brand: {
     color: SYSTEM.text,
@@ -225,17 +197,17 @@ const styles = StyleSheet.create({
     width: 22,
   },
   title: {
-    fontSize: 32,
+    fontSize: 27,
     fontWeight: '700',
     color: SYSTEM.text,
-    marginBottom: 16,
-    lineHeight: 38,
+    marginBottom: 10,
+    lineHeight: 32,
   },
   body: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 15,
+    lineHeight: 22,
     color: '#66715f',
-    marginBottom: 30,
+    marginBottom: 18,
   },
   footer: {
     alignItems: 'center',
@@ -269,140 +241,68 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   valueVisual: {
-    alignItems: 'center',
-    backgroundColor: '#eef4e7',
-    borderColor: '#d5e0cb',
-    borderRadius: 24,
-    borderWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 34,
-    padding: 18,
+    height: 304,
+    marginBottom: 22,
+    position: 'relative',
   },
-  eventCard: {
+  sceneCard: {
     backgroundColor: '#fff',
-    borderColor: '#d5e0cb',
-    borderRadius: 16,
+    borderColor: '#e2e8dc',
+    borderRadius: 18,
     borderWidth: 1,
-    padding: 16,
-    width: 180,
+    aspectRatio: 1.5,
+    left: 0,
+    overflow: 'hidden',
+    position: 'absolute',
+    right: 46,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
   },
-  eventTitle: {
-    color: SYSTEM.text,
-    fontSize: 17,
-    fontWeight: '800',
-    marginBottom: 18,
+  sceneCardLower: {
+    bottom: 0,
+    left: 46,
+    right: 0,
+    top: undefined,
   },
-  avatarRow: {
-    flexDirection: 'row',
-  },
-  avatar: {
-    backgroundColor: '#f2c078',
-    borderColor: '#fff',
-    borderRadius: 999,
-    borderWidth: 2,
-    height: 34,
-    width: 34,
-  },
-  avatarOverlap: {
-    backgroundColor: '#8bb6a6',
-    marginLeft: -9,
-  },
-  avatarAccent: {
-    backgroundColor: '#d97862',
-  },
-  flowVisual: {
-    alignItems: 'center',
+  inviteSceneCard: {
     backgroundColor: '#fff',
-    borderColor: '#d5e0cb',
-    borderRadius: 24,
+    aspectRatio: 1.5,
+    borderColor: '#e2e8dc',
+    borderRadius: 18,
     borderWidth: 1,
-    flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'space-between',
-    marginBottom: 34,
-    padding: 14,
-  },
-  visualStep: {
-    alignItems: 'center',
-    backgroundColor: '#f4f7f1',
-    borderRadius: 16,
-    flex: 1,
-    minHeight: 82,
-    justifyContent: 'center',
-    padding: 8,
-  },
-  visualStepText: {
-    color: SYSTEM.text,
-    fontSize: 12,
-    fontWeight: '800',
-    marginTop: 7,
-    textAlign: 'center',
+    marginBottom: 22,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
   },
   callout: {
     backgroundColor: '#fff',
     borderColor: '#d5e0cb',
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1,
-    padding: 18,
-  },
-  calloutTitle: {
-    color: SYSTEM.text,
-    fontSize: 18,
-    fontWeight: '800',
-    marginBottom: 8,
+    padding: 14,
   },
   calloutBody: {
-    color: '#66715f',
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  magicVisual: {
-    alignItems: 'center',
-    backgroundColor: '#f7eadf',
-    borderColor: '#ecd6c2',
-    borderRadius: 24,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 34,
-    padding: 20,
-  },
-  magicText: {
     color: SYSTEM.text,
-    fontSize: 19,
-    fontWeight: '800',
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 18,
   },
-  networkPreview: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 8,
-  },
-  personNode: {
-    alignItems: 'center',
+  dancingSceneCard: {
     backgroundColor: '#fff',
-    borderColor: SYSTEM.primary,
-    borderRadius: 999,
-    borderWidth: 2,
-    height: 54,
-    justifyContent: 'center',
-    width: 54,
-  },
-  friendNode: {
-    backgroundColor: '#eef4e7',
-  },
-  secondNode: {
-    backgroundColor: '#f7eadf',
-    borderColor: '#d97862',
-  },
-  personInitial: {
-    color: SYSTEM.text,
-    fontWeight: '900',
-  },
-  connector: {
-    backgroundColor: SYSTEM.border,
-    height: 2,
-    width: 42,
+    aspectRatio: 1.5,
+    borderColor: '#e2e8dc',
+    borderRadius: 18,
+    borderWidth: 1,
+    marginBottom: 22,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
   },
 });

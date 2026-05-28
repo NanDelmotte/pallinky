@@ -127,7 +127,7 @@ export default function OnboardingGateScreen() {
         title: eventRow.title || t('people_event_fallback'),
         hostName: eventRow.host_name || t('common_someone'),
       });
-    } catch (error) {
+    } catch {
       router.replace({
         pathname: '/onboarding',
         params: { destination: encodeURIComponent('/create') },

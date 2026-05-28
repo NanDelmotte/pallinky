@@ -234,19 +234,18 @@ export const en: Record<TranslationKey, string> = {
   welcome_language_headline: "Choose your language.",
   welcome_language_body:
     "First, pick the language you want to use in Pallinky.",
-  welcome_value_headline: "Making plans with friends should feel easy.",
+  welcome_value_headline: "Bring people together around real-life plans",
   welcome_value_body:
-    "Create events, invite people through WhatsApp or Pallinky, and keep everything in one place.",
-  welcome_invite_headline: "Your friends don't need the app to join.",
+    "Pallinky makes it easy to organize outings, dinners, walks, and hangouts — so you spend less time coordinating and more time actually together",
+  welcome_invite_headline: "Your friends don't need the app to join",
   welcome_invite_body:
-    "Create dinner, send a WhatsApp invite, and let friends RSVP.",
+    "From idea to IRL in 3 steps:\n1. Confirm a date, suggest options, or float the idea.\n2. Invite directly, share via WhatsApp, or open it to your circle and friends-of-friends.\n3. Show up & enjoy",
   welcome_invite_flow_key: "Invite through WhatsApp or in-app.",
   welcome_invite_flow_detail:
     "Guests RSVP in Pallinky or on the web, so you can use this today.",
-  welcome_network_headline:
-    "Some of the best connections happen through friends of friends.",
+  welcome_network_headline: "Grow your social circle the human way",
   welcome_network_body:
-    "When hosts choose to share events with their extended circle, trusted new people can discover and join. That's how social circles grow naturally.",
+    "The best new friendships happen through mutual friends. Open a plan to friends-of-friends and let the right people discover it naturally — no awkward cold follows, no algorithmic feeds.\n\nFriends of friends, meeting IRL",
   onboarding_create_first_event: "Create your first event",
   rsvp_gate_title: "You are in.",
   rsvp_gate_body:
