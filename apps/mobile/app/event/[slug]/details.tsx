@@ -1113,6 +1113,29 @@ setInvites(invitesRes.data || []);
             </View>
 
             <View style={styles.titleActions}>
+              {canOpenChat ? (
+                <TouchableOpacity
+                  style={[
+                    styles.titleActionBtn,
+                    {
+                      borderColor: theme.isDark ? 'rgba(255,255,255,0.10)' : SYSTEM.borderSoft,
+                      backgroundColor: theme.isDark ? 'rgba(255,255,255,0.08)' : SYSTEM.surface,
+                    },
+                  ]}
+                  onPress={() => router.push(`/event/${slug}/chat` as any)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open event chat"
+                >
+                  <MaterialCommunityIcons name="chat-outline" size={20} color={theme.accent} />
+
+                  {chatSummary?.unread_count > 0 ? (
+                    <View style={[styles.titleActionBadge, { backgroundColor: theme.accent }]}>
+                      <Text style={styles.titleActionBadgeText}>{chatSummary.unread_count}</Text>
+                    </View>
+                  ) : null}
+                </TouchableOpacity>
+              ) : null}
+
               {isFixedDate && event.starts_at ? (
                 <CalendarButton
                   event={event}
@@ -1285,30 +1308,6 @@ setInvites(invitesRes.data || []);
             </TouchableOpacity>
           ) : null}
 
-          {canOpenChat ? (
-            <View style={styles.chatRow}>
-              <TouchableOpacity
-                style={[
-                  styles.chatButton,
-                  {
-                    borderColor: theme.accent,
-                    backgroundColor: theme.isDark ? 'transparent' : SYSTEM.surface,
-                  },
-                ]}
-                onPress={() => router.push(`/event/${slug}/chat` as any)}
-              >
-                <MaterialCommunityIcons name="chat-outline" size={18} color={theme.accent} />
-                <Text style={[styles.chatLabel, { color: theme.text }]}>{t('event_chat')}</Text>
-
-                {chatSummary?.unread_count > 0 ? (
-                  <View style={[styles.chatBadge, { backgroundColor: theme.accent }]}>
-                    <Text style={styles.chatBadgeText}>{chatSummary.unread_count}</Text>
-                  </View>
-                ) : null}
-              </TouchableOpacity>
-            </View>
-          ) : null}
-
           {isHost ? (
             <>
               <HostActionsSection
@@ -1408,14 +1407,12 @@ const styles = StyleSheet.create({
   },
 
   titleRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
+    gap: 10,
     marginBottom: 10,
   },
 
   titleTextWrap: {
-    flex: 1,
+    width: '100%',
   },
 
   title: {
@@ -1426,7 +1423,7 @@ const styles = StyleSheet.create({
   titleActions: {
     flexDirection: 'row',
     gap: 8,
-    paddingTop: 3,
+    alignSelf: 'flex-end',
   },
 
   titleActionBtn: {
@@ -1436,6 +1433,24 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  titleActionBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+  },
+
+  titleActionBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '900',
   },
 
   hostHeaderWrap: {
@@ -1629,41 +1644,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 13,
     fontWeight: '600',
-  },
-
-  chatRow: {
-    marginBottom: 10,
-  },
-
-  chatButton: {
-    minHeight: 54,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-
-  chatLabel: {
-    fontSize: 16,
-    fontWeight: '800',
-    flex: 1,
-  },
-
-  chatBadge: {
-    minWidth: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 6,
-  },
-
-  chatBadgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '800',
   },
 
   hostActionsRow: {

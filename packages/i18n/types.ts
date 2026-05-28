@@ -232,6 +232,7 @@ export type TranslationKey =
   | "settings_support_subject"
   | "settings_support_body"
   | "tab_events"
+  | "tab_chat"
   | "tab_share"
   | "tab_people"
   | "tab_create"
