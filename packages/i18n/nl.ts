@@ -269,19 +269,19 @@ export const nl: Record<TranslationKey, string> = {
   welcome_language_headline: "Kies je taal.",
   welcome_language_body:
     "Kies eerst de taal waarin je Pallinky wilt gebruiken.",
-  welcome_value_headline: "Plannen maken met vrienden moet makkelijk voelen.",
+  welcome_value_headline: "Breng mensen samen rond plannen in het echte leven",
   welcome_value_body:
-    "Maak events, nodig mensen uit via WhatsApp of Pallinky, en houd alles op één plek.",
-  welcome_invite_headline: "Je vrienden hebben de app niet nodig om mee te doen.",
+    "Pallinky maakt het makkelijk om uitstapjes, etentjes, hikes en hangouts te organiseren, zodat je minder tijd kwijt bent aan afstemmen en meer tijd echt samen bent.",
+  welcome_invite_headline: "Je vrienden hebben de app niet nodig om mee te doen",
   welcome_invite_body:
-    "Maak een diner aan, stuur een WhatsApp-uitnodiging en laat vrienden RSVP’en.",
+    "Van idee naar IRL in 3 stappen:\n1. Prik een datum, stel opties voor, of gooi het idee op.\n2. Stuur direct, deel via WhatsApp, of open voor je kring en vrienden-van-vrienden.\n3. Kom opdagen & geniet",
   welcome_invite_flow_key: "Nodig uit via WhatsApp of in de app.",
   welcome_invite_flow_detail:
     "Gasten RSVP’en in Pallinky of op het web, dus je kunt dit vandaag al gebruiken.",
   welcome_network_headline:
-    "Sommige van de beste connecties ontstaan via vrienden van vrienden.",
+    "Laat je sociale kringen op een menselijke manier groeien",
   welcome_network_body:
-    "Wanneer hosts events delen met hun bredere kring, kunnen vertrouwde nieuwe mensen ze ontdekken en meedoen. Zo groeien sociale kringen natuurlijk.",
+    "Pallinky helpt je echte sociale leven natuurlijk groeien via gedeelde ervaringen.",
   onboarding_create_first_event: "Maak je eerste event",
   rsvp_gate_title: "Je bent erbij.",
   rsvp_gate_body:

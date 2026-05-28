@@ -241,20 +241,21 @@ export const fr: Record<TranslationKey, string> = {
   welcome_language_headline: "Choisissez votre langue.",
   welcome_language_body:
     "Choisissez d’abord la langue que vous voulez utiliser dans Pallinky.",
-  welcome_value_headline: "Faire des plans avec ses amis devrait être simple.",
+  welcome_value_headline:
+    "Rassemblez les gens autour de vrais moments à vivre",
   welcome_value_body:
-    "Créez des événements, invitez via WhatsApp ou Pallinky, et gardez tout au même endroit.",
+    "Pallinky facilite l’organisation de sorties, dîners, randonnées et moments entre amis, pour passer moins de temps à coordonner et plus de temps vraiment ensemble.",
   welcome_invite_headline:
-    "Vos amis n’ont pas besoin de l’app pour participer.",
+    "Vos amis n’ont pas besoin de l’app pour participer",
   welcome_invite_body:
-    "Créez un dîner, envoyez une invitation WhatsApp, puis laissez vos amis répondre.",
+    "De l’idée à l’IRL en 3 étapes :\n1. Confirmez une date, proposez des options, ou lancez l’idée.\n2. Envoyez directement, partagez via WhatsApp, ou ouvrez à votre cercle et aux amis d’amis.\n3. Venez & profitez",
   welcome_invite_flow_key: "Invitez via WhatsApp ou dans l’app.",
   welcome_invite_flow_detail:
     "Les invités répondent dans Pallinky ou sur le web, donc vous pouvez l’utiliser dès aujourd’hui.",
   welcome_network_headline:
-    "Certaines des meilleures connexions passent par les amis d’amis.",
+    "Élargissez vos cercles sociaux de façon humaine",
   welcome_network_body:
-    "Quand les hôtes partagent des événements avec leur cercle élargi, de nouvelles personnes de confiance peuvent les découvrir et participer. C’est comme ça que les cercles sociaux grandissent naturellement.",
+    "Pallinky aide la vraie vie sociale à grandir naturellement grâce aux expériences partagées.",
   onboarding_create_first_event: "Créer votre premier événement",
   rsvp_gate_title: "Vous participez.",
   rsvp_gate_body:
