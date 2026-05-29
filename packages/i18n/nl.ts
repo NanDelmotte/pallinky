@@ -116,13 +116,13 @@ export const nl: Record<TranslationKey, string> = {
   home_start_something_cold_subtitle:
     "De snelste manier om je feed in beweging te krijgen.",
   home_start_something_warm_subtitle: "Laten we iets doen!",
-  home_happening_title: "Wat gebeurt er?",
+  home_happening_title: "Nu gaande",
   home_happening_cold_subtitle:
     "Zodra er plannen en mensen zijn, zie je ze hier.",
   home_happening_active_subtitle: "Je actieve plannen",
-  home_friends_active_title: "Actieve plannen van vrienden",
+  home_friends_active_title: "Plannen van vrienden",
   home_friends_active_subtitle:
-    "Geen zorgen, ze zien niet dat je kijkt.",
+    "Plannen die ze zichtbaar voor jou hebben gemaakt.",
   home_extended_network_title: "Plannen uit je netwerk",
   home_extended_network_subtitle:
     "Events via vrienden van vrienden",

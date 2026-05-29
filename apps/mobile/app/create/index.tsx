@@ -177,7 +177,7 @@ export default function CreateLaunchpad() {
   };
 
   const handleClose = () => {
-    router.dismissTo("/");
+    router.replace("/(tabs)" as any);
   };
   const saveCustomCards = async (next: CustomQuickStart[]) => {
     setCustomCards(next);

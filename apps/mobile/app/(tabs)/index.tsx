@@ -6,7 +6,7 @@
  * - Start Something
  */
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   ScrollView,
   View,
@@ -118,6 +118,9 @@ export default function HomeScreen() {
   const router = useRouter();
   const { session } = useSession();
   const { language: lang } = useI18n();
+  const inboxBadgeChannelName = useRef(
+    `home-notifications-inbox-badge-${Date.now()}-${Math.random()}`
+  );
   
 useEffect(() => {
   if (!session?.user?.email) {
@@ -554,7 +557,7 @@ const [
 
   useEffect(() => {
     const channel = supabase
-      .channel('home-notifications-inbox-badge')
+      .channel(inboxBadgeChannelName.current)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'notifications_inbox' },
@@ -829,7 +832,7 @@ function FeedSectionHeader({
     <View style={[styles.sectionHeader, compact && styles.sectionHeaderCompact]}>
       <StyledText style={[styles.sectionTitle, { color: theme.text }]}>{title}</StyledText>
       {subtitle ? (
-        <StyledText style={[styles.sectionSubtitle, { color: theme.text }]}>
+        <StyledText style={styles.sectionSubtitle}>
           {subtitle}
         </StyledText>
       ) : null}
@@ -1041,10 +1044,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#eee',
   },
   mainTitle: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '900',
-    letterSpacing: -0.5,
+    letterSpacing: 0,
     color: '#1f2a1b',
+    lineHeight: 31,
   },
   scrollContent: {
     paddingBottom: 132,
@@ -1052,16 +1056,16 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     paddingHorizontal: 16,
-    marginTop: 18,
-    marginBottom: 6,
+    marginTop: 16,
+    marginBottom: 8,
   },
   sectionHeaderCompact: {
-    marginTop: 14,
+    marginTop: 12,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '900',
-    letterSpacing: -0.3,
+    fontSize: 17,
+    fontWeight: '800',
+    letterSpacing: 0,
     color: '#1f2a1b',
   },
   sectionSubtitle: {
@@ -1143,9 +1147,10 @@ const styles = StyleSheet.create({
     color: '#1f2a1b',
   },
   mainSubtitle: {
-    marginTop: 4,
+    marginTop: 6,
     fontSize: 13,
     color: '#66715f',
+    lineHeight: 18,
   },
   utilitySubtitle: {
     fontSize: 12,
