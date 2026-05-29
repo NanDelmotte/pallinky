@@ -110,7 +110,7 @@ export const nl: Record<TranslationKey, string> = {
   people_may_know_create_placeholder: "Of maak een nieuwe cirkel...",
   people_may_know_create_add: "Maken en toevoegen",
 
-  home_title: "Sociale feed",
+  home_title: "Het leven is beter samen",
   home_subtitle: "Plannen en mensen die om je heen bewegen.",
   home_start_something_title: "Start iets",
   home_start_something_cold_subtitle:
@@ -319,7 +319,7 @@ export const nl: Record<TranslationKey, string> = {
 
   tab_events: "Events",
   tab_chat: "Chats",
-  tab_share: "Delen",
+  tab_share: "Connect",
   tab_people: "Mensen",
   tab_create: "Maken",
   tab_inbox: "Inbox",
@@ -455,10 +455,10 @@ export const nl: Record<TranslationKey, string> = {
   delete_account_generic_error: "Er ging iets mis",
   delete_account_deleting: "Bezig met verwijderen...",
 
-  share_profile_title: "Deel je profiel",
+  share_profile_title: "Connect in het echt",
   share_profile_body:
     "Laat iemand deze QR-code scannen om met je te connecten op Pallinky.",
-  share_profile_sign_in: "Log in om je deelcode te maken.",
+  share_profile_sign_in: "Log in om je connect-code te maken.",
 
   inbox_title: "Inbox",
   inbox_empty_title: "Nog geen meldingen",

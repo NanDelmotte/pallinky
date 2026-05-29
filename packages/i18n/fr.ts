@@ -88,7 +88,7 @@ export const fr: Record<TranslationKey, string> = {
   common_start: "Commencer",
   common_next: "Suivant",
 
-  home_title: "Fil social",
+  home_title: "La vie est meilleure ensemble",
   home_subtitle: "Les plans et les personnes qui bougent autour de vous.",
   home_start_something_title: "Lancer quelque chose",
   home_start_something_cold_subtitle:
@@ -284,7 +284,7 @@ export const fr: Record<TranslationKey, string> = {
     "Bonjour l’assistance Pallinky,\n\nJ’ai besoin d’aide avec mon compte ou un problème de sécurité.\n\nE-mail du compte : {email}\n\nProblème :\n",
   tab_events: "Événements",
   tab_chat: "Chats",
-  tab_share: "Partager",
+  tab_share: "Connecter",
   tab_people: "Personnes",
   tab_create: "Créer",
   tab_inbox: "Boîte",
@@ -431,10 +431,10 @@ delete_account_confirm_title: "Supprimer le compte ?",
 delete_account_failed: "Échec de la suppression",
 delete_account_generic_error: "Une erreur s’est produite",
 delete_account_deleting: "Suppression...",
-share_profile_title: "Partager votre profil",
+share_profile_title: "Se connecter en vrai",
 share_profile_body:
   "Laissez quelqu’un scanner ce QR code pour se connecter avec vous sur Pallinky.",
-share_profile_sign_in: "Connectez-vous pour créer votre code de partage.",
+share_profile_sign_in: "Connectez-vous pour créer votre code de connexion.",
 inbox_title: "Boîte de réception",
 inbox_empty_title: "Aucune notification pour le moment",
 inbox_empty_body:

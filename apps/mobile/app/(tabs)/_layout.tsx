@@ -1,6 +1,6 @@
 /**
  * Path: app/(tabs)/_layout.tsx 
- * Description: 5-tab layout with Inbox badge from notifications_inbox.
+ * Description: Main tab layout.
  */
 
 import { Tabs } from 'expo-router';
@@ -13,23 +13,7 @@ import { useI18n } from '@pallinky/i18n/client';
 
 export default function TabLayout() {
   const { t } = useI18n();
-  const [inboxBadgeCount, setInboxBadgeCount] = useState(0);
   const [chatBadgeCount, setChatBadgeCount] = useState(0);
-
-  const loadInboxBadgeCount = useCallback(async () => {
-    try {
-      const { data, error } = await supabase.rpc('get_my_unread_inbox_count');
-
-      if (error) {
-        console.log('Inbox badge load error:', error);
-        return;
-      }
-
-      setInboxBadgeCount(typeof data === 'number' ? data : 0);
-    } catch (err) {
-      console.log('Inbox badge load exception:', err);
-    }
-  }, []);
 
   const loadChatBadgeCount = useCallback(async () => {
     try {
@@ -51,7 +35,6 @@ export default function TabLayout() {
   }, []);
 
   useEffect(() => {
-  void loadInboxBadgeCount();
   void loadChatBadgeCount();
 
   const existing = supabase
@@ -68,7 +51,6 @@ export default function TabLayout() {
       'postgres_changes',
       { event: '*', schema: 'public', table: 'notifications_inbox' },
       () => {
-        void loadInboxBadgeCount();
         void loadChatBadgeCount();
       }
     )
@@ -77,7 +59,7 @@ export default function TabLayout() {
   return () => {
     void supabase.removeChannel(channel);
   };
-}, [loadInboxBadgeCount, loadChatBadgeCount]);
+}, [loadChatBadgeCount]);
 
   return (
     <Tabs
@@ -135,7 +117,7 @@ export default function TabLayout() {
     title: t('tab_share'),
     tabBarIcon: ({ color, focused }) => (
       <Ionicons
-        name={focused ? 'qr-code' : 'qr-code-outline'}
+        name={focused ? 'person-add' : 'person-add-outline'}
         size={24}
         color={color}
       />
@@ -174,15 +156,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="inbox"
         options={{
-          title: t('tab_inbox'),
-          tabBarBadge: inboxBadgeCount > 0 ? inboxBadgeCount : undefined,
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'mail' : 'mail-outline'}
-              size={24}
-              color={color}
-            />
-          ),
+          href: null,
         }}
       />
     </Tabs>
