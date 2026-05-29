@@ -85,6 +85,16 @@ function isPositiveStatus(status: string | null | undefined) {
   );
 }
 
+function isQaPlaceholderEvent(event: any) {
+  const title = String(event?.title || '').trim();
+  const location = String(event?.location || '').trim();
+
+  return (
+    /^QA\s+\d{8,}\s+FEED\b/i.test(title) ||
+    /^QA\s+Dev\s+Location$/i.test(location)
+  );
+}
+
 export default function FriendsActivities({
   data,
   theme,
@@ -161,6 +171,7 @@ export default function FriendsActivities({
 
         const event = signal.payload;
         if (!event?.id) continue;
+        if (isQaPlaceholderEvent(event)) continue;
         if (accessByEventId[String(event.id)]?.can_see !== true) continue;
         if (dismissedEventIds.includes(String(event.id))) continue;
 
@@ -206,6 +217,7 @@ export default function FriendsActivities({
 
     for (const ev of events) {
       if (!ev?.id) continue;
+      if (isQaPlaceholderEvent(ev)) continue;
       if (accessByEventId[String(ev.id)]?.can_see !== true) continue;
       if (dismissedEventIds.includes(String(ev.id))) continue;
 

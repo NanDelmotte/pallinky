@@ -90,17 +90,17 @@ export const fr: Record<TranslationKey, string> = {
 
   home_title: "La vie est meilleure ensemble",
   home_subtitle: "Les plans et les personnes qui bougent autour de vous.",
-  home_start_something_title: "Lancer quelque chose",
+  home_start_something_title: "Lancer un plan",
   home_start_something_cold_subtitle:
     "Le moyen le plus rapide de mettre votre fil en mouvement.",
   home_start_something_warm_subtitle: "Sortons !",
-  home_happening_title: "Que se passe-t-il ?",
+  home_happening_title: "En ce moment",
   home_happening_cold_subtitle:
     "Lorsque des plans et des personnes commenceront à apparaître, ils s’afficheront ici.",
   home_happening_active_subtitle: "Vos plans actifs",
-  home_friends_active_title: "Les activités de vos amis",
+  home_friends_active_title: "Plans d’amis",
   home_friends_active_subtitle:
-    "Ne vous inquiétez pas, ils ont dit que vous pouviez jeter un œil, et nous ne leur montrerons pas que vous l’avez fait",
+    "Les plans qu’ils ont rendus visibles pour vous.",
   home_extended_network_title: "Les activités de votre réseau élargi",
   home_extended_network_subtitle: "Événements issus de signaux au second degré",
   home_connect_title: "Se connecter",

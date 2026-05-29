@@ -91,17 +91,17 @@ export const en: Record<TranslationKey, string> = {
 
   home_title: "Life is better together",
   home_subtitle: "Plans and people moving around you.",
-  home_start_something_title: "Start Something",
+  home_start_something_title: "Start something",
   home_start_something_cold_subtitle:
     "The fastest way to get motion into your feed.",
   home_start_something_warm_subtitle: "Let's go out!",
-  home_happening_title: "What is Happening?",
+  home_happening_title: "What's happening",
   home_happening_cold_subtitle:
     "Once plans and people start showing up, they will appear here.",
   home_happening_active_subtitle: "Your active plans",
-  home_friends_active_title: "Your friends active plans",
+  home_friends_active_title: "Friends' plans",
   home_friends_active_subtitle:
-    "Don't worry, they said you could peek, and we won't show them that you did",
+    "Plans they made visible to you.",
   home_connect_title: "Connect",
   home_extended_network_title: "Plans from your extended network",
   home_extended_network_subtitle: "Friends of friends plans",
