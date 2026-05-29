@@ -128,6 +128,7 @@ useEffect(() => {
   const [themeKey, setThemeKey] = useState('classic');
   const [deviceContactCount, setDeviceContactCount] = useState(0);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [inboxBadgeCount, setInboxBadgeCount] = useState(0);
 
   const [data, setData] = useState<any>({
   events: [],
@@ -529,11 +530,44 @@ const [
     }
   };
 
+  const loadInboxBadgeCount = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_my_unread_inbox_count');
+
+      if (error) {
+        console.log('Inbox badge load error:', error);
+        return;
+      }
+
+      setInboxBadgeCount(typeof data === 'number' ? data : 0);
+    } catch (err) {
+      console.log('Inbox badge load exception:', err);
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       void loadData();
-    }, [session])
+      void loadInboxBadgeCount();
+    }, [session, loadInboxBadgeCount])
   );
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('home-notifications-inbox-badge')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'notifications_inbox' },
+        () => {
+          void loadInboxBadgeCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [loadInboxBadgeCount]);
 
  const theme = DASHBOARD_THEMES[themeKey] || DASHBOARD_THEMES.classic;
 
@@ -618,20 +652,37 @@ const secondDegreeActivitySignals = useMemo(() => {
           </StyledText>
         </View>
 
-        <TouchableOpacity onPress={() => router.push('/profile')}>
-          {session?.user?.email ? (
-  <Image
-    source={{
-      uri:
-        avatarUrl ||
-        `https://ui-avatars.com/api/?name=${encodeURIComponent(
-          session.user.email
-        )}&background=43691b&color=fff`,
-    }}
-    style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: '#eee' }}
-  />
-) : null}
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            accessibilityLabel={t(lang, 'tab_inbox')}
+            onPress={() => router.push('/inbox' as any)}
+            style={styles.headerIconButton}
+          >
+            <Ionicons name="mail-outline" size={22} color="#0b1a2b" />
+            {inboxBadgeCount > 0 ? (
+              <View style={styles.headerBadge}>
+                <StyledText style={styles.headerBadgeText}>
+                  {inboxBadgeCount > 9 ? '9+' : inboxBadgeCount}
+                </StyledText>
+              </View>
+            ) : null}
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => router.push('/profile')}>
+            {session?.user?.email ? (
+              <Image
+                source={{
+                  uri:
+                    avatarUrl ||
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                      session.user.email
+                    )}&background=43691b&color=fff`,
+                }}
+                style={styles.avatar}
+              />
+            ) : null}
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -757,7 +808,7 @@ const secondDegreeActivitySignals = useMemo(() => {
           </>
         )}
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 24 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -952,6 +1003,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerIconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  headerBadge: {
+    position: 'absolute',
+    right: 1,
+    top: 1,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    paddingHorizontal: 4,
+    backgroundColor: '#6A4C93',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '900',
+    lineHeight: 11,
+  },
+  avatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#eee',
+  },
   mainTitle: {
     fontSize: 28,
     fontWeight: '900',
@@ -959,7 +1047,7 @@ const styles = StyleSheet.create({
     color: '#1f2a1b',
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingBottom: 132,
     backgroundColor: '#F6F7F9',
   },
   sectionHeader: {

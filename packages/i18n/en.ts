@@ -89,7 +89,7 @@ export const en: Record<TranslationKey, string> = {
   common_start: "Start",
   common_next: "Next",
 
-  home_title: "Social Feed",
+  home_title: "Life is better together",
   home_subtitle: "Plans and people moving around you.",
   home_start_something_title: "Start Something",
   home_start_something_cold_subtitle:
@@ -274,7 +274,7 @@ export const en: Record<TranslationKey, string> = {
     "Hi Pallinky Support,\n\nI need help with my account or a safety issue.\n\nAccount email: {email}\n\nIssue:\n",
   tab_events: "Events",
   tab_chat: "Chats",
-  tab_share: "Share",
+  tab_share: "Connect",
   tab_people: "People",
   tab_create: "Create",
   tab_inbox: "Inbox",
@@ -420,10 +420,10 @@ export const en: Record<TranslationKey, string> = {
   delete_account_failed: "Delete failed",
   delete_account_generic_error: "Something went wrong",
   delete_account_deleting: "Deleting...",
-  share_profile_title: "Share your profile",
+  share_profile_title: "Connect in person",
   share_profile_body:
     "Let someone scan this QR code to connect with you on Pallinky.",
-  share_profile_sign_in: "Sign in to create your share code.",
+  share_profile_sign_in: "Sign in to create your connect code.",
   inbox_title: "Inbox",
   inbox_empty_title: "No notifications yet",
   inbox_empty_body:

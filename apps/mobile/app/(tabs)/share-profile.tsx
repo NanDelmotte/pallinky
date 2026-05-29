@@ -1,6 +1,6 @@
 /**
- * Path: app/(tabs)/share.tsx
- * Description: Profile sharing page with QR code.
+ * Path: app/(tabs)/share-profile.tsx
+ * Description: In-person profile connection page with QR code.
  */
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -17,7 +17,7 @@ interface ProfileRow {
   avatar_url: string | null;
 }
 
-export default function ShareProfileScreen() {
+export default function ConnectProfileScreen() {
   const { session } = useSession();
   const { t } = useI18n();
 
@@ -45,7 +45,7 @@ export default function ShareProfileScreen() {
       if (!isMounted) return;
 
       if (error) {
-        console.log("Share profile load error:", error);
+        console.log("Connect profile load error:", error);
         setProfile({ id: session.user.id, full_name: null, avatar_url: null });
         setLoadingProfile(false);
         return;
