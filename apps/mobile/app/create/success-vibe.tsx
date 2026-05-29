@@ -88,6 +88,7 @@ export default function VibeSuccessScreen() {
     manage_handle,
     email,
     visibility,
+    invite_option,
     circleId,
   } = useLocalSearchParams<{
     slug: string;
@@ -96,11 +97,20 @@ export default function VibeSuccessScreen() {
     manage_handle?: string;
     email?: string;
     visibility?: string;
+    invite_option?: string;
     circleId?: string;
   }>();
 
   const visibilityMode = Number(visibility ?? 3);
   const isPublicEvent = visibilityMode === 3;
+  const inviteOption =
+    invite_option === 'direct' ||
+    invite_option === 'circle' ||
+    invite_option === 'friends_of_friends'
+      ? invite_option
+      : visibilityMode === 1
+      ? 'direct'
+      : 'circle';
 
   const { isHost } = useHostGate(slug);
   const { t } = useI18n();
@@ -197,6 +207,43 @@ export default function VibeSuccessScreen() {
     }
   };
 
+  const selectedShareOption =
+    inviteOption === 'direct'
+      ? {
+          icon: 'chatbubble-ellipses-outline' as const,
+          title: t('invite_options_direct_title'),
+          badge: t('invite_options_direct_badge'),
+          body: t('invite_options_direct_body'),
+          primaryLabel: t('create_success_share_link'),
+          primaryAction: requireNativeShare,
+          secondaryAction: () => requireHost('share'),
+          primaryIcon: isHost ? ('share-outline' as const) : ('lock-closed' as const),
+          secondaryIcon: isHost ? ('people' as const) : ('lock-closed' as const),
+        }
+      : inviteOption === 'friends_of_friends'
+      ? {
+          icon: 'git-network-outline' as const,
+          title: t('invite_options_friends_title'),
+          badge: t('invite_options_friends_badge'),
+          body: t('invite_options_friends_body'),
+          primaryLabel: t('create_success_share_link'),
+          primaryAction: requireNativeShare,
+          secondaryAction: () => requireHost('share'),
+          primaryIcon: isHost ? ('share-outline' as const) : ('lock-closed' as const),
+          secondaryIcon: isHost ? ('people' as const) : ('lock-closed' as const),
+        }
+      : {
+          icon: 'people-outline' as const,
+          title: t('invite_options_circle_title'),
+          badge: t('invite_options_circle_badge'),
+          body: t('invite_options_circle_body'),
+          primaryLabel: t('create_success_share_pallinky_friends'),
+          primaryAction: () => requireHost('share'),
+          secondaryAction: requireNativeShare,
+          primaryIcon: isHost ? ('people' as const) : ('lock-closed' as const),
+          secondaryIcon: isHost ? ('share-outline' as const) : ('lock-closed' as const),
+        };
+
   const handleStudioNav = () => {
     if (!manage_handle) {
       Alert.alert(t('create_success_missing_link'), t('create_success_missing_manage_handle'));
@@ -246,6 +293,34 @@ export default function VibeSuccessScreen() {
             <View style={styles.shareCard}>
                 <StyledText style={styles.label}>{t('event_share')}</StyledText>
 
+                <View style={styles.selectedShareCard}>
+                  <View style={styles.selectedShareIcon}>
+                    <Ionicons
+                      name={selectedShareOption.icon}
+                      size={22}
+                      color={COLORS.primary}
+                    />
+                  </View>
+
+                  <View style={styles.selectedShareText}>
+                    <View style={styles.selectedShareHeader}>
+                      <StyledText style={styles.selectedShareTitle}>
+                        {selectedShareOption.title}
+                      </StyledText>
+
+                      <View style={styles.selectedShareBadge}>
+                        <StyledText style={styles.selectedShareBadgeText}>
+                          {selectedShareOption.badge}
+                        </StyledText>
+                      </View>
+                    </View>
+
+                    <StyledText style={styles.selectedShareBody}>
+                      {selectedShareOption.body}
+                    </StyledText>
+                  </View>
+                </View>
+
                 <TextInput
                   style={styles.messageInput}
                   value={customMessage}
@@ -256,25 +331,28 @@ export default function VibeSuccessScreen() {
                 />
 
                 <View style={styles.buttonRow}>
-                  <TouchableOpacity style={styles.primaryBtn} onPress={() => requireHost('share')}>
+                  <TouchableOpacity
+                    style={styles.primaryBtn}
+                    onPress={selectedShareOption.primaryAction}
+                  >
                     <Ionicons
-                      name={isHost ? 'people' : 'lock-closed'}
+                      name={selectedShareOption.primaryIcon}
                       size={20}
                       color="#fff"
                     />
                     <StyledText style={styles.btnText}>
-                      {t('create_success_share_pallinky_friends')}
+                      {selectedShareOption.primaryLabel}
                     </StyledText>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     style={styles.nativeShareBtn}
-                    onPress={requireNativeShare}
+                    onPress={selectedShareOption.secondaryAction}
                     accessibilityRole="button"
                     accessibilityLabel={t('create_success_share_native')}
                   >
                     <Ionicons
-                      name={isHost ? 'share-outline' : 'lock-closed'}
+                      name={selectedShareOption.secondaryIcon}
                       size={22}
                       color={COLORS.primary}
                     />
@@ -368,7 +446,9 @@ export default function VibeSuccessScreen() {
             manage_handle || ''
           )}&email=${encodeURIComponent(email || '')}&visibility=${encodeURIComponent(
             visibility || ''
-          )}&circleId=${encodeURIComponent(circleId || '')}`}
+          )}&invite_option=${encodeURIComponent(inviteOption || '')}&circleId=${encodeURIComponent(
+            circleId || ''
+          )}`}
         />
       </SafeAreaView>
     </>
@@ -506,6 +586,56 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     textTransform: 'uppercase',
     marginBottom: 10,
+  },
+  selectedShareCard: {
+    flexDirection: 'row',
+    backgroundColor: '#f9faf7',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.borderSoft,
+    padding: 12,
+    marginBottom: 14,
+  },
+  selectedShareIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: '#EEF4E9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 11,
+  },
+  selectedShareText: {
+    flex: 1,
+  },
+  selectedShareHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 4,
+  },
+  selectedShareTitle: {
+    fontSize: 17,
+    lineHeight: 21,
+    fontWeight: '900',
+    color: COLORS.text,
+  },
+  selectedShareBadge: {
+    borderRadius: 999,
+    backgroundColor: '#EEF4E9',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+  },
+  selectedShareBadgeText: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: COLORS.primary,
+  },
+  selectedShareBody: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: COLORS.textMuted,
   },
   messageInput: {
     backgroundColor: '#f9faf7',
