@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -23,14 +24,16 @@ import { supabase, useSession } from '@pallinky/core';
 import { StyledText } from '@pallinky/ui';
 
 const COLORS = {
-  background: '#FFFFFF',
-  searchBg: '#F0F0F0',
-  text: '#050505',
-  muted: '#717171',
-  divider: '#E8E8E8',
-  green: '#25D366',
-  blue: '#3478F6',
-  avatarBg: '#D9F0FA',
+  background: '#F8FAF6',
+  searchBg: '#EFF4EA',
+  text: '#1F2A1B',
+  muted: '#66715F',
+  divider: '#D6DED0',
+  olive: '#43691B',
+  purple: '#6A4C93',
+  purpleBg: '#EFE9F7',
+  purpleText: '#5B3F84',
+  avatarBg: '#EFE9F7',
 };
 
 type ThreadRow = {
@@ -215,8 +218,6 @@ export default function ChatTabScreen() {
     });
   }, [query, rows, showArchived]);
 
-  const archivedCount = rows.filter((row) => row.archived).length;
-
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     void loadChats();
@@ -242,14 +243,37 @@ export default function ChatTabScreen() {
     [archivedIds, emailLower]
   );
 
+  const renderArchiveAction = useCallback(
+    (isArchived: boolean) => (
+      <View style={[styles.swipeAction, isArchived ? styles.unarchiveAction : styles.archiveAction]}>
+        <Ionicons
+          name={isArchived ? 'arrow-undo-outline' : 'archive-outline'}
+          size={18}
+          color="#FFFFFF"
+        />
+        <StyledText style={styles.swipeActionText}>
+          {isArchived ? 'Unarchive' : 'Archive'}
+        </StyledText>
+      </View>
+    ),
+    []
+  );
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.moreButton} activeOpacity={0.8}>
-          <Ionicons name="ellipsis-horizontal" size={24} color={COLORS.text} />
-        </TouchableOpacity>
-
-        <StyledText style={styles.title}>Chats</StyledText>
+        <View style={styles.headerTop}>
+          <StyledText style={styles.title}>Chats</StyledText>
+          {!showArchived ? (
+            <TouchableOpacity
+              style={styles.composeButton}
+              activeOpacity={0.85}
+              onPress={() => router.push('/chat/new' as any)}
+            >
+              <Ionicons name="create-outline" size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+          ) : null}
+        </View>
 
         <View style={styles.searchWrap}>
           <Ionicons name="search" size={18} color={COLORS.muted} />
@@ -277,14 +301,11 @@ export default function ChatTabScreen() {
           <StyledText style={styles.archiveText}>
             {showArchived ? 'Active chats' : 'Archived'}
           </StyledText>
-          {archivedCount > 0 && !showArchived ? (
-            <StyledText style={styles.archiveCount}>{archivedCount}</StyledText>
-          ) : null}
         </TouchableOpacity>
 
         {loading ? (
           <View style={styles.centered}>
-            <ActivityIndicator color={COLORS.green} />
+            <ActivityIndicator color={COLORS.purple} />
           </View>
         ) : visibleRows.length === 0 ? (
           <View style={styles.emptyState}>
@@ -306,69 +327,68 @@ export default function ChatTabScreen() {
               : { threadId: row.thread_id };
 
             return (
-              <TouchableOpacity
+              <Swipeable
                 key={row.thread_id}
-                style={styles.chatRow}
-                activeOpacity={0.75}
-                onPress={() => router.push({ pathname: '/chat/[threadId]', params } as any)}
-                onLongPress={() => void toggleArchive(String(row.thread_id))}
+                renderRightActions={() => renderArchiveAction(row.archived)}
+                rightThreshold={32}
+                overshootRight={false}
+                onSwipeableOpen={() => {
+                  void toggleArchive(String(row.thread_id));
+                }}
               >
-                {row.avatar_url ? (
-                  <Image source={{ uri: row.avatar_url }} style={styles.avatar} />
-                ) : (
-                  <View style={styles.avatarFallback}>
-                    {row.kind === 'direct' ? (
-                      <Ionicons name="person" size={22} color="#2A80B9" />
-                    ) : (
-                      <MaterialCommunityIcons
-                        name={getEventIconName(title) as any}
-                        size={23}
-                        color="#2A80B9"
-                      />
-                    )}
-                  </View>
-                )}
+                <TouchableOpacity
+                  style={styles.chatRow}
+                  activeOpacity={0.75}
+                  onPress={() => router.push({ pathname: '/chat/[threadId]', params } as any)}
+                >
+                  {row.avatar_url ? (
+                    <Image source={{ uri: row.avatar_url }} style={styles.avatar} />
+                  ) : (
+                    <View style={styles.avatarFallback}>
+                      {row.kind === 'direct' ? (
+                        <Ionicons name="person" size={22} color={COLORS.purpleText} />
+                      ) : (
+                        <MaterialCommunityIcons
+                          name={getEventIconName(title) as any}
+                          size={23}
+                          color={COLORS.purpleText}
+                        />
+                      )}
+                    </View>
+                  )}
 
-                <View style={styles.chatMain}>
-                  <View style={styles.rowTop}>
-                    <StyledText style={styles.chatTitle} numberOfLines={1}>
-                      {title}
-                    </StyledText>
-                    <StyledText style={styles.timeText}>{time}</StyledText>
-                  </View>
-
-                  <View style={styles.rowBottom}>
-                    <View style={styles.previewWrap}>
-                      {isPhoto ? (
-                        <Ionicons name="camera" size={14} color={COLORS.muted} />
-                      ) : null}
-                      <StyledText style={styles.previewText} numberOfLines={2}>
-                        {preview}
+                  <View style={styles.chatMain}>
+                    <View style={styles.rowTop}>
+                      <StyledText style={styles.chatTitle} numberOfLines={1}>
+                        {title}
                       </StyledText>
+                      <StyledText style={styles.timeText}>{time}</StyledText>
                     </View>
 
-                    {unreadCount > 0 ? (
-                      <View style={styles.unreadBadge}>
-                        <StyledText style={styles.unreadText}>{unreadCount}</StyledText>
+                    <View style={styles.rowBottom}>
+                      <View style={styles.previewWrap}>
+                        {isPhoto ? (
+                          <Ionicons name="camera" size={14} color={COLORS.muted} />
+                        ) : null}
+                        <StyledText style={styles.previewText} numberOfLines={2}>
+                          {preview}
+                        </StyledText>
                       </View>
-                    ) : null}
+
+                      {unreadCount > 0 ? (
+                        <View style={styles.unreadBadge}>
+                          <StyledText style={styles.unreadText}>{unreadCount}</StyledText>
+                        </View>
+                      ) : null}
+                    </View>
                   </View>
-                </View>
-              </TouchableOpacity>
+                </TouchableOpacity>
+              </Swipeable>
             );
           })
         )}
       </ScrollView>
 
-      {!showArchived ? (
-        <TouchableOpacity
-          style={styles.composeButton}
-          activeOpacity={0.85}
-          onPress={() => router.push('/chat/new' as any)}
-        >
-          <Ionicons name="create-outline" size={22} color="#FFFFFF" />
-        </TouchableOpacity>
-      ) : null}
     </SafeAreaView>
   );
 }
@@ -383,16 +403,14 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     paddingBottom: 6,
   },
-  moreButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  headerTop: {
+    marginTop: 4,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FAFAFA',
+    justifyContent: 'space-between',
+    gap: 16,
   },
   title: {
-    marginTop: 10,
     fontSize: 32,
     lineHeight: 37,
     fontWeight: '900',
@@ -411,7 +429,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 17,
-    fontWeight: '700',
+    fontWeight: '600',
     color: COLORS.text,
     paddingVertical: 10,
   },
@@ -424,6 +442,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     paddingVertical: 12,
     gap: 22,
+    backgroundColor: '#F8FAF6',
   },
   archiveText: {
     flex: 1,
@@ -453,7 +472,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#D9F0FA',
+    backgroundColor: COLORS.avatarBg,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -509,12 +528,30 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.green,
+    backgroundColor: COLORS.purple,
   },
   unreadText: {
     fontSize: 12,
     fontWeight: '800',
     color: '#fff',
+  },
+  swipeAction: {
+    width: 112,
+    minHeight: 68,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  archiveAction: {
+    backgroundColor: COLORS.purple,
+  },
+  unarchiveAction: {
+    backgroundColor: COLORS.olive,
+  },
+  swipeActionText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
   centered: {
     paddingTop: 40,
@@ -531,19 +568,16 @@ const styles = StyleSheet.create({
     color: COLORS.muted,
   },
   composeButton: {
-    position: 'absolute',
-    right: 24,
-    bottom: 94,
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: '#1F9D55',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: COLORS.purple,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOpacity: 0.18,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 12,
-    elevation: 4,
+    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 3,
   },
 });

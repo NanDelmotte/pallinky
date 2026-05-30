@@ -26,12 +26,14 @@ type EventRow = {
 };
 
 const COLORS = {
-  background: '#FFFFFF',
-  surface: '#F7F7F7',
-  text: '#111111',
-  muted: '#6B6B6B',
-  border: '#E8E8E8',
-  green: '#1F9D55',
+  background: '#F8FAF6',
+  surface: '#EFF4EA',
+  text: '#1F2A1B',
+  muted: '#66715F',
+  border: '#D6DED0',
+  purple: '#6A4C93',
+  purpleSoft: '#EFE9F7',
+  purpleText: '#5B3F84',
 };
 
 function normalizeEmail(value: string | null | undefined) {
@@ -200,7 +202,7 @@ export default function AttachEventPage() {
 
         {loading ? (
           <View style={styles.centered}>
-            <ActivityIndicator color={COLORS.green} />
+            <ActivityIndicator color={COLORS.purple} />
           </View>
         ) : sortedEvents.length === 0 ? (
           <View style={styles.centered}>
@@ -216,7 +218,7 @@ export default function AttachEventPage() {
               disabled={!!attachingId}
             >
               <View style={styles.iconWrap}>
-                <MaterialCommunityIcons name="calendar-heart" size={22} color={COLORS.green} />
+                <MaterialCommunityIcons name="calendar-heart" size={22} color={COLORS.purpleText} />
               </View>
 
               <View style={styles.rowText}>
@@ -225,7 +227,7 @@ export default function AttachEventPage() {
               </View>
 
               {attachingId === event.id ? (
-                <ActivityIndicator color={COLORS.green} />
+                <ActivityIndicator color={COLORS.purple} />
               ) : (
                 <Ionicons name="chevron-forward" size={18} color={COLORS.muted} />
               )}
@@ -307,7 +309,7 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: '#E7F7EC',
+    backgroundColor: COLORS.purpleSoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -315,7 +317,7 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: COLORS.green,
+    backgroundColor: COLORS.purple,
     alignItems: 'center',
     justifyContent: 'center',
   },

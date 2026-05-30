@@ -44,25 +44,13 @@ export default function EventChatResolverPage() {
         if (eventError) throw eventError;
         if (!eventData?.id) throw new Error('Event not found');
 
-        const { data: linkedThreads, error: linkedThreadError } = await supabase
-          .from('chat_thread_events')
-          .select('thread_id, created_at')
-          .eq('event_id', eventData.id)
-          .order('created_at', { ascending: false })
-          .limit(1);
+        const threadResponse = await supabase.rpc('get_or_create_event_primary_chat_thread', {
+          p_event_id: eventData.id,
+          p_user_email: viewerEmail,
+        });
 
-        if (linkedThreadError) throw linkedThreadError;
-
-        let threadId = linkedThreads?.[0]?.thread_id || null;
-
-        if (!threadId) {
-          const threadResponse = await supabase.rpc('get_or_create_event_chat_thread', {
-            p_event_id: eventData.id,
-          });
-
-          if (threadResponse.error) throw threadResponse.error;
-          threadId = threadResponse.data;
-        }
+        if (threadResponse.error) throw threadResponse.error;
+        const threadId = threadResponse.data;
 
         if (!threadId) throw new Error('Could not open chat');
         if (cancelled) return;

@@ -15,11 +15,11 @@ import { supabase, useSession } from '@pallinky/core';
 import { StyledText } from '@pallinky/ui';
 
 const COLORS = {
-  background: '#FFFFFF',
-  surface: '#F7F7F7',
-  text: '#111111',
-  muted: '#6B6B6B',
-  green: '#1F9D55',
+  background: '#F8FAF6',
+  surface: '#EFF4EA',
+  text: '#1F2A1B',
+  muted: '#66715F',
+  purple: '#6A4C93',
 };
 
 function normalizeEmail(value: string | null | undefined) {
@@ -93,21 +93,21 @@ export default function EditChatThreadPage() {
         </TouchableOpacity>
 
         <View style={styles.headerTextWrap}>
-          <StyledText style={styles.title}>Edit group name</StyledText>
-          <StyledText style={styles.subtitle}>Choose what everyone sees</StyledText>
+          <StyledText style={styles.title}>Edit chat name</StyledText>
+          <StyledText style={styles.subtitle}>Choose what people see</StyledText>
         </View>
       </View>
 
       <View style={styles.body}>
         {loading ? (
-          <ActivityIndicator color={COLORS.green} />
+          <ActivityIndicator color={COLORS.purple} />
         ) : (
           <>
             <View style={styles.inputWrap}>
               <TextInput
                 value={title}
                 onChangeText={setTitle}
-                placeholder="Group name"
+                placeholder="Chat name"
                 placeholderTextColor={COLORS.muted}
                 style={styles.input}
                 autoFocus
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
   saveButton: {
     height: 48,
     borderRadius: 24,
-    backgroundColor: COLORS.green,
+    backgroundColor: COLORS.purple,
     alignItems: 'center',
     justifyContent: 'center',
   },

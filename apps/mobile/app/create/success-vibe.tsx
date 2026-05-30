@@ -162,7 +162,7 @@ export default function VibeSuccessScreen() {
 
     async function attachIfNeeded() {
       const viewerEmail = session?.user?.email?.toLowerCase().trim() || '';
-      if (!pendingChatThreadId || !slug || !viewerEmail || chatAttachReady) return;
+      if (!slug || !viewerEmail || chatAttachReady) return;
 
       try {
         const { data: eventData, error: eventError } = await supabase
@@ -174,19 +174,36 @@ export default function VibeSuccessScreen() {
         if (eventError) throw eventError;
         if (!eventData?.id) throw new Error('Event not found');
 
-        const { error: attachError } = await supabase.rpc('attach_event_to_chat_thread', {
-          p_thread_id: pendingChatThreadId,
-          p_event_id: eventData.id,
-          p_attached_by_email: viewerEmail,
-        });
+        if (pendingChatThreadId) {
+          const { error: attachError } = await supabase.rpc('attach_event_to_chat_thread', {
+            p_thread_id: pendingChatThreadId,
+            p_event_id: eventData.id,
+            p_attached_by_email: viewerEmail,
+          });
 
-        if (attachError) throw attachError;
+          if (attachError) throw attachError;
+        } else {
+          const { error: threadError } = await supabase.rpc('get_or_create_event_primary_chat_thread', {
+            p_event_id: eventData.id,
+            p_user_email: viewerEmail,
+          });
+
+          if (threadError) throw threadError;
+        }
+
         if (cancelled) return;
 
         setChatAttachReady(true);
-        await AsyncStorage.removeItem(PENDING_CHAT_EVENT_THREAD_KEY);
+        if (pendingChatThreadId) {
+          await AsyncStorage.removeItem(PENDING_CHAT_EVENT_THREAD_KEY);
+        }
       } catch (err) {
-        console.error('Failed to attach new event to chat thread', err);
+        console.error(
+          pendingChatThreadId
+            ? 'Failed to attach new event to chat thread'
+            : 'Failed to initialize event chat thread',
+          err
+        );
       }
     }
 

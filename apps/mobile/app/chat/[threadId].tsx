@@ -19,21 +19,24 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { supabase, useSession } from '@pallinky/core';
+import { GiphyPicker } from '@pallinky/ui';
 
 const COLORS = {
-  background: '#EFEAE2',
-  header: '#F7F5F0',
-  headerText: '#111111',
-  muted: '#656565',
-  bubbleMine: '#D9FDD3',
+  background: '#F3F5F1',
+  header: '#F8FAF6',
+  headerText: '#1F2A1B',
+  muted: '#66715F',
+  bubbleMine: '#EFE9F7',
   bubbleOther: '#FFFFFF',
   inputBg: '#FFFFFF',
-  divider: '#E5DED4',
-  green: '#1F9D55',
-  iconBg: '#FFFFFF',
+  divider: '#DCE5D4',
+  green: '#6A4C93',
+  purple: '#6A4C93',
+  iconBg: '#F1ECF7',
 };
 
 const NAME_COLORS = ['#C83F5D', '#2E8B57', '#2D70C9', '#8B5FBF', '#D27A20', '#078A8A'];
+const QUICK_EMOJIS = ['😀', '😂', '🥰', '🎉', '❤️', '👍', '🙏', '🔥'];
 
 type ChatMessage = {
   id: string;
@@ -57,6 +60,16 @@ type ThreadDetails = {
   latest_event_title: string | null;
   latest_event_slug: string | null;
   avatar_url: string | null;
+};
+
+type LinkedEvent = {
+  event_id: string;
+  event_slug: string | null;
+  event_title: string | null;
+  starts_at: string | null;
+  cover_image_url: string | null;
+  host_name: string | null;
+  attached_at: string;
 };
 
 function normalizeEmail(value: string | null | undefined) {
@@ -100,7 +113,8 @@ function DoodleBackground() {
         const left = `${(index * 23) % 100}%` as `${number}%`;
         const top = `${(index * 17) % 100}%` as `${number}%`;
         const rotate = `${(index * 29) % 360}deg`;
-        const icon = ['○', '+', '□', '◇', '♡', '✦'][index % 6];
+        const icon = ['○', '·', '□', '◇', '✦', '◌'][index % 6];
+        const color = index % 5 === 0 ? 'rgba(106, 76, 147, 0.10)' : 'rgba(67, 105, 27, 0.09)';
 
         return (
           <Text
@@ -108,6 +122,7 @@ function DoodleBackground() {
             style={[
               styles.doodle,
               {
+                color,
                 left,
                 top,
                 transform: [{ rotate }],
@@ -130,7 +145,7 @@ function titleForSystemMessage(message: ChatMessage) {
 }
 
 export default function ChatThreadPage() {
-  const { threadId, eventSlug } = useLocalSearchParams<{ threadId: string; eventSlug?: string }>();
+  const { threadId } = useLocalSearchParams<{ threadId: string }>();
   const router = useRouter();
   const { session } = useSession();
   const scrollRef = useRef<ScrollView | null>(null);
@@ -143,7 +158,10 @@ export default function ChatThreadPage() {
   const [thread, setThread] = useState<ThreadDetails | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [profilesByEmail, setProfilesByEmail] = useState<Record<string, string>>({});
+  const [linkedEventsById, setLinkedEventsById] = useState<Record<string, LinkedEvent>>({});
   const [body, setBody] = useState('');
+  const [showEmojiTray, setShowEmojiTray] = useState(false);
+  const [showGiphyPicker, setShowGiphyPicker] = useState(false);
 
   const fetchChat = useCallback(async () => {
     if (!threadId || !viewerEmail) {
@@ -154,7 +172,11 @@ export default function ChatThreadPage() {
     setLoading(true);
 
     try {
-      const [{ data: threadData, error: threadError }, { data: messageData, error: messageError }] =
+      const [
+        { data: threadData, error: threadError },
+        { data: messageData, error: messageError },
+        { data: linkedEventData, error: linkedEventError },
+      ] =
         await Promise.all([
           supabase.rpc('get_chat_thread_details', {
             p_thread_id: threadId,
@@ -164,16 +186,28 @@ export default function ChatThreadPage() {
             p_thread_id: threadId,
             p_user_email: viewerEmail,
           }),
+          supabase.rpc('get_chat_thread_events', {
+            p_thread_id: threadId,
+            p_user_email: viewerEmail,
+          }),
         ]);
 
       if (threadError) throw threadError;
       if (messageError) throw messageError;
+      if (linkedEventError) throw linkedEventError;
 
       const nextThread = ((threadData || [])[0] || null) as ThreadDetails | null;
       const nextMessages = (messageData || []) as ChatMessage[];
+      const nextLinkedEvents = (linkedEventData || []) as LinkedEvent[];
 
       setThread(nextThread);
       setMessages(nextMessages);
+      setLinkedEventsById(
+        nextLinkedEvents.reduce<Record<string, LinkedEvent>>((acc, eventRow) => {
+          acc[String(eventRow.event_id)] = eventRow;
+          return acc;
+        }, {})
+      );
 
       const senderEmails = Array.from(
         new Set(nextMessages.map((item) => normalizeEmail(item.sender_email_lc)).filter(Boolean))
@@ -202,6 +236,7 @@ export default function ChatThreadPage() {
       console.error(err);
       setThread(null);
       setMessages([]);
+      setLinkedEventsById({});
     } finally {
       setLoading(false);
     }
@@ -247,6 +282,13 @@ export default function ChatThreadPage() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'chat_messages', filter: `thread_id=eq.${threadId}` },
+        () => {
+          void fetchChat();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'chat_thread_participants', filter: `thread_id=eq.${threadId}` },
         () => {
           void fetchChat();
         }
@@ -368,10 +410,49 @@ export default function ChatThreadPage() {
     }
   }, [body, fetchChat, sending, threadId, viewerEmail]);
 
+  const appendEmoji = useCallback((emoji: string) => {
+    setBody((current) => `${current}${emoji}`);
+  }, []);
+
+  const handleSendGif = useCallback(
+    async (url: string) => {
+      if (!threadId || !viewerEmail || !url) return;
+
+      try {
+        const { error } = await supabase.rpc('send_chat_message', {
+          p_thread_id: threadId,
+          p_sender_email: viewerEmail,
+          p_body: null,
+          p_image_url: url,
+          p_metadata: { media_kind: 'gif' },
+        });
+
+        if (error) throw error;
+
+        setShowGiphyPicker(false);
+        await fetchChat();
+      } catch (err: any) {
+        console.error('Could not send GIF', err);
+        Alert.alert('Could not send GIF', err?.message || 'Please try again.');
+      }
+    },
+    [fetchChat, threadId, viewerEmail]
+  );
+
   const title = thread?.title || 'Chat';
   const participantPreview = thread?.participant_preview || 'Chat';
   const avatarUrl = thread?.avatar_url || null;
-  const linkedEventSlug = thread?.latest_event_slug || eventSlug || null;
+  const openEventFromMessage = useCallback(
+    (message: ChatMessage) => {
+      const metadataEventId = message.metadata?.event_id ? String(message.metadata.event_id) : '';
+      const metadataEventSlug = message.metadata?.event_slug ? String(message.metadata.event_slug) : '';
+      const linkedEvent = metadataEventId ? linkedEventsById[metadataEventId] : null;
+      const slug = metadataEventSlug || linkedEvent?.event_slug || '';
+      if (!slug) return;
+      router.push(`/event/${slug}/details` as any);
+    },
+    [linkedEventsById, router]
+  );
 
   const groupedMessages = useMemo(() => messages, [messages]);
 
@@ -415,9 +496,9 @@ export default function ChatThreadPage() {
 
           <TouchableOpacity
             style={styles.headerIdentity}
-            activeOpacity={linkedEventSlug ? 0.8 : 1}
-            onPress={
-              linkedEventSlug ? () => router.push(`/event/${linkedEventSlug}/details` as any) : undefined
+            activeOpacity={0.8}
+            onPress={() =>
+              router.push({ pathname: '/chat/info/[threadId]', params: { threadId } } as any)
             }
           >
             {avatarUrl ? (
@@ -425,7 +506,7 @@ export default function ChatThreadPage() {
             ) : (
               <View style={styles.headerAvatarFallback}>
                 {thread.kind === 'direct' ? (
-                  <Ionicons name="person" size={20} color="#2A80B9" />
+                  <Ionicons name="person" size={20} color={COLORS.purple} />
                 ) : (
                   <Text style={styles.headerAvatarText}>{getInitials(title)}</Text>
                 )}
@@ -442,28 +523,26 @@ export default function ChatThreadPage() {
             </View>
           </TouchableOpacity>
 
-          <View style={styles.headerActions}>
-            {thread.kind === 'group' ? (
+            <View style={styles.headerActions}>
               <TouchableOpacity
                 style={styles.headerCircle}
                 onPress={() =>
-                  router.push({ pathname: '/chat/edit/[threadId]', params: { threadId } } as any)
+                  router.push({ pathname: '/chat/people/[threadId]', params: { threadId } } as any)
                 }
               >
-                <Ionicons name="pencil-outline" size={20} color={COLORS.headerText} />
+                <Ionicons name="person-add-outline" size={20} color={COLORS.headerText} />
               </TouchableOpacity>
-            ) : null}
 
-            {linkedEventSlug ? (
               <TouchableOpacity
                 style={styles.headerCircle}
-                onPress={() => router.push(`/event/${linkedEventSlug}/details` as any)}
+                onPress={() =>
+                  router.push({ pathname: '/chat/events/[threadId]', params: { threadId } } as any)
+                }
               >
                 <Ionicons name="calendar-outline" size={22} color={COLORS.headerText} />
               </TouchableOpacity>
-            ) : null}
+            </View>
           </View>
-        </View>
 
         <View style={styles.chatArea}>
           <DoodleBackground />
@@ -485,16 +564,32 @@ export default function ChatThreadPage() {
                 const senderName = getDisplayName(message.sender_email_lc);
 
                 if (message.message_type === 'event_attachment') {
+                  const metadataEventId = message.metadata?.event_id
+                    ? String(message.metadata.event_id)
+                    : '';
+                  const metadataEventSlug = message.metadata?.event_slug
+                    ? String(message.metadata.event_slug)
+                    : '';
+                  const eventRow = metadataEventId ? linkedEventsById[metadataEventId] : null;
+                  const canOpenEvent = Boolean(metadataEventSlug || eventRow?.event_slug);
+
                   return (
                     <View key={message.id} style={styles.systemRow}>
-                      <View style={styles.systemBubble}>
+                      <TouchableOpacity
+                        activeOpacity={canOpenEvent ? 0.8 : 1}
+                        disabled={!canOpenEvent}
+                        onPress={() => openEventFromMessage(message)}
+                        style={styles.systemBubble}
+                      >
                         <MaterialCommunityIcons
                           name="calendar-heart"
                           size={16}
                           color={COLORS.green}
                         />
-                        <Text style={styles.systemText}>{titleForSystemMessage(message)}</Text>
-                      </View>
+                        <Text style={styles.systemText}>
+                          {eventRow?.event_title || titleForSystemMessage(message)}
+                        </Text>
+                      </TouchableOpacity>
                     </View>
                   );
                 }
@@ -556,17 +651,34 @@ export default function ChatThreadPage() {
           </ScrollView>
         </View>
 
-        <View style={styles.composerWrap}>
-          <TouchableOpacity
-            style={styles.composerIcon}
-            onPress={() =>
-              router.push({ pathname: '/chat/attach-event', params: { threadId } } as any)
-            }
-          >
-            <Ionicons name="add" size={28} color={COLORS.headerText} />
-          </TouchableOpacity>
+        {showEmojiTray ? (
+          <View style={styles.emojiTray}>
+            {QUICK_EMOJIS.map((emoji) => (
+              <TouchableOpacity
+                key={emoji}
+                style={styles.emojiChip}
+                activeOpacity={0.82}
+                onPress={() => appendEmoji(emoji)}
+              >
+                <Text style={styles.emojiText}>{emoji}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : null}
 
+        <View style={styles.composerWrap}>
           <View style={styles.inputWrap}>
+            <TouchableOpacity
+              style={styles.inlineIconButton}
+              onPress={() => setShowEmojiTray((current) => !current)}
+            >
+              <Ionicons
+                name={showEmojiTray ? 'happy' : 'happy-outline'}
+                size={22}
+                color={COLORS.headerText}
+              />
+            </TouchableOpacity>
+
             <TextInput
               style={styles.input}
               placeholder=""
@@ -576,7 +688,18 @@ export default function ChatThreadPage() {
               multiline
             />
 
-            <TouchableOpacity onPress={pickImage} disabled={uploadingImage}>
+            <TouchableOpacity
+              style={styles.inlineIconButton}
+              onPress={() => setShowGiphyPicker(true)}
+            >
+              <Text style={styles.gifButtonText}>GIF</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.inlineIconButton}
+              onPress={pickImage}
+              disabled={uploadingImage}
+            >
               {uploadingImage ? (
                 <ActivityIndicator color={COLORS.green} />
               ) : (
@@ -595,6 +718,14 @@ export default function ChatThreadPage() {
             </TouchableOpacity>
           ) : null}
         </View>
+
+        <GiphyPicker
+          visible={showGiphyPicker}
+          onClose={() => setShowGiphyPicker(false)}
+          onSelect={(url) => {
+            void handleSendGif(url);
+          }}
+        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -650,20 +781,20 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#D9F0FA',
+    backgroundColor: '#DCE8D0',
   },
   headerAvatarFallback: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#CFEFFF',
+    backgroundColor: '#E3ECD9',
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerAvatarText: {
     fontSize: 14,
     fontWeight: '900',
-    color: '#2A80B9',
+    color: COLORS.purple,
   },
   headerTextWrap: {
     flex: 1,
@@ -688,9 +819,8 @@ const styles = StyleSheet.create({
   },
   doodle: {
     position: 'absolute',
-    color: 'rgba(171, 150, 120, 0.16)',
-    fontSize: 24,
-    fontWeight: '900',
+    fontSize: 22,
+    fontWeight: '800',
   },
   scrollContent: {
     paddingHorizontal: 10,
@@ -700,7 +830,7 @@ const styles = StyleSheet.create({
   emptyState: {
     marginTop: 24,
     alignSelf: 'center',
-    backgroundColor: 'rgba(255,255,255,0.78)',
+    backgroundColor: 'rgba(255,255,255,0.88)',
     paddingHorizontal: 16,
     paddingVertical: 9,
     borderRadius: 14,
@@ -746,10 +876,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 9,
     paddingVertical: 6,
-    shadowColor: '#000',
+    shadowColor: '#1F2A1B',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 1,
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   messageBubbleMine: {
     backgroundColor: COLORS.bubbleMine,
@@ -772,7 +902,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 21,
     fontWeight: '400',
-    color: '#111',
+    color: COLORS.headerText,
   },
   messageImage: {
     width: 210,
@@ -803,12 +933,37 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: 'rgba(248,250,246,0.96)',
+    borderWidth: 1,
+    borderColor: 'rgba(106,76,147,0.10)',
   },
   systemText: {
     fontSize: 14,
     fontWeight: '700',
     color: COLORS.headerText,
+  },
+  emojiTray: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: 4,
+    backgroundColor: COLORS.header,
+  },
+  emojiChip: {
+    minWidth: 40,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(106,76,147,0.10)',
+  },
+  emojiText: {
+    fontSize: 20,
   },
   composerWrap: {
     flexDirection: 'row',
@@ -819,10 +974,9 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.header,
     gap: 8,
   },
-  composerIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+  inlineIconButton: {
+    minWidth: 24,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -846,6 +1000,11 @@ const styles = StyleSheet.create({
     color: COLORS.headerText,
     paddingTop: 0,
     paddingBottom: 0,
+  },
+  gifButtonText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: COLORS.headerText,
   },
   sendBtn: {
     width: 38,

@@ -10,11 +10,15 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { supabase, useSession } from '@pallinky/core';
 import { StyledText } from '@pallinky/ui';
+
+type MemberRow = {
+  user_email_lc: string;
+};
 
 type Candidate = {
   email: string;
@@ -50,21 +54,21 @@ function initialsFor(value: string) {
     .join('') || 'CH';
 }
 
-export default function NewChatPage() {
+export default function AddPeopleToChatPage() {
+  const { threadId } = useLocalSearchParams<{ threadId: string }>();
   const router = useRouter();
   const { session } = useSession();
   const emailLower = normalizeEmail(session?.user?.email);
   const userId = session?.user?.id || '';
 
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
+  const [adding, setAdding] = useState(false);
   const [query, setQuery] = useState('');
-  const [groupTitle, setGroupTitle] = useState('');
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
 
   const loadCandidates = useCallback(async () => {
-    if (!emailLower || !userId) {
+    if (!emailLower || !userId || !threadId) {
       setCandidates([]);
       setLoading(false);
       return;
@@ -73,25 +77,37 @@ export default function NewChatPage() {
     try {
       setLoading(true);
 
-      const { data: relationshipRows, error } = await supabase
-        .from('relationships')
-        .select(`
-          related_person_id,
-          people:related_person_id (
-            id,
-            email_lc
-          )
-        `)
-        .eq('owner_user_id', userId)
-        .eq('relationship_type', 'direct');
+      const [{ data: members, error: membersError }, { data: relationshipRows, error }] =
+        await Promise.all([
+          supabase.rpc('get_chat_thread_members', {
+            p_thread_id: threadId,
+            p_user_email: emailLower,
+          }),
+          supabase
+            .from('relationships')
+            .select(`
+              related_person_id,
+              people:related_person_id (
+                id,
+                email_lc
+              )
+            `)
+            .eq('owner_user_id', userId)
+            .eq('relationship_type', 'direct'),
+        ]);
 
+      if (membersError) throw membersError;
       if (error) throw error;
+
+      const existingEmails = new Set(
+        ((members || []) as MemberRow[]).map((member) => normalizeEmail(member.user_email_lc))
+      );
 
       const directEmails = Array.from(
         new Set(
           ((relationshipRows || []) as any[])
             .map((row) => normalizeEmail(row.people?.email_lc))
-            .filter((email) => email && email !== emailLower)
+            .filter((email) => email && email !== emailLower && !existingEmails.has(email))
         )
       );
 
@@ -128,12 +144,12 @@ export default function NewChatPage() {
 
       setCandidates(nextCandidates);
     } catch (err) {
-      console.error('Failed to load chat candidates', err);
+      console.error('Failed to load add-people candidates', err);
       setCandidates([]);
     } finally {
       setLoading(false);
     }
-  }, [emailLower, userId]);
+  }, [emailLower, threadId, userId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -157,63 +173,34 @@ export default function NewChatPage() {
     );
   }, []);
 
-  const handleCreate = useCallback(async () => {
-    if (!emailLower || selectedEmails.length === 0 || creating) return;
+  const handleAddPeople = useCallback(async () => {
+    if (!threadId || !emailLower || selectedEmails.length === 0 || adding) return;
 
-    setCreating(true);
+    setAdding(true);
 
     try {
-      if (selectedEmails.length === 1) {
-        const { data, error } = await supabase.rpc('get_or_create_direct_chat_thread', {
-          p_user_email: emailLower,
-          p_other_email: selectedEmails[0],
-        });
-
-        let nextThreadId = data ? String(data) : '';
-
-        if (error || !nextThreadId) {
-          const fallback = await supabase.rpc('create_chat_thread', {
-            p_creator_email: emailLower,
-            p_title: null,
-            p_participant_emails: selectedEmails,
-            p_kind: 'direct',
-          });
-
-          if (fallback.error || !fallback.data) {
-            throw fallback.error || error || new Error('Could not create direct chat');
-          }
-
-          nextThreadId = String(fallback.data);
-        }
-
-        router.replace({ pathname: '/chat/[threadId]', params: { threadId: nextThreadId } } as any);
-        return;
-      }
-
-      const fallbackTitle =
-        groupTitle.trim() ||
-        selectedEmails
-          .map((email) => candidates.find((candidate) => candidate.email === email)?.name || fallbackName(email))
-          .slice(0, 3)
-          .join(', ');
-
-      const { data, error } = await supabase.rpc('create_chat_thread', {
-        p_creator_email: emailLower,
-        p_title: fallbackTitle,
+      const { data, error } = await supabase.rpc('add_people_to_chat_thread', {
+        p_thread_id: threadId,
+        p_added_by_email: emailLower,
         p_participant_emails: selectedEmails,
-        p_kind: 'group',
       });
 
       if (error) throw error;
 
-      router.replace({ pathname: '/chat/[threadId]', params: { threadId: String(data) } } as any);
-    } catch (err) {
-      console.error('Failed to create chat', err);
-      Alert.alert('Could not create chat', 'Please try again.');
+      const addedCount = Number((data as any)?.[0]?.added_count || 0);
+      if (addedCount === 0) {
+        Alert.alert('No one new was added', 'Everyone you selected is already in this chat.');
+        return;
+      }
+
+      router.back();
+    } catch (err: any) {
+      console.error('Failed to add people to chat', err);
+      Alert.alert('Could not add people', err?.message || 'Please try again.');
     } finally {
-      setCreating(false);
+      setAdding(false);
     }
-  }, [candidates, creating, emailLower, groupTitle, router, selectedEmails]);
+  }, [adding, emailLower, router, selectedEmails, threadId]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -223,22 +210,18 @@ export default function NewChatPage() {
         </TouchableOpacity>
 
         <View style={styles.headerTextWrap}>
-          <StyledText style={styles.title}>New chat</StyledText>
+          <StyledText style={styles.title}>Add people</StyledText>
           <StyledText style={styles.subtitle}>
-            {selectedEmails.length > 0 ? `${selectedEmails.length} selected` : 'Choose people'}
+            {selectedEmails.length > 0 ? `${selectedEmails.length} selected` : 'Anyone in the chat can add people'}
           </StyledText>
         </View>
 
         <TouchableOpacity
-          style={[styles.startButton, selectedEmails.length === 0 && styles.startButtonDisabled]}
-          onPress={handleCreate}
-          disabled={selectedEmails.length === 0 || creating}
+          style={[styles.addButton, selectedEmails.length === 0 && styles.addButtonDisabled]}
+          onPress={handleAddPeople}
+          disabled={selectedEmails.length === 0 || adding}
         >
-          {creating ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <StyledText style={styles.startButtonText}>Start</StyledText>
-          )}
+          {adding ? <ActivityIndicator color="#fff" /> : <StyledText style={styles.addButtonText}>Add</StyledText>}
         </TouchableOpacity>
       </View>
 
@@ -253,45 +236,33 @@ export default function NewChatPage() {
         />
       </View>
 
-      {selectedEmails.length > 1 ? (
-        <View style={styles.groupTitleWrap}>
-          <TextInput
-            value={groupTitle}
-            onChangeText={setGroupTitle}
-            placeholder="Group name"
-            placeholderTextColor={COLORS.muted}
-            style={styles.groupTitleInput}
-          />
-        </View>
-      ) : null}
-
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {loading ? (
           <View style={styles.centered}>
             <ActivityIndicator color={COLORS.purple} />
           </View>
         ) : filteredCandidates.length === 0 ? (
-          <View style={styles.centered}>
-            <StyledText style={styles.emptyText}>No people available yet</StyledText>
+          <View style={styles.emptyWrap}>
+            <StyledText style={styles.emptyTitle}>No one new to add</StyledText>
+            <StyledText style={styles.emptyBody}>
+              People from your direct circle who are not already in this chat will show up here.
+            </StyledText>
           </View>
         ) : (
           filteredCandidates.map((candidate) => {
             const selected = selectedEmails.includes(candidate.email);
-
             return (
               <TouchableOpacity
                 key={candidate.email}
-                style={styles.row}
-                activeOpacity={0.8}
+                style={[styles.row, selected && styles.rowSelected]}
+                activeOpacity={0.82}
                 onPress={() => toggleSelected(candidate.email)}
               >
                 {candidate.avatarUrl ? (
                   <Image source={{ uri: candidate.avatarUrl }} style={styles.avatar} />
                 ) : (
-                  <View style={styles.avatarFallback}>
-                    <StyledText style={styles.avatarFallbackText}>
-                      {initialsFor(candidate.name)}
-                    </StyledText>
+                  <View style={[styles.avatarFallback, selected && styles.avatarFallbackSelected]}>
+                    <StyledText style={styles.avatarText}>{initialsFor(candidate.name)}</StyledText>
                   </View>
                 )}
 
@@ -301,7 +272,7 @@ export default function NewChatPage() {
                 </View>
 
                 <View style={[styles.checkbox, selected && styles.checkboxSelected]}>
-                  {selected ? <Ionicons name="checkmark" size={16} color="#fff" /> : null}
+                  {selected ? <Ionicons name="checkmark" size={16} color="#FFFFFF" /> : null}
                 </View>
               </TouchableOpacity>
             );
@@ -318,55 +289,53 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   header: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    paddingHorizontal: 18,
+    paddingTop: 4,
+    paddingBottom: 10,
   },
   headerButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: COLORS.surface,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: COLORS.surface,
   },
   headerTextWrap: {
     flex: 1,
-    minWidth: 0,
   },
   title: {
     fontSize: 28,
-    lineHeight: 32,
     fontWeight: '900',
     color: COLORS.text,
   },
   subtitle: {
-    marginTop: 2,
-    fontSize: 13,
-    fontWeight: '600',
+    marginTop: 3,
+    fontSize: 14,
     color: COLORS.muted,
   },
-  startButton: {
-    minWidth: 72,
-    height: 40,
-    borderRadius: 20,
-    paddingHorizontal: 16,
+  addButton: {
+    minWidth: 58,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.purple,
+    paddingHorizontal: 14,
   },
-  startButtonDisabled: {
-    opacity: 0.45,
+  addButtonDisabled: {
+    backgroundColor: '#AADFC0',
   },
-  startButtonText: {
-    fontSize: 15,
+  addButtonText: {
+    fontSize: 14,
     fontWeight: '800',
-    color: '#fff',
+    color: '#FFFFFF',
   },
   searchWrap: {
-    marginHorizontal: 16,
+    marginHorizontal: 18,
     minHeight: 42,
     borderRadius: 21,
     backgroundColor: COLORS.surface,
@@ -377,90 +346,101 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: 16,
     color: COLORS.text,
     paddingVertical: 10,
   },
-  groupTitleWrap: {
-    marginHorizontal: 16,
-    marginTop: 12,
-    borderRadius: 18,
-    backgroundColor: COLORS.surface,
-    paddingHorizontal: 14,
-  },
-  groupTitleInput: {
-    minHeight: 44,
-    fontSize: 16,
-    color: COLORS.text,
-  },
   content: {
-    paddingTop: 12,
-    paddingBottom: 36,
-  },
-  centered: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 60,
-  },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.muted,
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    paddingBottom: 32,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 11,
     gap: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    marginTop: 10,
   },
-  avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-  },
-  avatarFallback: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    alignItems: 'center',
-    justifyContent: 'center',
+  rowSelected: {
+    borderColor: COLORS.purple,
     backgroundColor: COLORS.purpleSoft,
   },
-  avatarFallbackText: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: COLORS.purpleText,
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.purpleSoft,
+  },
+  avatarFallback: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F2F2F2',
+  },
+  avatarFallbackSelected: {
+    backgroundColor: '#D5F1DF',
+  },
+  avatarText: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.text,
   },
   rowText: {
     flex: 1,
     minWidth: 0,
   },
   rowTitle: {
-    fontSize: 17,
-    lineHeight: 21,
+    fontSize: 16,
     fontWeight: '800',
     color: COLORS.text,
   },
   rowSubtitle: {
     marginTop: 2,
     fontSize: 13,
-    lineHeight: 17,
-    fontWeight: '500',
     color: COLORS.muted,
   },
   checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: '#C9C9C9',
+    borderColor: COLORS.border,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: COLORS.background,
   },
   checkboxSelected: {
-    backgroundColor: COLORS.purple,
     borderColor: COLORS.purple,
+    backgroundColor: COLORS.purple,
+  },
+  centered: {
+    paddingTop: 36,
+    alignItems: 'center',
+  },
+  emptyWrap: {
+    marginTop: 28,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: '900',
+    color: COLORS.text,
+  },
+  emptyBody: {
+    marginTop: 6,
+    fontSize: 14,
+    color: COLORS.muted,
+    textAlign: 'center',
   },
 });
