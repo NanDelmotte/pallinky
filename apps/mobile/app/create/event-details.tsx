@@ -1,5 +1,5 @@
 /**
- * Path: apps/mobile/app/create/formal-details.tsx
+ * Path: apps/mobile/app/create/event-details.tsx
  * Description: Final details + submit step for the formal create flow.
  * Simplified social visibility model:
  * - visible_in_feed
@@ -11,7 +11,6 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   ScrollView,
   StatusBar,
@@ -41,13 +40,6 @@ import {
   ReminderDays,
   useFormalDraft,
 } from '../../lib/formalDraft';
-
-type VisibilityDraft = {
-  send_rsvp_reminders: boolean;
-  remind_after_days: ReminderDays;
-  rsvp_deadline: string | null;
-  send_final_reminder_at_deadline: boolean;
-};
 
 const COLORS = {
   background: '#F6F7F9',
@@ -103,14 +95,13 @@ export default function FormalDetailsScreen() {
     prefill_date?: string;
   }>();
 
-  const { form, updateForm, initializeFromPrefill } = useFormalDraft();
+  const { form, updateForm, initializeFromPrefill } =
+    useFormalDraft();
   const { t, language } = useI18n();
   const dateLocale = language === 'fr' ? 'fr-FR' : language === 'nl' ? 'nl-NL' : 'en-US';
 
   const [loading, setLoading] = useState(false);
   const submitLockRef = useRef(false);
-
-  const [showVisibilityModal, setShowVisibilityModal] = useState(false);
 
   const [showDeadlinePicker, setShowDeadlinePicker] = useState(false);
 
@@ -121,13 +112,19 @@ export default function FormalDetailsScreen() {
   const [showReminderDropdown, setShowReminderDropdown] =
     useState(false);
 
-  const [visibilityDraft, setVisibilityDraft] =
-    useState<VisibilityDraft>({
-      send_rsvp_reminders: false,
-      remind_after_days: 3,
-      rsvp_deadline: null,
-      send_final_reminder_at_deadline: false,
-    });
+  const inviteSettingTitle =
+    form.invite_option === 'direct'
+      ? t('invite_options_direct_title')
+      : form.invite_option === 'friends_of_friends'
+      ? t('invite_options_friends_title')
+      : t('invite_options_circle_title');
+
+  const inviteSettingBadge =
+    form.invite_option === 'direct'
+      ? t('invite_options_direct_badge')
+      : form.invite_option === 'friends_of_friends'
+      ? t('invite_options_friends_badge')
+      : t('invite_options_circle_badge');
 
   useEffect(() => {
     initializeFromPrefill({
@@ -171,39 +168,14 @@ export default function FormalDetailsScreen() {
     void loadUser();
   }, [updateForm]);
 
-  const updateVisibilityDraft = <
-    K extends keyof VisibilityDraft
-  >(
-    key: K,
-    value: VisibilityDraft[K]
-  ) => {
-    setVisibilityDraft((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
-
   const goBack = () => {
-    if (showVisibilityModal) {
-      setShowVisibilityModal(false);
-      setShowDeadlinePicker(false);
-      setShowReminderDropdown(false);
-      return;
-    }
-
-    router.push('/create/formal-when');
+    router.push('/create/invite-options');
   };
 
   const canSave =
     !!form.title.trim() &&
     !!form.host_name.trim() &&
     !!form.host_email.trim();
-
-  const saveVisibilityConfig = () => {
-    setShowVisibilityModal(false);
-    setShowDeadlinePicker(false);
-    setShowReminderDropdown(false);
-  };
 
   const onIOSDeadlineChange = (
     _event: DateTimePickerEvent,
@@ -215,7 +187,7 @@ export default function FormalDetailsScreen() {
   };
 
   const confirmIOSDeadline = () => {
-    updateVisibilityDraft(
+    updateForm(
       'rsvp_deadline',
       toDateOnly(tempDeadlineDate)
     );
@@ -225,9 +197,9 @@ export default function FormalDetailsScreen() {
 
   const openAndroidDeadlinePicker = () => {
     DateTimePickerAndroid.open({
-      value: visibilityDraft.rsvp_deadline
+      value: form.rsvp_deadline
         ? new Date(
-            `${visibilityDraft.rsvp_deadline}T12:00:00`
+            `${form.rsvp_deadline}T12:00:00`
           )
         : new Date(),
 
@@ -235,7 +207,7 @@ export default function FormalDetailsScreen() {
 
       onChange: (event, date) => {
         if (event.type === 'set' && date) {
-          updateVisibilityDraft(
+          updateForm(
             'rsvp_deadline',
             toDateOnly(date)
           );
@@ -487,6 +459,8 @@ export default function FormalDetailsScreen() {
               firstRow.manage_handle,
             title: form.title,
             email: effectiveEmail,
+            visibility: String(form.visibility),
+            invite_option: form.invite_option ?? '',
           },
         });
 
@@ -558,6 +532,13 @@ export default function FormalDetailsScreen() {
 
         sendFinalReminderAtDeadline:
           form.send_final_reminder_at_deadline,
+
+        forwardingMode:
+          form.forwarding_mode,
+
+        visibility:
+          form.visibility,
+
         externalUrl,
       });
 
@@ -570,6 +551,8 @@ export default function FormalDetailsScreen() {
             result.manage_handle,
           title: form.title,
           email: effectiveEmail,
+          visibility: String(form.visibility),
+          invite_option: form.invite_option ?? '',
         },
       });
     } catch (e: any) {
@@ -627,130 +610,364 @@ export default function FormalDetailsScreen() {
               {t('create_details_title')}
             </StyledText>
 
-            <StyledInput
-              placeholder={t('manage_note_placeholder')}
-              value={form.description}
-              onChangeText={(t: string) =>
-                updateForm(
-                  'description',
-                  t
-                )
-              }
-              multiline
-              style={[
-                styles.inputStyle,
-                styles.detailsInput,
-              ]}
-            />
+            <View style={styles.detailSection}>
+              <StyledText style={styles.sectionTitle}>Description</StyledText>
+              <StyledText style={styles.sectionHint}>
+                Add the context people need before they say yes.
+              </StyledText>
 
-            <StyledText
-              style={styles.sectionLabel}
-            >
-              {t('manage_label_where')}
-            </StyledText>
-
-            <View style={styles.locationWrap}>
-              <LocationSearch
-                value={form.location}
-                onChange={(nextValue) =>
+              <StyledInput
+                placeholder={t('manage_note_placeholder')}
+                value={form.description}
+                onChangeText={(t: string) =>
                   updateForm(
-                    'location',
-                    nextValue
+                    'description',
+                    t
                   )
                 }
+                multiline
+                style={[
+                  styles.inputStyle,
+                  styles.detailsInput,
+                ]}
               />
             </View>
 
-            <StyledText
-              style={styles.sectionLabel}
-            >
-              {t('external_link_label')}
-            </StyledText>
+            <View style={styles.detailSection}>
+              <StyledText style={styles.sectionTitle}>Place and links</StyledText>
+              <StyledText style={styles.sectionHint}>
+                Add where it happens and any useful link.
+              </StyledText>
 
-            <StyledInput
-              placeholder={t('external_link_placeholder')}
-              value={form.external_url}
-              onChangeText={(text: string) =>
-                updateForm(
-                  'external_url',
-                  text
-                )
-              }
-              keyboardType="url"
-              autoCapitalize="none"
-              autoCorrect={false}
-              style={styles.inputStyle}
-            />
+              <StyledText style={styles.fieldLabel}>{t('manage_label_where')}</StyledText>
 
-            <StyledText
-              style={styles.helperText}
-            >
-              {t('external_link_helper')}
-            </StyledText>
-
-            <TouchableOpacity
-              style={styles.pwaInput}
-              onPress={() =>
-                setShowVisibilityModal(true)
-              }
-            >
-              <View>
-                <StyledText style={styles.label}>
-                  {t('create_details_social_settings')}
-                </StyledText>
-
-                <StyledText
-                  style={styles.pwaInputText}
-                >
-                  {visibilitySummary(
-                    form.visible_in_feed ??
-                      true,
-
-                    form.requires_approval ??
-                      false,
-                    t
-                  )}
-                </StyledText>
+              <View style={styles.locationWrap}>
+                <LocationSearch
+                  value={form.location}
+                  onChange={(nextValue) =>
+                    updateForm(
+                      'location',
+                      nextValue
+                    )
+                  }
+                />
               </View>
 
-              <Ionicons
-                name="settings-outline"
-                size={20}
-                color={COLORS.textMuted}
+              <StyledText style={styles.fieldLabel}>{t('external_link_label')}</StyledText>
+
+              <StyledInput
+                placeholder={t('external_link_placeholder')}
+                value={form.external_url}
+                onChangeText={(text: string) =>
+                  updateForm(
+                    'external_url',
+                    text
+                  )
+                }
+                keyboardType="url"
+                autoCapitalize="none"
+                autoCorrect={false}
+                style={styles.inputStyle}
               />
-            </TouchableOpacity>
 
-            <StyledText
-              style={styles.sectionLabel}
-            >
-              {t('create_details_from')}
-            </StyledText>
+            </View>
 
-            <StyledInput
-              placeholder={t('manage_name_placeholder')}
-              value={form.host_name}
-              onChangeText={(t: string) =>
-                updateForm(
-                  'host_name',
-                  t
-                )
-              }
-              style={styles.inputStyle}
-            />
+            <View style={styles.detailSection}>
+              <StyledText style={styles.sectionTitle}>Invite settings</StyledText>
+              <StyledText style={styles.sectionHint}>
+                This follows the sharing choice you picked, with a few final controls.
+              </StyledText>
 
-            <StyledInput
-              placeholder={t('manage_email_placeholder')}
-              value={form.host_email}
-              onChangeText={(t: string) =>
-                updateForm(
-                  'host_email',
-                  t
-                )
-              }
-              keyboardType="email-address"
-              autoCapitalize="none"
-              style={styles.inputStyle}
-            />
+              <View style={styles.summaryRow}>
+                <View style={styles.summaryContent}>
+                  <View style={styles.summaryHeader}>
+                    <StyledText style={styles.summaryText}>
+                      {inviteSettingTitle}
+                    </StyledText>
+
+                    <View style={styles.summaryBadge}>
+                      <StyledText style={styles.summaryBadgeText}>
+                        {inviteSettingBadge}
+                      </StyledText>
+                    </View>
+                  </View>
+
+                  <StyledText style={styles.summarySub}>
+                    {visibilitySummary(
+                      form.visible_in_feed ?? true,
+                      form.requires_approval ?? false,
+                      t
+                    )}
+                  </StyledText>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles.checkboxRow}
+                onPress={() =>
+                  updateForm(
+                    'visible_in_feed',
+                    !(form.visible_in_feed ?? true)
+                  )
+                }
+              >
+                <Ionicons
+                  name={
+                    (form.visible_in_feed ?? true)
+                      ? 'checkbox-outline'
+                      : 'square-outline'
+                  }
+                  size={22}
+                  color={COLORS.primary}
+                />
+
+                <StyledText style={styles.radioRowText}>
+                  {t('create_details_people_can_see')}
+                </StyledText>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.checkboxRow}
+                onPress={() =>
+                  updateForm(
+                    'requires_approval',
+                    !(form.requires_approval ?? false)
+                  )
+                }
+              >
+                <Ionicons
+                  name={
+                    (form.requires_approval ?? false)
+                      ? 'checkbox-outline'
+                      : 'square-outline'
+                  }
+                  size={22}
+                  color={COLORS.primary}
+                />
+
+                <StyledText style={styles.radioRowText}>
+                  {t('create_details_approve_attendees')}
+                </StyledText>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.detailSection}>
+              <StyledText style={styles.sectionTitle}>RSVP settings</StyledText>
+              <StyledText style={styles.sectionHint}>
+                Set reminders and an optional deadline before the invite goes out.
+              </StyledText>
+
+              <View style={styles.reminderInlineRow}>
+                <TouchableOpacity
+                  style={styles.checkboxInline}
+                  onPress={() =>
+                    updateForm(
+                      'send_rsvp_reminders',
+                      !form.send_rsvp_reminders
+                    )
+                  }
+                >
+                  <Ionicons
+                    name={
+                      form.send_rsvp_reminders
+                        ? 'checkbox-outline'
+                        : 'square-outline'
+                    }
+                    size={22}
+                    color={COLORS.primary}
+                  />
+
+                  <StyledText style={styles.checkboxInlineText}>
+                    Send reminders after
+                  </StyledText>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.reminderDropdown}
+                  onPress={() =>
+                    setShowReminderDropdown((prev) => !prev)
+                  }
+                >
+                  <StyledText style={styles.reminderDropdownText}>
+                    {form.remind_after_days} day
+                    {form.remind_after_days > 1 ? 's' : ''}
+                  </StyledText>
+
+                  <Ionicons
+                    name={
+                      showReminderDropdown
+                        ? 'chevron-up'
+                        : 'chevron-down'
+                    }
+                    size={16}
+                    color={COLORS.textMuted}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              {showReminderDropdown && (
+                <View style={styles.reminderDropdownMenu}>
+                  {REMINDER_OPTIONS.map((days) => (
+                    <TouchableOpacity
+                      key={days}
+                      style={styles.reminderDropdownItem}
+                      onPress={() => {
+                        updateForm(
+                          'remind_after_days',
+                          days
+                        );
+                        setShowReminderDropdown(false);
+                      }}
+                    >
+                      <StyledText
+                        style={styles.reminderDropdownItemText}
+                      >
+                        {days} day{days > 1 ? 's' : ''}
+                      </StyledText>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              <StyledText style={styles.fieldLabel}>RSVP deadline</StyledText>
+
+              <TouchableOpacity
+                style={styles.deadlineField}
+                onPress={() => {
+                  if (Platform.OS === 'android') {
+                    openAndroidDeadlinePicker();
+                  } else {
+                    setTempDeadlineDate(
+                      form.rsvp_deadline
+                        ? new Date(
+                            `${form.rsvp_deadline}T12:00:00`
+                          )
+                        : new Date()
+                    );
+                    setShowDeadlinePicker(true);
+                  }
+                }}
+              >
+                <StyledText style={styles.deadlineFieldText}>
+                  {formatDeadlineLabel(
+                    form.rsvp_deadline,
+                    t,
+                    dateLocale
+                  )}
+                </StyledText>
+
+                <Ionicons
+                  name="chevron-down"
+                  size={18}
+                  color={COLORS.textMuted}
+                />
+              </TouchableOpacity>
+
+              {!!form.rsvp_deadline && (
+                <TouchableOpacity
+                  style={styles.clearDeadlineBtn}
+                  onPress={() =>
+                    updateForm(
+                      'rsvp_deadline',
+                      null
+                    )
+                  }
+                >
+                  <StyledText style={styles.clearDeadlineText}>
+                    Clear date
+                  </StyledText>
+                </TouchableOpacity>
+              )}
+
+              {showDeadlinePicker && Platform.OS === 'ios' && (
+                <View style={styles.iosDeadlinePickerWrap}>
+                  <View style={styles.iosDeadlinePickerHeader}>
+                    <TouchableOpacity
+                      onPress={() =>
+                        setShowDeadlinePicker(false)
+                      }
+                    >
+                      <StyledText style={styles.iosCancelText}>
+                        {t('common_cancel')}
+                      </StyledText>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={confirmIOSDeadline}>
+                      <StyledText style={styles.iosConfirmText}>
+                        {t('common_confirm')}
+                      </StyledText>
+                    </TouchableOpacity>
+                  </View>
+
+                  <DateTimePicker
+                    value={tempDeadlineDate}
+                    mode="date"
+                    display="inline"
+                    onChange={onIOSDeadlineChange}
+                    accentColor={COLORS.primary}
+                  />
+                </View>
+              )}
+
+              <TouchableOpacity
+                style={styles.checkboxRow}
+                onPress={() =>
+                  updateForm(
+                    'send_final_reminder_at_deadline',
+                    !form.send_final_reminder_at_deadline
+                  )
+                }
+              >
+                <Ionicons
+                  name={
+                    form.send_final_reminder_at_deadline
+                      ? 'checkbox-outline'
+                      : 'square-outline'
+                  }
+                  size={22}
+                  color={COLORS.primary}
+                />
+
+                <StyledText style={styles.radioRowText}>
+                  Send final reminder at the RSVP deadline
+                </StyledText>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.detailSection}>
+              <StyledText style={styles.sectionTitle}>
+                {t('create_details_from')}
+              </StyledText>
+              <StyledText style={styles.sectionHint}>
+                This is how guests will see the host.
+              </StyledText>
+
+              <StyledInput
+                placeholder={t('manage_name_placeholder')}
+                value={form.host_name}
+                onChangeText={(t: string) =>
+                  updateForm(
+                    'host_name',
+                    t
+                  )
+                }
+                style={styles.inputStyle}
+              />
+
+              <StyledInput
+                placeholder={t('manage_email_placeholder')}
+                value={form.host_email}
+                onChangeText={(t: string) =>
+                  updateForm(
+                    'host_email',
+                    t
+                  )
+                }
+                keyboardType="email-address"
+                autoCapitalize="none"
+                style={styles.inputStyle}
+              />
+            </View>
 
             <View style={styles.nav}>
               <TouchableOpacity
@@ -798,223 +1015,6 @@ export default function FormalDetailsScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <Modal
-        visible={showVisibilityModal}
-        transparent
-        animationType="slide"
-      >
-        <View
-          style={
-            styles.modalOverlayBottom
-          }
-        >
-          <View style={styles.modalCard}>
-            <ScrollView
-              keyboardShouldPersistTaps="handled"
-            >
-              <View
-                style={
-                  styles.compactSection
-                }
-              >
-                <StyledText
-                  style={
-                    styles.compactHeading
-                  }
-                >
-                  {t('create_details_social_visibility')}
-                </StyledText>
-
-                <TouchableOpacity
-                  style={
-                    styles.checkboxRow
-                  }
-                  onPress={() =>
-                    updateForm(
-                      'visible_in_feed',
-                      !(
-                        form.visible_in_feed ??
-                        true
-                      )
-                    )
-                  }
-                >
-                  <Ionicons
-                    name={
-                      (
-                        form.visible_in_feed ??
-                        true
-                      )
-                        ? 'checkbox-outline'
-                        : 'square-outline'
-                    }
-                    size={22}
-                    color={
-                      COLORS.primary
-                    }
-                  />
-
-                  <StyledText
-                    style={
-                      styles.radioRowText
-                    }
-                  >
-                    {t('create_details_people_can_see')}
-                  </StyledText>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={
-                    styles.checkboxRow
-                  }
-                  onPress={() =>
-                    updateForm(
-                      'requires_approval',
-                      !(
-                        form.requires_approval ??
-                        false
-                      )
-                    )
-                  }
-                >
-                  <Ionicons
-                    name={
-                      (
-                        form.requires_approval ??
-                        false
-                      )
-                        ? 'checkbox-outline'
-                        : 'square-outline'
-                    }
-                    size={22}
-                    color={
-                      COLORS.primary
-                    }
-                  />
-
-                  <StyledText
-                    style={
-                      styles.radioRowText
-                    }
-                  >
-                    {t('create_details_approve_attendees')}
-                  </StyledText>
-                </TouchableOpacity>
-              </View>
-
-              <View
-                style={
-                  styles.modalActionsBottom
-                }
-              >
-                <TouchableOpacity
-                  style={
-                    styles.modalSecondaryBtn
-                  }
-                  onPress={() => {
-                    setShowVisibilityModal(
-                      false
-                    );
-
-                    setShowDeadlinePicker(
-                      false
-                    );
-
-                    setShowReminderDropdown(
-                      false
-                    );
-                  }}
-                >
-                  <StyledText
-                    style={
-                      styles.modalSecondaryText
-                    }
-                  >
-                    {t('common_cancel')}
-                  </StyledText>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={
-                    styles.modalPrimaryBtn
-                  }
-                  onPress={
-                    saveVisibilityConfig
-                  }
-                >
-                  <StyledText
-                    style={
-                      styles.modalPrimaryText
-                    }
-                  >
-                    {t('common_save')}
-                  </StyledText>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-
-            {showDeadlinePicker &&
-              Platform.OS ===
-                'ios' && (
-                <View
-                  style={
-                    styles.iosDeadlinePickerWrap
-                  }
-                >
-                  <View
-                    style={
-                      styles.iosDeadlinePickerHeader
-                    }
-                  >
-                    <TouchableOpacity
-                      onPress={() =>
-                        setShowDeadlinePicker(
-                          false
-                        )
-                      }
-                    >
-                      <StyledText
-                        style={
-                          styles.iosCancelText
-                        }
-                      >
-                        {t('common_cancel')}
-                      </StyledText>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      onPress={
-                        confirmIOSDeadline
-                      }
-                    >
-                      <StyledText
-                        style={
-                          styles.iosConfirmText
-                        }
-                      >
-                        {t('common_confirm')}
-                      </StyledText>
-                    </TouchableOpacity>
-                  </View>
-
-                  <DateTimePicker
-                    value={
-                      tempDeadlineDate
-                    }
-                    mode="date"
-                    display="inline"
-                    onChange={
-                      onIOSDeadlineChange
-                    }
-                    accentColor={
-                      COLORS.primary
-                    }
-                  />
-                </View>
-              )}
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -1058,29 +1058,45 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
-  sectionLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: 12,
+  detailSection: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: COLORS.borderSoft,
+    padding: 16,
+    marginBottom: 14,
   },
 
-  label: {
-    fontSize: 12,
-    fontWeight: '800',
+  sectionTitle: {
+    fontSize: 20,
+    lineHeight: 24,
+    fontWeight: '900',
+    color: COLORS.text,
+    marginBottom: 4,
+  },
+
+  sectionHint: {
+    fontSize: 13,
+    lineHeight: 18,
     color: COLORS.textMuted,
-    marginTop: 20,
+    marginBottom: 14,
+  },
+
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: COLORS.textMuted,
     marginBottom: 8,
-    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
 
   inputStyle: {
-    fontSize: 18,
+    fontSize: 16,
     backgroundColor:
       COLORS.surface,
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 15,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: COLORS.border,
     color: COLORS.text,
@@ -1090,36 +1106,59 @@ const styles = StyleSheet.create({
     height: 120,
   },
 
-  helperText: {
-    color: COLORS.textMuted,
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: -8,
-    marginBottom: 16,
-  },
-
   locationWrap: {
-    marginBottom: 18,
+    marginBottom: 14,
   },
 
-  pwaInput: {
+  summaryRow: {
     flexDirection: 'row',
     justifyContent:
       'space-between',
     alignItems: 'center',
-    backgroundColor:
-      COLORS.surface,
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#f9faf7',
+    borderRadius: 14,
+    padding: 14,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    marginBottom: 8,
+    borderColor: COLORS.borderSoft,
+    marginBottom: 10,
   },
 
-  pwaInputText: {
-    fontSize: 18,
+  summaryContent: {
+    flex: 1,
+  },
+
+  summaryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 4,
+  },
+
+  summaryText: {
+    fontSize: 15,
+    lineHeight: 20,
     color: COLORS.text,
-    fontWeight: '600',
+    fontWeight: '800',
+  },
+
+  summarySub: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: COLORS.textMuted,
+  },
+
+  summaryBadge: {
+    backgroundColor: '#EEF4E9',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+
+  summaryBadgeText: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: COLORS.primary,
   },
 
   nav: {
@@ -1148,38 +1187,10 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
 
-  modalOverlayBottom: {
-    flex: 1,
-    backgroundColor:
-      COLORS.overlay,
-    justifyContent: 'flex-end',
-  },
-
-  modalCard: {
-    backgroundColor:
-      COLORS.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 20,
-    maxHeight: '88%',
-    borderTopWidth: 1,
-    borderColor: COLORS.border,
-  },
-
-  compactSection: {
-    marginBottom: 22,
-  },
-
-  compactHeading: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: COLORS.text,
-    marginBottom: 4,
-  },
-
   radioRowText: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 15,
+    lineHeight: 20,
     color: COLORS.text,
     marginLeft: 10,
   },
@@ -1190,35 +1201,91 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
 
-  modalActionsBottom: {
+  reminderInlineRow: {
     flexDirection: 'row',
-    justifyContent:
-      'space-between',
-    marginTop: 12,
-    marginBottom: 6,
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    marginTop: 8,
+    marginBottom: 12,
+    gap: 10,
   },
 
-  modalSecondaryBtn: {
-    paddingVertical: 14,
-    paddingHorizontal: 18,
+  checkboxInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 
-  modalSecondaryText: {
-    color: COLORS.textMuted,
-    fontWeight: '700',
+  checkboxInlineText: {
+    fontSize: 15,
+    lineHeight: 20,
+    color: COLORS.text,
+    marginLeft: 10,
   },
 
-  modalPrimaryBtn: {
-    backgroundColor:
-      COLORS.primary,
+  reminderDropdown: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
     borderRadius: 999,
-    paddingVertical: 14,
-    paddingHorizontal: 22,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
 
-  modalPrimaryText: {
-    color: '#fff',
-    fontWeight: '800',
+  reminderDropdownText: {
+    fontSize: 15,
+    color: COLORS.text,
+    fontWeight: '600',
+    marginRight: 6,
+  },
+
+  reminderDropdownMenu: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 14,
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+
+  reminderDropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderSoft,
+  },
+
+  reminderDropdownItemText: {
+    fontSize: 15,
+    color: COLORS.text,
+  },
+
+  deadlineField: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  deadlineFieldText: {
+    fontSize: 16,
+    color: COLORS.text,
+  },
+
+  clearDeadlineBtn: {
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+  },
+
+  clearDeadlineText: {
+    color: COLORS.primary,
+    fontWeight: '700',
   },
 
   iosDeadlinePickerWrap: {

@@ -100,7 +100,7 @@ export default function FormalCreateScreen() {
             <View style={[styles.nav, { justifyContent: "flex-end" }]}>
               <TouchableOpacity
                 style={[styles.btn, !canContinue && styles.disabledBtn]}
-                onPress={() => router.replace("/create/formal-when")}
+                onPress={() => router.replace("/create/event-type")}
                 disabled={!canContinue}
               >
                 <Ionicons name="arrow-forward" size={28} color="#fff" />

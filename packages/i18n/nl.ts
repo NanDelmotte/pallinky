@@ -822,4 +822,27 @@ export const nl: Record<TranslationKey, string> = {
   manage_update_hint: "Dit werkt je huidige evenement bij",
   manage_date: "DATUM",
   manage_poll: "POLL",
+  create_when_specific_badge: "Bevestigd",
+create_when_specific_example: "Zaterdag 7 juni · 19:00 · Luca's rooftop",
+create_when_options_badge: "Opties voorstellen",
+create_when_options_example: "Vr avond / Za lunch / Zo brunch — stem hieronder",
+create_when_unsure_badge: "Even aftasten",
+create_when_unsure_example: "Wie heeft binnenkort zin in een weekendwandeling?",
+invite_options_title: "Hoe wil je mensen uitnodigen?",
+invite_options_subtitle: "Kies hoe dit plan zich mag verspreiden.",
+
+invite_options_direct_title: "Direct uitnodigen",
+invite_options_direct_badge: "Privé",
+invite_options_direct_body:
+  "Deel met contacten in de app of stuur het rechtstreeks naar een WhatsApp-gesprek.",
+
+invite_options_circle_title: "Zichtbaar voor je kring",
+invite_options_circle_badge: "Zichtbaar",
+invite_options_circle_body:
+  "Je directe contacten kunnen het zien en deelnemen — perfect voor goede vrienden.",
+
+invite_options_friends_title: "Open voor vrienden van vrienden",
+invite_options_friends_badge: "Open",
+invite_options_friends_body:
+  "Laat vrienden van vrienden het ontdekken en een verzoek indienen om deel te nemen. Een natuurlijke manier om je sociale kring uit te breiden.",
 };

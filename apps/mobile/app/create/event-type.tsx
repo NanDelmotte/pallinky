@@ -1,5 +1,5 @@
 /**
- * Path: apps/mobile/app/create/formal-when.tsx
+ * Path: apps/mobile/app/create/event-type.tsx
  * Description: When step.
  * Specific = overlay modal
  * Options = overlay modal
@@ -277,7 +277,7 @@ export default function FormalWhenScreen() {
     setShowSpecificModal(false);
     setShowPicker(false);
     setShowEndPicker(false);
-    router.push('/create/formal-details');
+    router.push('/create/invite-options');
   };
 
   const continueSeries = () => {
@@ -285,14 +285,47 @@ export default function FormalWhenScreen() {
     setShowSeriesModal(false);
     setShowPicker(false);
     setShowEndPicker(false);
-    router.push('/create/formal-details');
+    router.push('/create/invite-options');
   };
 
   const continueOptions = () => {
     updateForm('whenMode', 'options');
     setShowOptionsModal(false);
-    router.push('/create/formal-details');
+    router.push('/create/invite-options');
   };
+
+  const whenCards = [
+    {
+      key: 'specific',
+      emoji: '🗓️',
+      badge: t('create_when_specific_badge'),
+      title: t('create_when_specific_title'),
+      subtitle: t('create_when_specific_subtitle'),
+      example: t('create_when_specific_example'),
+      onPress: openSpecific,
+    },
+    {
+      key: 'options',
+      emoji: '🗳️',
+      badge: t('create_when_options_badge'),
+      title: t('create_when_options_title'),
+      subtitle: t('create_when_options_subtitle'),
+      example: t('create_when_options_example'),
+      onPress: openOptions,
+    },
+    {
+      key: 'unsure',
+      emoji: '🙋',
+      badge: t('create_when_unsure_badge'),
+      title: t('create_when_unsure_title'),
+      subtitle: t('create_when_unsure_subtitle'),
+      example: t('create_when_unsure_example'),
+      onPress: () => {
+        updateForm('whenMode', 'unsure');
+        router.push('/create/invite-options');
+      },
+    },
+  ] as const;
 
   return (
     <SafeAreaView style={styles.wrapper} edges={['top', 'left', 'right']}>
@@ -313,47 +346,43 @@ export default function FormalWhenScreen() {
           <View>
             <StyledText style={styles.stepTitle}>{t('create_when_title')}</StyledText>
 
-            <TouchableOpacity
-              style={[
-                styles.modeCard,
-                form.whenMode === 'specific' && styles.modeCardSelected,
-              ]}
-              onPress={openSpecific}
-            >
-              <StyledText style={styles.modeTitle}>{t('create_when_specific_title')}</StyledText>
-              <StyledText style={styles.modeSub}>
-                {t('create_when_specific_subtitle')}
-              </StyledText>
-            </TouchableOpacity>
+            {whenCards.map((card) => {
+              const selected = form.whenMode === card.key;
 
-            <TouchableOpacity
-              style={[
-                styles.modeCard,
-                form.whenMode === 'options' && styles.modeCardSelected,
-              ]}
-              onPress={openOptions}
-            >
-              <StyledText style={styles.modeTitle}>{t('create_when_options_title')}</StyledText>
-              <StyledText style={styles.modeSub}>
-                {t('create_when_options_subtitle')}
-              </StyledText>
-            </TouchableOpacity>
+              return (
+                <TouchableOpacity
+                  key={card.key}
+                  style={[
+                    styles.modeCard,
+                    selected && styles.modeCardSelected,
+                  ]}
+                  activeOpacity={0.9}
+                  onPress={card.onPress}
+                >
+                  <View style={styles.modeCardTop}>
+                    <StyledText style={styles.modeEmoji}>{card.emoji}</StyledText>
 
-            <TouchableOpacity
-              style={[
-                styles.modeCard,
-                form.whenMode === 'unsure' && styles.modeCardSelected,
-              ]}
-              onPress={() => {
-                updateForm('whenMode', 'unsure');
-                router.push('/create/formal-details');
-              }}
-            >
-              <StyledText style={styles.modeTitle}>{t('create_when_unsure_title')}</StyledText>
-              <StyledText style={styles.modeSub}>
-                {t('create_when_unsure_subtitle')}
-              </StyledText>
-            </TouchableOpacity>
+                    <View style={styles.modeBadge}>
+                      <StyledText style={styles.modeBadgeText}>
+                        {card.badge}
+                      </StyledText>
+                    </View>
+                  </View>
+
+                  <StyledText style={styles.modeTitle}>{card.title}</StyledText>
+
+                  <StyledText style={styles.modeSub}>
+                    {card.subtitle}
+                  </StyledText>
+
+                  <View style={styles.modeExample}>
+                    <StyledText style={styles.modeExampleText}>
+                      {card.example}
+                    </StyledText>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -872,13 +901,13 @@ const styles = StyleSheet.create({
   },
 
   modeCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    marginBottom: 12,
-  },
+  backgroundColor: '#FAFBF8',
+  borderRadius: 18,
+  padding: 14,
+  borderWidth: 1,
+  borderColor: '#DDD5C8',
+  marginBottom: 10,
+},
 
   modeCardSelected: {
     borderWidth: 2,
@@ -886,18 +915,59 @@ const styles = StyleSheet.create({
     backgroundColor: '#fbfcfa',
   },
 
-  modeTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: COLORS.text,
-    marginBottom: 4,
+  modeCardTop: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  marginBottom: 8,
+},
+  modeEmoji: {
+    fontSize: 25,
   },
 
+  modeBadge: {
+  backgroundColor: '#EEF4E9',
+  borderRadius: 999,
+  paddingHorizontal: 10,
+  paddingVertical: 5,
+},
+
+modeBadgeText: {
+  fontSize: 12,
+  fontWeight: '800',
+  color: COLORS.primary,
+},
+  
+modeTitle: {
+  fontSize: 18,
+  lineHeight: 22,
+  fontWeight: '900',
+  color: '#1E1A17',
+  marginBottom: 4,
+},
+
   modeSub: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: COLORS.textMuted,
-  },
+  fontSize: 13,
+  lineHeight: 18,
+  color: '#7B746B',
+},
+
+modeExample: {
+  marginTop: 8,
+  backgroundColor: '#EEF4E9',
+  borderRadius: 12,
+  borderWidth: 1,
+  borderColor: '#D7E4CC',
+  paddingHorizontal: 10,
+  paddingVertical: 8,
+},
+
+modeExampleText: {
+  fontSize: 12,
+  lineHeight: 16,
+  color: COLORS.primary,
+  fontWeight: '800',
+},
 
   timezoneNote: {
     fontSize: 13,
