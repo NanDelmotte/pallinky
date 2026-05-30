@@ -8,16 +8,25 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { HapticTab } from '@pallinky/ui';
 import { Ionicons } from '@expo/vector-icons';
-import { supabase } from '@pallinky/core';
+import { supabase, useSession } from '@pallinky/core';
 import { useI18n } from '@pallinky/i18n/client';
 
 export default function TabLayout() {
   const { t } = useI18n();
+  const { session } = useSession();
   const [chatBadgeCount, setChatBadgeCount] = useState(0);
 
   const loadChatBadgeCount = useCallback(async () => {
+    const emailLower = session?.user?.email?.toLowerCase().trim() || '';
+    if (!emailLower) {
+      setChatBadgeCount(0);
+      return;
+    }
+
     try {
-      const { data, error } = await supabase.rpc('get_my_notifications_inbox');
+      const { data, error } = await supabase.rpc('get_my_chat_threads', {
+        p_user_email: emailLower,
+      });
 
       if (error) {
         console.log('Chat badge load error:', error);
@@ -25,31 +34,37 @@ export default function TabLayout() {
       }
 
       const total = ((data || []) as any[])
-        .filter((row) => row.notification_type === 'chat_message_batch' && row.is_read === false)
         .reduce((sum, row) => sum + Number(row.unread_count || 0), 0);
 
       setChatBadgeCount(total);
     } catch (err) {
       console.log('Chat badge load exception:', err);
     }
-  }, []);
+  }, [session?.user?.email]);
 
   useEffect(() => {
   void loadChatBadgeCount();
 
   const existing = supabase
     .getChannels()
-    .find((c: any) => c.topic === 'realtime:notifications-inbox-badge');
+    .find((c: any) => c.topic === 'realtime:chat-threads-badge');
 
   if (existing) {
     void supabase.removeChannel(existing);
   }
 
   const channel = supabase
-    .channel('notifications-inbox-badge')
+    .channel('chat-threads-badge')
     .on(
       'postgres_changes',
-      { event: '*', schema: 'public', table: 'notifications_inbox' },
+      { event: '*', schema: 'public', table: 'chat_messages' },
+      () => {
+        void loadChatBadgeCount();
+      }
+    )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'chat_thread_participants' },
       () => {
         void loadChatBadgeCount();
       }

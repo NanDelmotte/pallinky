@@ -12,6 +12,7 @@ export type VisibilityText = 'host_only' | 'guests_can_see';
 export type ForwardingMode = 'free' | 'host_approval' | null;
 export type ReminderDays = 1 | 2 | 3 | 5 | 7;
 export type WhenMode = 'specific' | 'series' | 'options' | 'unsure';
+export type InviteOption = 'direct' | 'circle' | 'friends_of_friends' | null;
 
 export type FormalDraftState = {
   title: string;
@@ -33,6 +34,7 @@ export type FormalDraftState = {
   rsvp_deadline: string | null;
   send_final_reminder_at_deadline: boolean;
   forwarding_mode: ForwardingMode;
+  invite_option: InviteOption;
   visible_in_feed: boolean;
   requires_approval: boolean;
 };
@@ -62,31 +64,32 @@ function buildInitialFormalDraft(
     : new Date();
 
   return {
-  title: prefill?.prefill_title || '',
-  whenMode: prefill?.prefill_date ? 'specific' : 'options',
-  specificDate: initialDate,
-  seriesDates: prefill?.prefill_date ? [initialDate] : [],
-  pollOptions: prefill?.prefill_date ? [] : [new Date()],
-  endDate: null,
-  description: prefill?.prefill_desc || '',
-  location: '',
-  external_url: '',
-  host_name: '',
-  host_email: '',
+    title: prefill?.prefill_title || '',
+    whenMode: 'specific',
+    specificDate: initialDate,
+    seriesDates: [],
+    pollOptions: [],
+    endDate: null,
+    description: prefill?.prefill_desc || '',
+    location: '',
+    external_url: '',
+    host_name: '',
+    host_email: '',
 
-  visibility: 3,
+    visibility: 3,
 
-  visible_in_feed: true,
-  requires_approval: false,
+    visible_in_feed: true,
+    requires_approval: false,
 
-  invite_list_visibility: 'host_only',
-  guest_list_visibility: 'guests_can_see',
-  send_rsvp_reminders: false,
-  remind_after_days: 3,
-  rsvp_deadline: null,
-  send_final_reminder_at_deadline: false,
-  forwarding_mode: null,
-};
+    invite_list_visibility: 'host_only',
+    guest_list_visibility: 'guests_can_see',
+    send_rsvp_reminders: false,
+    remind_after_days: 3,
+    rsvp_deadline: null,
+    send_final_reminder_at_deadline: false,
+    forwarding_mode: null,
+    invite_option: null,
+  };
 }
 
 const FormalDraftContext = createContext<FormalDraftContextValue | null>(null);

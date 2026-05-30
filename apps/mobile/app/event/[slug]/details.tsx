@@ -952,6 +952,15 @@ setInvites(invitesRes.data || []);
     }, [fetchData, event?.id])
   );
 
+  const handleBackPress = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace('/(tabs)' as any);
+  }, [router]);
+
   if (loading) {
     return (
       <View style={[styles.centered, { backgroundColor: SYSTEM.background }]}>
@@ -1088,9 +1097,9 @@ setInvites(invitesRes.data || []);
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.headerIconBtn}
-          onPress={() => router.replace('/(tabs)' as any)}
+          onPress={handleBackPress}
           accessibilityRole="button"
-          accessibilityLabel="Back to social hub"
+          accessibilityLabel="Go back"
         >
           <Ionicons name="arrow-back" size={20} color={theme.accent} />
         </TouchableOpacity>

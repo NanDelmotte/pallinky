@@ -721,6 +721,29 @@ inbox_your_event: "votre événement",
   visibility_link_approval: "Lien uniquement • approbation requise",
   visibility_link_open: "Lien uniquement • tout le monde peut répondre",
   create_when_specific_title: "Une heure précise",
+  create_when_specific_badge: "Confirmé",
+create_when_specific_example: "Samedi 7 juin · 19h · Rooftop de Luca",
+create_when_options_badge: "Proposer des options",
+create_when_options_example: "Ven soir / Sam midi / Dim brunch — votez ci-dessous",
+create_when_unsure_badge: "Tester l’intérêt",
+create_when_unsure_example: "Qui serait partant pour une rando bientôt ?",
+invite_options_title: "Comment souhaitez-vous inviter des personnes ?",
+invite_options_subtitle: "Choisissez comment cette activité peut se diffuser.",
+
+invite_options_direct_title: "Inviter directement",
+invite_options_direct_badge: "Privé",
+invite_options_direct_body:
+  "Partagez avec vos contacts dans l'application ou directement dans une conversation WhatsApp.",
+
+invite_options_circle_title: "Visible à votre cercle",
+invite_options_circle_badge: "Visible",
+invite_options_circle_body:
+  "Vos contacts directs peuvent voir et rejoindre l'activité — idéal pour les amis proches.",
+
+invite_options_friends_title: "Ouvert aux amis d'amis",
+invite_options_friends_badge: "Ouvert",
+invite_options_friends_body:
+  "Permettez aux amis de vos amis de découvrir l'activité et de demander à rejoindre. Une façon naturelle d'élargir votre cercle social.",
   create_when_specific_subtitle: "Je sais déjà quand cela aura lieu.",
   create_when_options_title: "Quelques options",
   create_when_options_subtitle: "Je veux proposer quelques dates et laisser les gens choisir.",

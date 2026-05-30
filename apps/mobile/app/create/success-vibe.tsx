@@ -21,12 +21,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { StyledText } from '@pallinky/ui';
-import { buildInviteMessage, useHostGate } from '@pallinky/core';
+import { buildInviteMessage, supabase, useHostGate, useSession } from '@pallinky/core';
 import { useI18n } from '@pallinky/i18n/client';
 
 import IdentityModal from '../../components/IdentityModal';
@@ -47,6 +48,7 @@ const COLORS = {
 };
 
 type PendingAction = 'share' | 'circles' | 'native' | null;
+const PENDING_CHAT_EVENT_THREAD_KEY = 'pallinky:pending_chat_event_thread';
 
 const ConfettiPiece = ({ delay, color }: { delay: number; color: string }) => {
   const fallAnim = useRef(new Animated.Value(-20)).current;
@@ -88,6 +90,7 @@ export default function VibeSuccessScreen() {
     manage_handle,
     email,
     visibility,
+    invite_option,
     circleId,
   } = useLocalSearchParams<{
     slug: string;
@@ -96,19 +99,31 @@ export default function VibeSuccessScreen() {
     manage_handle?: string;
     email?: string;
     visibility?: string;
+    invite_option?: string;
     circleId?: string;
   }>();
 
   const visibilityMode = Number(visibility ?? 3);
   const isPublicEvent = visibilityMode === 3;
+  const inviteOption =
+    invite_option === 'direct' ||
+    invite_option === 'circle' ||
+    invite_option === 'friends_of_friends'
+      ? invite_option
+      : visibilityMode === 1
+      ? 'direct'
+      : 'circle';
 
   const { isHost } = useHostGate(slug);
+  const { session } = useSession();
   const { t } = useI18n();
 
   const [showConfetti, setShowConfetti] = useState(true);
   const [identityVisible, setIdentityVisible] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [qrExpanded, setQrExpanded] = useState(false);
+  const [pendingChatThreadId, setPendingChatThreadId] = useState<string | null>(null);
+  const [chatAttachReady, setChatAttachReady] = useState(false);
   const shareLink = useMemo(() => `https://pallinky.com/event/${slug}`, [slug]);
 
   const [customMessage, setCustomMessage] = useState(
@@ -128,6 +143,76 @@ export default function VibeSuccessScreen() {
     const timer = setTimeout(() => setShowConfetti(false), 5000);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    AsyncStorage.getItem(PENDING_CHAT_EVENT_THREAD_KEY)
+      .then((raw) => {
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        const nextThreadId = typeof parsed?.threadId === 'string' ? parsed.threadId : '';
+        if (nextThreadId) setPendingChatThreadId(nextThreadId);
+      })
+      .catch((err) => {
+        console.error('Failed to load pending chat thread', err);
+      });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function attachIfNeeded() {
+      const viewerEmail = session?.user?.email?.toLowerCase().trim() || '';
+      if (!slug || !viewerEmail || chatAttachReady) return;
+
+      try {
+        const { data: eventData, error: eventError } = await supabase
+          .from('events')
+          .select('id, slug')
+          .eq('slug', slug)
+          .single();
+
+        if (eventError) throw eventError;
+        if (!eventData?.id) throw new Error('Event not found');
+
+        if (pendingChatThreadId) {
+          const { error: attachError } = await supabase.rpc('attach_event_to_chat_thread', {
+            p_thread_id: pendingChatThreadId,
+            p_event_id: eventData.id,
+            p_attached_by_email: viewerEmail,
+          });
+
+          if (attachError) throw attachError;
+        } else {
+          const { error: threadError } = await supabase.rpc('get_or_create_event_primary_chat_thread', {
+            p_event_id: eventData.id,
+            p_user_email: viewerEmail,
+          });
+
+          if (threadError) throw threadError;
+        }
+
+        if (cancelled) return;
+
+        setChatAttachReady(true);
+        if (pendingChatThreadId) {
+          await AsyncStorage.removeItem(PENDING_CHAT_EVENT_THREAD_KEY);
+        }
+      } catch (err) {
+        console.error(
+          pendingChatThreadId
+            ? 'Failed to attach new event to chat thread'
+            : 'Failed to initialize event chat thread',
+          err
+        );
+      }
+    }
+
+    void attachIfNeeded();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [chatAttachReady, pendingChatThreadId, session?.user?.email, slug]);
 
   useEffect(() => {
     if (!isHost || !pendingAction) return;
@@ -197,6 +282,43 @@ export default function VibeSuccessScreen() {
     }
   };
 
+  const selectedShareOption =
+    inviteOption === 'direct'
+      ? {
+          icon: 'chatbubble-ellipses-outline' as const,
+          title: t('invite_options_direct_title'),
+          badge: t('invite_options_direct_badge'),
+          body: t('invite_options_direct_body'),
+          primaryLabel: t('create_success_share_link'),
+          primaryAction: requireNativeShare,
+          secondaryAction: () => requireHost('share'),
+          primaryIcon: isHost ? ('share-outline' as const) : ('lock-closed' as const),
+          secondaryIcon: isHost ? ('people' as const) : ('lock-closed' as const),
+        }
+      : inviteOption === 'friends_of_friends'
+      ? {
+          icon: 'git-network-outline' as const,
+          title: t('invite_options_friends_title'),
+          badge: t('invite_options_friends_badge'),
+          body: t('invite_options_friends_body'),
+          primaryLabel: t('create_success_share_link'),
+          primaryAction: requireNativeShare,
+          secondaryAction: () => requireHost('share'),
+          primaryIcon: isHost ? ('share-outline' as const) : ('lock-closed' as const),
+          secondaryIcon: isHost ? ('people' as const) : ('lock-closed' as const),
+        }
+      : {
+          icon: 'people-outline' as const,
+          title: t('invite_options_circle_title'),
+          badge: t('invite_options_circle_badge'),
+          body: t('invite_options_circle_body'),
+          primaryLabel: t('create_success_share_pallinky_friends'),
+          primaryAction: () => requireHost('share'),
+          secondaryAction: requireNativeShare,
+          primaryIcon: isHost ? ('people' as const) : ('lock-closed' as const),
+          secondaryIcon: isHost ? ('share-outline' as const) : ('lock-closed' as const),
+        };
+
   const handleStudioNav = () => {
     if (!manage_handle) {
       Alert.alert(t('create_success_missing_link'), t('create_success_missing_manage_handle'));
@@ -229,7 +351,14 @@ export default function VibeSuccessScreen() {
           >
             <TouchableOpacity
               style={styles.backBtn}
-              onPress={() => router.replace(`/event/${slug}/details`)}
+              onPress={() =>
+                pendingChatThreadId && chatAttachReady
+                  ? router.replace({
+                      pathname: '/chat/[threadId]',
+                      params: { threadId: pendingChatThreadId, eventSlug: slug },
+                    } as any)
+                  : router.replace(`/event/${slug}/details`)
+              }
               accessibilityRole="button"
               accessibilityLabel={t('create_success_back_event')}
             >
@@ -246,6 +375,34 @@ export default function VibeSuccessScreen() {
             <View style={styles.shareCard}>
                 <StyledText style={styles.label}>{t('event_share')}</StyledText>
 
+                <View style={styles.selectedShareCard}>
+                  <View style={styles.selectedShareIcon}>
+                    <Ionicons
+                      name={selectedShareOption.icon}
+                      size={22}
+                      color={COLORS.primary}
+                    />
+                  </View>
+
+                  <View style={styles.selectedShareText}>
+                    <View style={styles.selectedShareHeader}>
+                      <StyledText style={styles.selectedShareTitle}>
+                        {selectedShareOption.title}
+                      </StyledText>
+
+                      <View style={styles.selectedShareBadge}>
+                        <StyledText style={styles.selectedShareBadgeText}>
+                          {selectedShareOption.badge}
+                        </StyledText>
+                      </View>
+                    </View>
+
+                    <StyledText style={styles.selectedShareBody}>
+                      {selectedShareOption.body}
+                    </StyledText>
+                  </View>
+                </View>
+
                 <TextInput
                   style={styles.messageInput}
                   value={customMessage}
@@ -256,25 +413,28 @@ export default function VibeSuccessScreen() {
                 />
 
                 <View style={styles.buttonRow}>
-                  <TouchableOpacity style={styles.primaryBtn} onPress={() => requireHost('share')}>
+                  <TouchableOpacity
+                    style={styles.primaryBtn}
+                    onPress={selectedShareOption.primaryAction}
+                  >
                     <Ionicons
-                      name={isHost ? 'people' : 'lock-closed'}
+                      name={selectedShareOption.primaryIcon}
                       size={20}
                       color="#fff"
                     />
                     <StyledText style={styles.btnText}>
-                      {t('create_success_share_pallinky_friends')}
+                      {selectedShareOption.primaryLabel}
                     </StyledText>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     style={styles.nativeShareBtn}
-                    onPress={requireNativeShare}
+                    onPress={selectedShareOption.secondaryAction}
                     accessibilityRole="button"
                     accessibilityLabel={t('create_success_share_native')}
                   >
                     <Ionicons
-                      name={isHost ? 'share-outline' : 'lock-closed'}
+                      name={selectedShareOption.secondaryIcon}
                       size={22}
                       color={COLORS.primary}
                     />
@@ -368,7 +528,9 @@ export default function VibeSuccessScreen() {
             manage_handle || ''
           )}&email=${encodeURIComponent(email || '')}&visibility=${encodeURIComponent(
             visibility || ''
-          )}&circleId=${encodeURIComponent(circleId || '')}`}
+          )}&invite_option=${encodeURIComponent(inviteOption || '')}&circleId=${encodeURIComponent(
+            circleId || ''
+          )}`}
         />
       </SafeAreaView>
     </>
@@ -506,6 +668,56 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     textTransform: 'uppercase',
     marginBottom: 10,
+  },
+  selectedShareCard: {
+    flexDirection: 'row',
+    backgroundColor: '#f9faf7',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.borderSoft,
+    padding: 12,
+    marginBottom: 14,
+  },
+  selectedShareIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: '#EEF4E9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 11,
+  },
+  selectedShareText: {
+    flex: 1,
+  },
+  selectedShareHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 4,
+  },
+  selectedShareTitle: {
+    fontSize: 17,
+    lineHeight: 21,
+    fontWeight: '900',
+    color: COLORS.text,
+  },
+  selectedShareBadge: {
+    borderRadius: 999,
+    backgroundColor: '#EEF4E9',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+  },
+  selectedShareBadgeText: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: COLORS.primary,
+  },
+  selectedShareBody: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: COLORS.textMuted,
   },
   messageInput: {
     backgroundColor: '#f9faf7',

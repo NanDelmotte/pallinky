@@ -40,7 +40,7 @@ export default function CreateLayout() {
           }}
         />
         <Stack.Screen
-          name="formal-when"
+          name="event-type"
           options={{
             title: 'When',
             presentation: 'card',
@@ -74,7 +74,14 @@ export default function CreateLayout() {
           }}
         />
         <Stack.Screen
-          name="formal-details"
+          name="invite-options"
+          options={{
+            title: 'Invite options',
+            presentation: 'card',
+          }}
+        />
+        <Stack.Screen
+          name="event-details"
           options={{
             title: 'Finish it off',
             presentation: 'card',
