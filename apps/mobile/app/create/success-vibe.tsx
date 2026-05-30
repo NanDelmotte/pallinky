@@ -21,12 +21,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { StyledText } from '@pallinky/ui';
-import { buildInviteMessage, useHostGate } from '@pallinky/core';
+import { buildInviteMessage, supabase, useHostGate, useSession } from '@pallinky/core';
 import { useI18n } from '@pallinky/i18n/client';
 
 import IdentityModal from '../../components/IdentityModal';
@@ -47,6 +48,7 @@ const COLORS = {
 };
 
 type PendingAction = 'share' | 'circles' | 'native' | null;
+const PENDING_CHAT_EVENT_THREAD_KEY = 'pallinky:pending_chat_event_thread';
 
 const ConfettiPiece = ({ delay, color }: { delay: number; color: string }) => {
   const fallAnim = useRef(new Animated.Value(-20)).current;
@@ -103,12 +105,15 @@ export default function VibeSuccessScreen() {
   const isPublicEvent = visibilityMode === 3;
 
   const { isHost } = useHostGate(slug);
+  const { session } = useSession();
   const { t } = useI18n();
 
   const [showConfetti, setShowConfetti] = useState(true);
   const [identityVisible, setIdentityVisible] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [qrExpanded, setQrExpanded] = useState(false);
+  const [pendingChatThreadId, setPendingChatThreadId] = useState<string | null>(null);
+  const [chatAttachReady, setChatAttachReady] = useState(false);
   const shareLink = useMemo(() => `https://pallinky.com/event/${slug}`, [slug]);
 
   const [customMessage, setCustomMessage] = useState(
@@ -128,6 +133,59 @@ export default function VibeSuccessScreen() {
     const timer = setTimeout(() => setShowConfetti(false), 5000);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    AsyncStorage.getItem(PENDING_CHAT_EVENT_THREAD_KEY)
+      .then((raw) => {
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        const nextThreadId = typeof parsed?.threadId === 'string' ? parsed.threadId : '';
+        if (nextThreadId) setPendingChatThreadId(nextThreadId);
+      })
+      .catch((err) => {
+        console.error('Failed to load pending chat thread', err);
+      });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function attachIfNeeded() {
+      const viewerEmail = session?.user?.email?.toLowerCase().trim() || '';
+      if (!pendingChatThreadId || !slug || !viewerEmail || chatAttachReady) return;
+
+      try {
+        const { data: eventData, error: eventError } = await supabase
+          .from('events')
+          .select('id, slug')
+          .eq('slug', slug)
+          .single();
+
+        if (eventError) throw eventError;
+        if (!eventData?.id) throw new Error('Event not found');
+
+        const { error: attachError } = await supabase.rpc('attach_event_to_chat_thread', {
+          p_thread_id: pendingChatThreadId,
+          p_event_id: eventData.id,
+          p_attached_by_email: viewerEmail,
+        });
+
+        if (attachError) throw attachError;
+        if (cancelled) return;
+
+        setChatAttachReady(true);
+        await AsyncStorage.removeItem(PENDING_CHAT_EVENT_THREAD_KEY);
+      } catch (err) {
+        console.error('Failed to attach new event to chat thread', err);
+      }
+    }
+
+    void attachIfNeeded();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [chatAttachReady, pendingChatThreadId, session?.user?.email, slug]);
 
   useEffect(() => {
     if (!isHost || !pendingAction) return;
@@ -229,7 +287,14 @@ export default function VibeSuccessScreen() {
           >
             <TouchableOpacity
               style={styles.backBtn}
-              onPress={() => router.replace(`/event/${slug}/details`)}
+              onPress={() =>
+                pendingChatThreadId && chatAttachReady
+                  ? router.replace({
+                      pathname: '/chat/[threadId]',
+                      params: { threadId: pendingChatThreadId, eventSlug: slug },
+                    } as any)
+                  : router.replace(`/event/${slug}/details`)
+              }
               accessibilityRole="button"
               accessibilityLabel={t('create_success_back_event')}
             >

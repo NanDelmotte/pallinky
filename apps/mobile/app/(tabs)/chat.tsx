@@ -1,6 +1,6 @@
 /**
  * Path: app/(tabs)/chat.tsx
- * Description: WhatsApp-style event chat list for active event conversations.
+ * Description: WhatsApp-style chat list for generic threads with optional linked events.
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -33,9 +33,20 @@ const COLORS = {
   avatarBg: '#D9F0FA',
 };
 
-type ChatRow = {
-  event: any;
-  summary: any;
+type ThreadRow = {
+  thread_id: string;
+  kind: 'direct' | 'group';
+  title: string;
+  participant_preview: string | null;
+  last_message_preview: string | null;
+  last_message_at: string | null;
+  unread_count: number;
+  participant_count: number;
+  latest_event_id: string | null;
+  latest_event_title: string | null;
+  latest_event_slug: string | null;
+  avatar_url: string | null;
+  counterpart_email_lc: string | null;
   archived: boolean;
 };
 
@@ -43,29 +54,9 @@ function normalizeEmail(value: string | null | undefined) {
   return (value || '').toLowerCase().trim();
 }
 
-function normalizeId(value: unknown) {
-  return String(value || '').trim();
-}
-
-function isPositiveRsvpStatus(status: string | null | undefined) {
-  const normalized = normalizeEmail(status);
-  return ['yes', 'going', 'interested', 'maybe'].includes(normalized);
-}
-
 function archiveKey(email: string) {
   const safeEmail = email.replace(/[^a-zA-Z0-9._-]/g, '_');
-  return `pallinky_archived_event_chats.${safeEmail}`;
-}
-
-function isActiveEvent(event: any) {
-  if (!event || event.cancelled_at || event.status === 'cancelled') return false;
-  if (!event.starts_at) return true;
-
-  const eventMs = new Date(event.starts_at).getTime();
-  if (!Number.isFinite(eventMs)) return true;
-
-  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  return eventMs >= sevenDaysAgo;
+  return `pallinky_archived_chat_threads.${safeEmail}`;
 }
 
 function formatTime(value: string | null | undefined) {
@@ -88,10 +79,10 @@ function formatTime(value: string | null | undefined) {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-function getPreview(summary: any) {
-  const body = String(summary?.last_message_body || summary?.latest_message || '').trim();
+function getPreview(row: ThreadRow) {
+  const body = String(row.last_message_preview || '').trim();
   if (!body) return 'No messages yet';
-  if (body.startsWith('Photo: ') || summary?.last_message_image_url) return 'Photo';
+  if (body === 'Photo') return 'Photo';
   return body;
 }
 
@@ -119,7 +110,7 @@ export default function ChatTabScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState('');
   const [showArchived, setShowArchived] = useState(false);
-  const [rows, setRows] = useState<ChatRow[]>([]);
+  const [rows, setRows] = useState<ThreadRow[]>([]);
   const [archivedIds, setArchivedIds] = useState<string[]>([]);
 
   const loadArchivedIds = useCallback(async () => {
@@ -136,7 +127,7 @@ export default function ChatTabScreen() {
   }, [emailLower]);
 
   const loadChats = useCallback(async () => {
-    if (!emailLower || !session?.user?.id) {
+    if (!emailLower) {
       setRows([]);
       setLoading(false);
       setRefreshing(false);
@@ -146,116 +137,18 @@ export default function ChatTabScreen() {
     try {
       const nextArchivedIds = await loadArchivedIds();
 
-      const { data: mePeople } = await supabase
-        .from('people')
-        .select('id, email_lc, matched_user_id')
-        .or(`matched_user_id.eq.${session.user.id},email_lc.eq.${emailLower}`);
+      const { data, error } = await supabase.rpc('get_my_chat_threads', {
+        p_user_email: emailLower,
+      });
 
-      const userPersonIds = Array.from(
-        new Set(((mePeople as any[]) || []).map((person) => normalizeId(person?.id)).filter(Boolean))
-      );
+      if (error) throw error;
 
-      const [
-        { data: hostedEvents },
-        { data: emailInvites },
-        { data: personInvites },
-        { data: emailRsvps },
-        { data: personRsvps },
-        { data: vibeResponses },
-      ] =
-        await Promise.all([
-          supabase.from('events').select('*').eq('host_email', emailLower),
-          supabase
-            .from('event_invites')
-            .select('event_id, invitee_email_lc, person_id, status')
-            .eq('invitee_email_lc', emailLower),
-          userPersonIds.length > 0
-            ? supabase
-                .from('event_invites')
-                .select('event_id, invitee_email_lc, person_id, status')
-                .in('person_id', userPersonIds)
-            : Promise.resolve({ data: [] }),
-          supabase
-            .from('rsvps')
-            .select('id, event_id, status, email_lc, email, person_id')
-            .eq('email_lc', emailLower),
-          userPersonIds.length > 0
-            ? supabase
-                .from('rsvps')
-                .select('id, event_id, status, email_lc, email, person_id')
-                .in('person_id', userPersonIds)
-            : Promise.resolve({ data: [] }),
-          supabase.from('vibe_responses').select('event_id, user_email').eq('user_email', emailLower),
-        ]);
-
-      const invites = [...((emailInvites || []) as any[]), ...((personInvites || []) as any[])];
-      const rsvpRows = Array.from(
-        new Map(
-          [...((emailRsvps || []) as any[]), ...((personRsvps || []) as any[])].map((rsvp) => [
-            String(rsvp.id || `${rsvp.event_id}:${rsvp.email_lc || rsvp.person_id}`),
-            rsvp,
-          ])
-        ).values()
-      );
-
-      const eventIds = Array.from(
-        new Set([
-          ...((hostedEvents || []) as any[]).map((event) => event.id),
-          ...invites.map((invite) => invite.event_id),
-          ...rsvpRows
-            .filter((rsvp) => isPositiveRsvpStatus(rsvp.status))
-            .map((rsvp) => rsvp.event_id),
-          ...((vibeResponses || []) as any[]).map((response) => response.event_id),
-        ].filter(Boolean))
-      );
-
-      let events = hostedEvents || [];
-      const hostedIds = new Set(events.map((event: any) => String(event.id)));
-      const missingIds = eventIds.filter((id) => !hostedIds.has(String(id)));
-
-      if (missingIds.length > 0) {
-        const { data: loadedEvents } = await supabase
-          .from('events')
-          .select('*')
-          .in('id', missingIds);
-
-        events = [...events, ...(loadedEvents || [])];
-      }
-
-      const activeEvents = (events || []).filter(isActiveEvent);
-
-      const summaryPairs = await Promise.all(
-        activeEvents.map(async (event: any) => {
-          try {
-            const { data } = await supabase.rpc('get_event_chat_summary', {
-              p_event_id: event.id,
-              p_user_email: emailLower,
-            });
-
-            return [event.id, data?.[0] || null] as const;
-          } catch {
-            return [event.id, null] as const;
-          }
-        })
-      );
-
-      const summaries = Object.fromEntries(summaryPairs);
-
-      const nextRows = activeEvents
-        .map((event: any) => ({
-          event,
-          summary: summaries[event.id] || null,
-          archived: nextArchivedIds.includes(String(event.id)),
-        }))
-        .sort((a, b) => {
-          const aDate = new Date(
-            a.summary?.last_message_at || a.event.starts_at || a.event.created_at || 0
-          ).getTime();
-          const bDate = new Date(
-            b.summary?.last_message_at || b.event.starts_at || b.event.created_at || 0
-          ).getTime();
-          return bDate - aDate;
-        });
+      const nextRows = ((data || []) as any[]).map((row) => ({
+        ...row,
+        unread_count: Number(row.unread_count || 0),
+        participant_count: Number(row.participant_count || 0),
+        archived: nextArchivedIds.includes(String(row.thread_id)),
+      })) as ThreadRow[];
 
       setRows(nextRows);
     } catch (err) {
@@ -265,7 +158,7 @@ export default function ChatTabScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [emailLower, loadArchivedIds, session?.user?.id]);
+  }, [emailLower, loadArchivedIds]);
 
   useFocusEffect(
     useCallback(() => {
@@ -277,11 +170,26 @@ export default function ChatTabScreen() {
   useEffect(() => {
     if (!emailLower) return;
 
+    const existing = supabase
+      .getChannels()
+      .find((channel: any) => channel.topic === 'realtime:generic-chat-list');
+
+    if (existing) {
+      void supabase.removeChannel(existing);
+    }
+
     const channel = supabase
-      .channel('event-chat-list')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications_inbox' }, () => {
+      .channel('generic-chat-list')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_messages' }, () => {
         void loadChats();
       })
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'chat_thread_participants' },
+        () => {
+          void loadChats();
+        }
+      )
       .subscribe();
 
     return () => {
@@ -296,9 +204,14 @@ export default function ChatTabScreen() {
       if (row.archived !== showArchived) return false;
       if (!cleanQuery) return true;
 
-      const title = String(row.event.title || '').toLowerCase();
-      const preview = getPreview(row.summary).toLowerCase();
-      return title.includes(cleanQuery) || preview.includes(cleanQuery);
+      const title = String(row.title || '').toLowerCase();
+      const preview = getPreview(row).toLowerCase();
+      const participantPreview = String(row.participant_preview || '').toLowerCase();
+      return (
+        title.includes(cleanQuery) ||
+        preview.includes(cleanQuery) ||
+        participantPreview.includes(cleanQuery)
+      );
     });
   }, [query, rows, showArchived]);
 
@@ -310,18 +223,18 @@ export default function ChatTabScreen() {
   }, [loadChats]);
 
   const toggleArchive = useCallback(
-    async (eventId: string) => {
+    async (threadId: string) => {
       if (!emailLower) return;
 
-      const isArchived = archivedIds.includes(eventId);
+      const isArchived = archivedIds.includes(threadId);
       const next = isArchived
-        ? archivedIds.filter((id) => id !== eventId)
-        : [...archivedIds, eventId];
+        ? archivedIds.filter((id) => id !== threadId)
+        : [...archivedIds, threadId];
 
       setArchivedIds(next);
       setRows((current) =>
         current.map((row) =>
-          String(row.event.id) === eventId ? { ...row, archived: !isArchived } : row
+          String(row.thread_id) === threadId ? { ...row, archived: !isArchived } : row
         )
       );
       await SecureStore.setItemAsync(archiveKey(emailLower), JSON.stringify(next));
@@ -377,35 +290,42 @@ export default function ChatTabScreen() {
           <View style={styles.emptyState}>
             <MaterialCommunityIcons name="chat-outline" size={28} color={COLORS.muted} />
             <StyledText style={styles.emptyTitle}>
-              {showArchived ? 'No archived chats' : 'No active chats'}
+              {showArchived ? 'No archived chats' : 'No chats yet'}
             </StyledText>
           </View>
         ) : (
           visibleRows.map((row) => {
-            const title = row.event.title || 'Untitled event';
-            const coverImageUrl = row.event.cover_image_url || null;
-            const unreadCount = Number(row.summary?.unread_count || 0);
-            const preview = getPreview(row.summary);
+            const title = row.title || row.latest_event_title || 'Untitled chat';
+            const unreadCount = Number(row.unread_count || 0);
+            const preview = getPreview(row);
             const isPhoto = preview === 'Photo';
-            const time = formatTime(row.summary?.last_message_at || row.event.starts_at);
+            const time = formatTime(row.last_message_at);
+
+            const params = row.latest_event_slug
+              ? { threadId: row.thread_id, eventSlug: row.latest_event_slug }
+              : { threadId: row.thread_id };
 
             return (
               <TouchableOpacity
-                key={row.event.id}
+                key={row.thread_id}
                 style={styles.chatRow}
                 activeOpacity={0.75}
-                onPress={() => router.push(`/event/${row.event.slug}/chat` as any)}
-                onLongPress={() => void toggleArchive(String(row.event.id))}
+                onPress={() => router.push({ pathname: '/chat/[threadId]', params } as any)}
+                onLongPress={() => void toggleArchive(String(row.thread_id))}
               >
-                {coverImageUrl ? (
-                  <Image source={{ uri: coverImageUrl }} style={styles.avatar} />
+                {row.avatar_url ? (
+                  <Image source={{ uri: row.avatar_url }} style={styles.avatar} />
                 ) : (
                   <View style={styles.avatarFallback}>
-                    <MaterialCommunityIcons
-                      name={getEventIconName(title) as any}
-                      size={23}
-                      color="#2A80B9"
-                    />
+                    {row.kind === 'direct' ? (
+                      <Ionicons name="person" size={22} color="#2A80B9" />
+                    ) : (
+                      <MaterialCommunityIcons
+                        name={getEventIconName(title) as any}
+                        size={23}
+                        color="#2A80B9"
+                      />
+                    )}
                   </View>
                 )}
 
@@ -439,6 +359,16 @@ export default function ChatTabScreen() {
           })
         )}
       </ScrollView>
+
+      {!showArchived ? (
+        <TouchableOpacity
+          style={styles.composeButton}
+          activeOpacity={0.85}
+          onPress={() => router.push('/chat/new' as any)}
+        >
+          <Ionicons name="create-outline" size={22} color="#FFFFFF" />
+        </TouchableOpacity>
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -486,7 +416,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   content: {
-    paddingBottom: 110,
+    paddingBottom: 120,
   },
   archiveRow: {
     flexDirection: 'row',
@@ -523,47 +453,46 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: COLORS.avatarBg,
+    backgroundColor: '#D9F0FA',
     alignItems: 'center',
     justifyContent: 'center',
   },
   chatMain: {
     flex: 1,
-    minHeight: 68,
-    marginLeft: 12,
-    borderBottomWidth: 1,
+    marginLeft: 14,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: COLORS.divider,
-    justifyContent: 'center',
   },
   rowTop: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  rowBottom: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    marginTop: 2,
   },
   chatTitle: {
     flex: 1,
     fontSize: 18,
-    lineHeight: 22,
+    lineHeight: 21,
     fontWeight: '900',
     color: COLORS.text,
   },
   timeText: {
     fontSize: 15,
-    fontWeight: '700',
+    lineHeight: 18,
+    fontWeight: '600',
     color: COLORS.muted,
-  },
-  rowBottom: {
-    marginTop: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
   },
   previewWrap: {
     flex: 1,
-    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
+    minWidth: 0,
   },
   previewText: {
     flex: 1,
@@ -573,31 +502,48 @@ const styles = StyleSheet.create({
     color: COLORS.muted,
   },
   unreadBadge: {
-    minWidth: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: COLORS.green,
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    paddingHorizontal: 6,
+    marginLeft: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 7,
+    backgroundColor: COLORS.green,
   },
   unreadText: {
+    fontSize: 12,
+    fontWeight: '800',
     color: '#fff',
-    fontSize: 13,
-    fontWeight: '900',
   },
   centered: {
-    paddingTop: 80,
+    paddingTop: 40,
     alignItems: 'center',
   },
   emptyState: {
-    paddingTop: 80,
+    paddingTop: 60,
     alignItems: 'center',
     gap: 10,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 17,
+    fontWeight: '700',
     color: COLORS.muted,
+  },
+  composeButton: {
+    position: 'absolute',
+    right: 24,
+    bottom: 94,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: '#1F9D55',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 12,
+    elevation: 4,
   },
 });
