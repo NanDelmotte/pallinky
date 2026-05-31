@@ -8,7 +8,7 @@ import { createClient } from "@supabase/supabase-js";
 
 type Job = {
   id: string;
-  event_id: string;
+  event_id: string | null;
   recipient_email: string;
   type: string;
   payload: any;
@@ -121,8 +121,14 @@ function renderNotification(job: Job, badgeCount: number) {
         : `${hostName} cancelled ${eventTitle}`,
     },
     chat_message_batch: {
-      title: "New messages",
-      body: `New messages in ${eventTitle}`,
+      title:
+        job.payload?.chat_kind === "direct"
+          ? senderName
+          : job.payload?.thread_title || "New messages",
+      body:
+        job.payload?.body || job.payload?.preview
+          ? `${senderName}: ${job.payload?.body || job.payload?.preview}`
+          : `New messages in ${eventTitle}`,
     },
     event_updated: {
       title: "Event updated",

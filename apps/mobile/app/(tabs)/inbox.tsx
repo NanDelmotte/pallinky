@@ -83,6 +83,10 @@ function isEventDmRow(row: InboxRow) {
   return row.notification_type === 'event_dm_message';
 }
 
+function getChatThreadId(row: InboxRow) {
+  return row.thread_id || row.latest_payload?.thread_id || null;
+}
+
 function getDmThreadId(row: InboxRow) {
   return row.thread_id || row.latest_payload?.thread_id || null;
 }
@@ -151,6 +155,7 @@ function getRowBody(row: InboxRow, eventTitle: string, t: any) {
     ? t('inbox_reached_out_body', { host: payload.host_name || t('inbox_someone'), event: eventTitle })
     : t('inbox_invited_body', { host: payload.host_name || t('inbox_someone'), event: eventTitle });
     case 'chat_message_batch':
+      if (!row.event_id) return row.latest_message || payload.preview || t('inbox_new_message');
       return t('inbox_in_event', { event: eventTitle });
     case 'event_updated':
       return t('inbox_details_changed', { event: eventTitle });
@@ -335,6 +340,40 @@ useEffect(() => {
 
   const handleOpenRow = useCallback(
     async (row: InboxRow) => {
+      if (row.notification_type === 'chat_message_batch' && !row.event_id) {
+        const threadId = getChatThreadId(row);
+
+        if (!threadId) {
+          Alert.alert(t('inbox_dm_unavailable'), t('inbox_dm_missing'));
+          return;
+        }
+
+        try {
+          await supabase.rpc('mark_chat_thread_read', {
+            p_thread_id: threadId,
+            p_user_email: userEmailLc,
+          });
+
+          setRows((current) =>
+            current.map((item) =>
+              item.id === row.id
+                ? {
+                    ...item,
+                    is_read: true,
+                    unread_count: 0,
+                    read_at: new Date().toISOString(),
+                  }
+                : item
+            )
+          );
+        } catch (err) {
+          console.log('Chat inbox mark read error:', err);
+        }
+
+        router.push(`/chat/${threadId}` as any);
+        return;
+      }
+
       const eventInfo = row.event_id ? eventsById[row.event_id] : null;
       if (!row.event_id || !eventInfo?.slug) return;
 
@@ -379,7 +418,7 @@ useEffect(() => {
 
       router.push(`/event/${eventInfo.slug}/details` as any);
     },
-    [eventsById, router, t]
+    [eventsById, router, t, userEmailLc]
   );
 
   const renderDismissActions = useCallback(() => {
