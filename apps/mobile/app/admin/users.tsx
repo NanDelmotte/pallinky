@@ -13,7 +13,9 @@ import { useRouter } from 'expo-router';
 import { useI18n } from '@pallinky/i18n/client';
 
 interface Profile {
+  id: string;
   email_lc: string;
+  full_name: string | null;
   avatar_url: string | null;
 }
 
@@ -21,6 +23,7 @@ export default function AdminUserManagement() {
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploadingFor, setUploadingFor] = useState<string | null>(null);
+  const [deletingFor, setDeletingFor] = useState<string | null>(null);
   const router = useRouter();
   const { t } = useI18n();
 
@@ -28,7 +31,7 @@ export default function AdminUserManagement() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('email_lc, avatar_url')
+        .select('id, email_lc, full_name, avatar_url')
         .order('email_lc', { ascending: true });
       
       if (error) throw error;
@@ -89,6 +92,78 @@ export default function AdminUserManagement() {
     }
   };
 
+  const deleteUser = async (target: Profile) => {
+    setDeletingFor(target.id);
+
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        'admin-delete-user',
+        {
+          method: 'POST',
+          body: {
+            target_user_id: target.id,
+            target_email: target.email_lc,
+          },
+        },
+      );
+
+      if (error || !data?.ok) {
+        let details = error?.message;
+        const context = (
+          error as { context?: { json?: () => Promise<unknown> } } | null
+        )?.context;
+
+        if (context?.json) {
+          try {
+            const body = await context.json();
+
+            if (body && typeof body === 'object') {
+              const { details: responseDetails, error: responseError } =
+                body as {
+                  details?: string;
+                  error?: string;
+                };
+
+              details = responseDetails || responseError || details;
+            }
+          } catch {
+            // Keep the original error message.
+          }
+        }
+
+        throw new Error(details || t('admin_user_delete_failed'));
+      }
+
+      setUsers((prev) => prev.filter((user) => user.id !== target.id));
+      Alert.alert(
+        t('common_success'),
+        t('admin_user_deleted', { email: target.email_lc }),
+      );
+    } catch (err: any) {
+      Alert.alert(
+        t('admin_user_delete_failed'),
+        err?.message || t('delete_account_generic_error'),
+      );
+    } finally {
+      setDeletingFor(null);
+    }
+  };
+
+  const confirmDeleteUser = (target: Profile) => {
+    Alert.alert(
+      t('admin_user_delete_confirm_title'),
+      t('admin_user_delete_confirm_body', { email: target.email_lc }),
+      [
+        { text: t('common_cancel'), style: 'cancel' },
+        {
+          text: t('common_delete'),
+          style: 'destructive',
+          onPress: () => void deleteUser(target),
+        },
+      ],
+    );
+  };
+
   if (loading) return <View style={styles.centered}><ActivityIndicator size="large" color="#43691b" /></View>;
 
   return (
@@ -103,7 +178,7 @@ export default function AdminUserManagement() {
 
       <FlatList
         data={users}
-        keyExtractor={(item) => item.email_lc}
+        keyExtractor={(item) => item.id}
         contentContainerStyle={{ padding: 20 }}
         renderItem={({ item }) => (
           <View style={styles.userCard}>
@@ -115,20 +190,39 @@ export default function AdminUserManagement() {
                   <Ionicons name="person" size={20} color="#999" />
                 </View>
               )}
-              <StyledText style={styles.userEmail}>{item.email_lc}</StyledText>
+              <View style={styles.userTextWrap}>
+                <StyledText style={styles.userEmail}>{item.email_lc}</StyledText>
+                {!!item.full_name && (
+                  <StyledText style={styles.userName}>{item.full_name}</StyledText>
+                )}
+              </View>
             </View>
-            
-            <TouchableOpacity 
-              style={styles.actionBtn} 
-              onPress={() => pickAndUpload(item.email_lc)}
-              disabled={!!uploadingFor}
-            >
-              {uploadingFor === item.email_lc ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Ionicons name="camera" size={20} color="#fff" />
-              )}
-            </TouchableOpacity>
+
+            <View style={styles.actions}>
+              <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => pickAndUpload(item.email_lc)}
+                disabled={!!uploadingFor || !!deletingFor}
+              >
+                {uploadingFor === item.email_lc ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Ionicons name="camera" size={20} color="#fff" />
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.deleteBtn]}
+                onPress={() => confirmDeleteUser(item)}
+                disabled={!!uploadingFor || !!deletingFor}
+              >
+                {deletingFor === item.id ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Ionicons name="trash-outline" size={20} color="#fff" />
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       />
@@ -144,6 +238,10 @@ const styles = StyleSheet.create({
   userCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fff', padding: 12, borderRadius: 16, marginBottom: 10, borderWidth: 1, borderColor: '#bac9ad' },
   userInfo: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
   miniAvatar: { width: 44, height: 44, borderRadius: 22 },
-  userEmail: { fontSize: 14, fontWeight: '700', color: '#1f2a1b', flex: 1 },
-  actionBtn: { backgroundColor: '#43691b', width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' }
+  userTextWrap: { flex: 1, minWidth: 0 },
+  userEmail: { fontSize: 14, fontWeight: '700', color: '#1f2a1b' },
+  userName: { fontSize: 12, fontWeight: '600', color: '#66715f', marginTop: 2 },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 10 },
+  actionBtn: { backgroundColor: '#43691b', width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+  deleteBtn: { backgroundColor: '#e63946' }
 });

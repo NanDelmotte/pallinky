@@ -603,6 +603,11 @@ export const en: Record<TranslationKey, string> = {
   admin_users_title: "Beta Testers",
   admin_photo_updated: "Updated photo for {email}",
   admin_upload_error: "Upload Error",
+  admin_user_deleted: "Deleted account for {email}",
+  admin_user_delete_failed: "Delete failed",
+  admin_user_delete_confirm_title: "Delete user account?",
+  admin_user_delete_confirm_body:
+    "This permanently deletes {email}'s auth account and cleans up their profile links.",
   admin_reports_access_only: "Admin access only",
   admin_reports_title: "Reports",
   admin_reports_subtitle: "Review objectionable content and abusive-user reports within 24 hours.",
