@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { StyledText } from '@pallinky/ui';
 import { supabase, useSession } from '@pallinky/core';
 import { useI18n } from '@pallinky/i18n/client';
+import { goBackOrReplace } from '../../lib/navigation';
 
 type ReportRow = {
   id: string;
@@ -110,7 +111,7 @@ export default function AdminReportsScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <TouchableOpacity onPress={() => router.back()} style={styles.backArrow}>
+      <TouchableOpacity onPress={() => goBackOrReplace(router, '/settings')} style={styles.backArrow}>
         <Ionicons name="arrow-back" size={28} color="#43691b" />
       </TouchableOpacity>
 

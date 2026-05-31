@@ -26,6 +26,7 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker';
 
 import { createVibeDraft, getLocalTimeZone, supabase } from '@pallinky/core';
+import { goBackOrReplace } from '../../lib/navigation';
 import { StyledInput, StyledText } from '@pallinky/ui';
 
 import DateOptionPicker from '../../components/DateOptionPicker';
@@ -579,7 +580,7 @@ const initialEndsAt = endsAtParam ? new Date(endsAtParam) : null;
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.navIconBtn}>
+        <TouchableOpacity onPress={() => goBackOrReplace(router, '/(tabs)/events')} style={styles.navIconBtn}>
           <Ionicons name="arrow-back" size={28} color={COLORS.primary} />
         </TouchableOpacity>
       </View>

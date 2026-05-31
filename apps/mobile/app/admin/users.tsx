@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useI18n } from '@pallinky/i18n/client';
+import { goBackOrReplace } from '../../lib/navigation';
 
 interface Profile {
   id: string;
@@ -169,7 +170,7 @@ export default function AdminUserManagement() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => goBackOrReplace(router, '/settings')}>
           <Ionicons name="arrow-back" size={24} color="#1f2a1b" />
         </TouchableOpacity>
         <StyledText style={styles.headerTitle}>{t("admin_users_title")}</StyledText>

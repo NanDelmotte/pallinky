@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { StyledText } from '@pallinky/ui';
 import { supabase } from '@pallinky/core';
 import { useI18n } from '@pallinky/i18n/client';
+import { goBackOrReplace } from '../../../../lib/navigation';
 
 const COLORS = {
   background: '#F6F7F9',
@@ -74,6 +75,7 @@ export default function EventDmThreadScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ slug?: string; thread_id?: string }>();
   const { t } = useI18n();
+  const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
   const threadId = Array.isArray(params.thread_id) ? params.thread_id[0] : params.thread_id;
 
   const [viewerEmail, setViewerEmail] = useState('');
@@ -283,7 +285,7 @@ export default function EventDmThreadScreen() {
         <View style={styles.header}>
           <TouchableOpacity
             accessibilityRole="button"
-            onPress={() => router.back()}
+            onPress={() => goBackOrReplace(router, `/event/${slug}/details`)}
             style={styles.backButton}
           >
             <Ionicons name="chevron-back" size={22} color={COLORS.text} />

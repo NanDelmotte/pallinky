@@ -10,6 +10,7 @@ import { supabase } from "@pallinky/core";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useI18n } from "@pallinky/i18n/client";
+import { goBackOrReplace } from "../../lib/navigation";
 
 export default function DeleteAccountScreen() {
   const router = useRouter();
@@ -93,7 +94,7 @@ export default function DeleteAccountScreen() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={() => router.back()} style={styles.backArrow}>
+      <TouchableOpacity onPress={() => goBackOrReplace(router, "/settings")} style={styles.backArrow}>
         <Ionicons name="arrow-back" size={28} color="#43691b" />
       </TouchableOpacity>
 

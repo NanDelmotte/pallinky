@@ -277,7 +277,7 @@ export default function FormalWhenScreen() {
     setShowSpecificModal(false);
     setShowPicker(false);
     setShowEndPicker(false);
-    router.push('/create/invite-options');
+    router.replace('/create/invite-options');
   };
 
   const continueSeries = () => {
@@ -285,13 +285,13 @@ export default function FormalWhenScreen() {
     setShowSeriesModal(false);
     setShowPicker(false);
     setShowEndPicker(false);
-    router.push('/create/invite-options');
+    router.replace('/create/invite-options');
   };
 
   const continueOptions = () => {
     updateForm('whenMode', 'options');
     setShowOptionsModal(false);
-    router.push('/create/invite-options');
+    router.replace('/create/invite-options');
   };
 
   const whenCards = [
@@ -322,7 +322,7 @@ export default function FormalWhenScreen() {
       example: t('create_when_unsure_example'),
       onPress: () => {
         updateForm('whenMode', 'unsure');
-        router.push('/create/invite-options');
+        router.replace('/create/invite-options');
       },
     },
   ] as const;
@@ -333,7 +333,7 @@ export default function FormalWhenScreen() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => router.push('/create/formal')} style={styles.navIconBtn}>
+        <TouchableOpacity onPress={() => router.replace('/create/formal')} style={styles.navIconBtn}>
           <Ionicons name="arrow-back" size={28} color={COLORS.primary} />
         </TouchableOpacity>
       </View>

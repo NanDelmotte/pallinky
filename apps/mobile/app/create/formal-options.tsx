@@ -57,11 +57,11 @@ export default function FormalOptionsScreen() {
   ]);
 
   const goBack = () => {
-    router.push("/create/event-type");
+    router.replace("/create/event-type");
   };
 
   const goForward = () => {
-    router.push("/create/event-details");
+    router.replace("/create/event-details");
   };
 
   return (
