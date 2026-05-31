@@ -159,8 +159,14 @@ function AppNavigator() {
 
         const data = response.notification.request.content.data as {
           event_id?: string;
+          thread_id?: string;
           type?: string;
         };
+
+        if (data?.thread_id && data?.type === 'chat_message_batch') {
+          router.push(`/chat/${data.thread_id}` as any);
+          return;
+        }
 
         const eventId = data?.event_id;
         if (!eventId) return;
