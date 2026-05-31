@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { supabase, useSession } from '@pallinky/core';
 import { StyledText } from '@pallinky/ui';
+import { goBackOrReplace } from '../../lib/navigation';
 
 type Candidate = {
   email: string;
@@ -218,7 +219,7 @@ export default function NewChatPage() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.headerButton} onPress={() => goBackOrReplace(router, '/(tabs)/chat')}>
           <Ionicons name="chevron-back" size={26} color={COLORS.text} />
         </TouchableOpacity>
 

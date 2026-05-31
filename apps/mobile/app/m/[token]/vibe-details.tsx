@@ -8,6 +8,7 @@ import { StyledText } from '@pallinky/ui';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { supabase } from '@pallinky/core';
+import { goBackOrReplace } from '../../../lib/navigation';
 
 export default function VibeDetailsScreen() {
   const { token } = useLocalSearchParams<{ token: string }>();
@@ -51,7 +52,7 @@ export default function VibeDetailsScreen() {
   return (
     <View style={styles.wrapper}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => goBackOrReplace(router, token ? `/m/${token}` : '/(tabs)')}>
           <Ionicons name="arrow-back" size={28} color="#003049" />
         </TouchableOpacity>
         <StyledText style={styles.headerTitle}>Vibe Check</StyledText>
@@ -85,7 +86,7 @@ export default function VibeDetailsScreen() {
           ))}
         </View>
 
-        <TouchableOpacity style={styles.deleteBtn} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.deleteBtn} onPress={() => goBackOrReplace(router, token ? `/m/${token}` : '/(tabs)')}>
           <StyledText style={styles.deleteText}>Pull the Line (Cancel Idea)</StyledText>
         </TouchableOpacity>
       </ScrollView>

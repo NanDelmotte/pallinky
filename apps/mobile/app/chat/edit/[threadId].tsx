@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { supabase, useSession } from '@pallinky/core';
 import { StyledText } from '@pallinky/ui';
+import { goBackOrReplace } from '../../../lib/navigation';
 
 const COLORS = {
   background: '#F8FAF6',
@@ -76,7 +77,7 @@ export default function EditChatThreadPage() {
       });
 
       if (error) throw error;
-      router.back();
+      goBackOrReplace(router, `/chat/info/${threadId}`);
     } catch (err: any) {
       console.error('Failed to rename chat', err);
       Alert.alert('Could not save title', err?.message || 'Please try again.');
@@ -88,7 +89,7 @@ export default function EditChatThreadPage() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.headerButton} onPress={() => goBackOrReplace(router, `/chat/info/${threadId}`)}>
           <Ionicons name="chevron-back" size={26} color={COLORS.text} />
         </TouchableOpacity>
 

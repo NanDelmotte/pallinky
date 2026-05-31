@@ -21,6 +21,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase, useSession } from '@pallinky/core';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useI18n } from '@pallinky/i18n/client';
+import { goBackOrReplace } from '../../../lib/navigation';
 
 import DateOptionPicker from '../../../components/DateOptionPicker';
 import LocationSearch from '../../../components/LocationSearch';
@@ -471,7 +472,7 @@ template: 'reach_out_suggestion',
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backButton} onPress={() => goBackOrReplace(router, `/event/${slug}/details`)}>
           <Ionicons name="arrow-back" size={22} color={COLORS.primary} />
         </TouchableOpacity>
 

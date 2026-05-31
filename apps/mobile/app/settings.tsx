@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import LanguageSelector from '../components/LanguageSelector';
 import { useI18n } from '@pallinky/i18n/client';
 import { clearDismissedPeopleSuggestions } from '../lib/dismissedPeopleSuggestions';
+import { goBackOrReplace } from '../lib/navigation';
 
 export default function SettingsScreen() {
   const { session } = useSession();
@@ -71,7 +72,7 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <TouchableOpacity onPress={() => router.back()} style={styles.backArrow}>
+      <TouchableOpacity onPress={() => goBackOrReplace(router, '/profile')} style={styles.backArrow}>
         <Ionicons name="arrow-back" size={28} color="#43691b" />
       </TouchableOpacity>
 

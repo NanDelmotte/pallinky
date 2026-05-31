@@ -19,6 +19,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StyledText } from '@pallinky/ui';
 import { supabase } from '@pallinky/core';
 import { Ionicons } from '@expo/vector-icons';
+import { goBackOrReplace } from '../../lib/navigation';
 
 interface EventRow {
   id: string;
@@ -463,7 +464,7 @@ export default function PersonScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() => goBackOrReplace(router, '/(tabs)/people')}>
           <Ionicons name="arrow-back" size={26} color="#fff" />
         </TouchableOpacity>
         <StyledText style={styles.headerTitle}>Connection</StyledText>

@@ -15,6 +15,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { supabase, useSession } from '@pallinky/core';
 import { StyledText } from '@pallinky/ui';
+import { goBackOrReplace } from '../../../lib/navigation';
 
 type ThreadDetails = {
   thread_id: string;
@@ -240,7 +241,7 @@ export default function ChatInfoPage() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.headerButton} onPress={() => goBackOrReplace(router, `/chat/${threadId}`)}>
           <Ionicons name="chevron-back" size={26} color={COLORS.text} />
         </TouchableOpacity>
         <StyledText style={styles.headerTitle}>Chat info</StyledText>

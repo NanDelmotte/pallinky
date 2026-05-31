@@ -490,7 +490,10 @@ export default function ChatThreadPage() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
       >
         <View style={styles.header}>
-          <TouchableOpacity style={styles.headerCircle} onPress={() => router.back()}>
+          <TouchableOpacity
+            style={styles.headerCircle}
+            onPress={() => router.replace('/(tabs)/chat' as any)}
+          >
             <Ionicons name="chevron-back" size={28} color={COLORS.headerText} />
           </TouchableOpacity>
 

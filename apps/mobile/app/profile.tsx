@@ -24,6 +24,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { useI18n } from '@pallinky/i18n/client';
 import { AUTH_PENDING_NAME_KEY, AUTH_RETURN_KEY } from '../lib/authRedirect';
+import { goBackOrReplace } from '../lib/navigation';
 interface ProfileRow {
   id: string;
   email_lc: string | null;
@@ -394,7 +395,7 @@ export default function ProfileScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.headerRow}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backArrow}>
+        <TouchableOpacity onPress={() => goBackOrReplace(router, '/(tabs)')} style={styles.backArrow}>
           <Ionicons name="arrow-back" size={28} color="#43691b" />
         </TouchableOpacity>
 

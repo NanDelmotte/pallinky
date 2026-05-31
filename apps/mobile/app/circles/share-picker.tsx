@@ -28,6 +28,7 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StyledText } from '@pallinky/ui';
 import { buildInviteMessage, supabase } from '@pallinky/core';
+import { goBackOrReplace } from '../../lib/navigation';
 import MyPeopleSection from 'components/people/MyPeopleSection';
 import CircleManagerSheet from '../../components/circles/CircleManagerSheet';
 import {
@@ -671,7 +672,7 @@ export default function CircleSharePickerScreen() {
 
       if (!nextUserId || !userEmail) {
         Alert.alert('Login Required', 'Please sign in before inviting people.');
-        router.back();
+        goBackOrReplace(router, '/(tabs)/people');
         return [];
       }
 
@@ -1507,7 +1508,7 @@ export default function CircleSharePickerScreen() {
     <SafeAreaView edges={['top']} style={styles.safe}>
       <View style={styles.wrapper}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.headerIcon}>
+          <TouchableOpacity onPress={() => goBackOrReplace(router, '/(tabs)/people')} style={styles.headerIcon}>
             <Ionicons name="close" size={28} color={COLORS.primary} />
           </TouchableOpacity>
 

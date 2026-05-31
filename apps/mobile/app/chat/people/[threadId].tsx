@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { supabase, useSession } from '@pallinky/core';
 import { StyledText } from '@pallinky/ui';
+import { goBackOrReplace } from '../../../lib/navigation';
 
 type MemberRow = {
   user_email_lc: string;
@@ -193,7 +194,7 @@ export default function AddPeopleToChatPage() {
         return;
       }
 
-      router.back();
+      goBackOrReplace(router, `/chat/info/${threadId}`);
     } catch (err: any) {
       console.error('Failed to add people to chat', err);
       Alert.alert('Could not add people', err?.message || 'Please try again.');
@@ -205,7 +206,7 @@ export default function AddPeopleToChatPage() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.headerButton} onPress={() => goBackOrReplace(router, `/chat/info/${threadId}`)}>
           <Ionicons name="chevron-back" size={26} color={COLORS.text} />
         </TouchableOpacity>
 

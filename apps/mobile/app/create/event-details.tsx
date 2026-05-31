@@ -169,7 +169,7 @@ export default function FormalDetailsScreen() {
   }, [updateForm]);
 
   const goBack = () => {
-    router.push('/create/invite-options');
+    router.replace('/create/invite-options');
   };
 
   const canSave =

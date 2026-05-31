@@ -14,6 +14,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { supabase, useSession } from '@pallinky/core';
 import { StyledText } from '@pallinky/ui';
+import { goBackOrReplace } from '../../lib/navigation';
 
 const PENDING_CHAT_EVENT_THREAD_KEY = 'pallinky:pending_chat_event_thread';
 
@@ -170,7 +171,7 @@ export default function AttachEventPage() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.headerButton} onPress={() => goBackOrReplace(router, threadId ? `/chat/${threadId}` : '/(tabs)/chat')}>
           <Ionicons name="chevron-back" size={26} color={COLORS.text} />
         </TouchableOpacity>
 

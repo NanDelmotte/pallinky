@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { supabase } from '@pallinky/core';
 import { useI18n } from '@pallinky/i18n/client';
+import { goBackOrReplace } from '../../../../lib/navigation';
 import {
   StyledText,
   GiphyPicker,
@@ -200,7 +201,7 @@ export default function DesignStudioScreen() {
   };
 
   const persistStudioState = async (nextState: StudioState) => {
-    if (!token) return;
+    if (!token) return false;
 
     setSaving(true);
 
@@ -227,9 +228,11 @@ export default function DesignStudioScreen() {
             }
           : prev
       );
+      return true;
     } catch (error) {
       console.error('Studio autosave failed', error);
       Alert.alert(t('studio_save_failed'), t('studio_save_failed_body'));
+      return false;
     } finally {
       setSaving(false);
     }
@@ -261,13 +264,17 @@ export default function DesignStudioScreen() {
 
   const handleDismiss = () => {
     if (!hasChanges) {
-      router.back();
+      goBackOrReplace(router, token ? `/m/${token}` : '/(tabs)');
       return;
     }
 
     Alert.alert(t('studio_discard_title'), t('studio_discard_body'), [
       { text: t('common_keep_editing'), style: 'cancel' },
-      { text: t('common_discard'), style: 'destructive', onPress: () => router.back() },
+      {
+        text: t('common_discard'),
+        style: 'destructive',
+        onPress: () => goBackOrReplace(router, token ? `/m/${token}` : '/(tabs)'),
+      },
     ]);
   };
 
@@ -328,6 +335,13 @@ export default function DesignStudioScreen() {
     updateStudioState(initialStudioState);
   };
 
+  const saveCurrentPreview = async () => {
+    const didSave = await persistStudioState(studioState);
+    if (didSave) {
+      goBackOrReplace(router, token ? `/m/${token}` : '/(tabs)');
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -340,7 +354,7 @@ export default function DesignStudioScreen() {
     return (
       <View style={styles.centered}>
         <StyledText>{t('manage_event_not_found')}</StyledText>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20 }}>
+        <TouchableOpacity onPress={() => goBackOrReplace(router, '/(tabs)')} style={{ marginTop: 20 }}>
           <StyledText style={{ color: '#43691b' }}>{t('common_close')}</StyledText>
         </TouchableOpacity>
       </View>
@@ -380,7 +394,17 @@ export default function DesignStudioScreen() {
         <StyledText style={styles.headerTitle}>{t('studio_title')}</StyledText>
 
         <View style={styles.headerStatusSlot}>
-          {saving ? <ActivityIndicator size="small" color="#43691b" /> : null}
+          <TouchableOpacity
+            style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+            onPress={saveCurrentPreview}
+            disabled={saving}
+          >
+            {saving ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <StyledText style={styles.saveButtonText}>{t('common_save')}</StyledText>
+            )}
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -524,8 +548,25 @@ const styles = StyleSheet.create({
     color: '#111827',
   },
   headerStatusSlot: {
-    width: 28,
+    minWidth: 74,
     alignItems: 'flex-end',
+  },
+  saveButton: {
+    minWidth: 68,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#43691b',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+  },
+  saveButtonDisabled: {
+    opacity: 0.72,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 14,
   },
 
   stepOneCenterWrap: {

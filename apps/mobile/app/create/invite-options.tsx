@@ -65,7 +65,7 @@ export default function InviteOptionsScreen() {
       };
     });
 
-    router.push('/create/event-details');
+    router.replace('/create/event-details');
   };
 
   const options = [
@@ -106,7 +106,7 @@ export default function InviteOptionsScreen() {
 
       <View style={styles.topBar}>
         <TouchableOpacity
-          onPress={() => router.push('/create/event-type')}
+          onPress={() => router.replace('/create/event-type')}
           style={styles.navIconBtn}
         >
           <Ionicons name="arrow-back" size={28} color={COLORS.primary} />

@@ -24,6 +24,7 @@ import { StyledText } from '@pallinky/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase, useSession } from '@pallinky/core';
 import * as SecureStore from 'expo-secure-store';
+import { goBackOrReplace } from '../../lib/navigation';
 import { getEventAccessDecision } from '../../lib/visibility/getEventAccessDecision';
 import { useI18n } from '@pallinky/i18n/client';
 
@@ -269,7 +270,7 @@ export default function PeekPage() {
       <StatusBar barStyle="light-content" />
 
       <View style={styles.header}>
-        <TouchableOpacity style={styles.closeBtn} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.closeBtn} onPress={() => goBackOrReplace(router, '/(tabs)')}>
           <Ionicons name="close-circle" size={32} color={SYSTEM.secondary} />
         </TouchableOpacity>
 

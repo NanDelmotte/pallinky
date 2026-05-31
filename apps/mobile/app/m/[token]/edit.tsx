@@ -29,6 +29,7 @@ import { getLocalTimeZone, supabase } from "@pallinky/core";
 import { StyledInput, StyledText } from "@pallinky/ui";
 import { useI18n } from "@pallinky/i18n/client";
 import type { TranslationKey } from "@pallinky/i18n";
+import { goBackOrReplace } from "../../../lib/navigation";
 
 import DateOptionPicker from "../../../components/DateOptionPicker";
 import LocationSearch from "../../../components/LocationSearch";
@@ -435,7 +436,7 @@ export default function EditCreateScreen() {
 
       <View style={styles.topBar}>
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={() => goBackOrReplace(router, token ? `/m/${token}` : "/(tabs)")}
           style={styles.navIconBtn}
         >
           <Ionicons name="arrow-back" size={28} color={COLORS.primary} />

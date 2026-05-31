@@ -26,6 +26,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase, useSession } from '@pallinky/core';
+import { goBackOrReplace } from '../../../lib/navigation';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 const SYSTEM = {
@@ -837,7 +838,7 @@ p_status: notThisTime ? 'no' : 'interested',
       >
         <View style={styles.headerBar}>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => goBackOrReplace(router, `/event/${slug}/details`)}
             style={[
               styles.backBtn,
               {
