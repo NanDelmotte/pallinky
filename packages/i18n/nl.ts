@@ -641,6 +641,11 @@ export const nl: Record<TranslationKey, string> = {
   admin_users_title: "Bètatesters",
   admin_photo_updated: "Foto bijgewerkt voor {email}",
   admin_upload_error: "Uploadfout",
+  admin_user_deleted: "Account verwijderd voor {email}",
+  admin_user_delete_failed: "Verwijderen mislukt",
+  admin_user_delete_confirm_title: "Gebruikersaccount verwijderen?",
+  admin_user_delete_confirm_body:
+    "Dit verwijdert het auth-account van {email} permanent en ruimt profiellinks op.",
   admin_reports_access_only: "Alleen toegang voor beheerders",
   admin_reports_title: "Meldingen",
   admin_reports_subtitle: "Beoordeel aanstootgevende content en meldingen over misbruikende gebruikers binnen 24 uur.",
