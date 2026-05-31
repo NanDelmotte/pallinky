@@ -1,4 +1,4 @@
--- Notify chat participants when a new direct/group chat message is sent.
+-- Fix chat message notification trigger to use the actual chat_thread_events timestamp.
 
 create or replace function public.enqueue_chat_message_notification()
 returns trigger
@@ -89,12 +89,5 @@ begin
   return new;
 end;
 $$;
-
-drop trigger if exists trg_enqueue_chat_message_notification on public.chat_messages;
-
-create trigger trg_enqueue_chat_message_notification
-after insert on public.chat_messages
-for each row
-execute function public.enqueue_chat_message_notification();
 
 notify pgrst, 'reload schema';
