@@ -10,6 +10,20 @@ Run this from the repository root:
 fly deploy --config apps/web/fly.toml --dockerfile apps/web/Dockerfile -a pallinky-prod
 ```
 
+The web app now has the same development/production Supabase guardrail as mobile. Local web development defaults to the development project:
+
+```bash
+npm run web:development
+```
+
+Use this only when intentionally testing against production:
+
+```bash
+npm run web:production
+```
+
+Production deploys build with `APP_VARIANT=production` by default and fail if the public or server Supabase URL points at the development project.
+
 ### Manual deploy from GitHub Actions
 
 This repository includes a GitHub Actions workflow at:
@@ -41,6 +55,13 @@ The deployed web app also runs the scheduled push worker. Set these secrets on t
 - `CRON_SECRET`: shared secret used by the scheduled worker request
 
 Push delivery is processed by `/api/worker/push` once per minute from inside the web container.
+
+For local push-worker testing against the development Supabase project, keep private values such as `SUPABASE_SERVICE_ROLE_KEY` and `CRON_SECRET` in `apps/web/.env.local`, then run:
+
+```bash
+npm run build:web:development
+npm run start:development --workspace=apps/web -- -H 127.0.0.1 -p 3001
+```
 
 ## Mobile App (Expo / EAS iOS)
 

@@ -3,9 +3,15 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "node scripts/run-with-env.js development next dev",
+    "dev:development": "node scripts/run-with-env.js development next dev",
+    "dev:production": "node scripts/run-with-env.js production next dev",
+    "build": "npm run build:production",
+    "build:development": "node scripts/run-with-env.js development next build",
+    "build:production": "node scripts/run-with-env.js production next build",
+    "start": "node scripts/validate-env.js production && next start",
+    "start:development": "node scripts/run-with-env.js development next start",
+    "start:production": "npm run start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
   },
   "dependencies": {

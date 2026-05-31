@@ -15,6 +15,21 @@ type Job = {
   device_token: string;
 };
 
+type OutboxRow = {
+  id: string;
+  event_id: string | null;
+  recipient_email: string;
+  type: string;
+  payload: any;
+};
+
+type PushTokenRow = {
+  email_lc: string;
+  device_token: string;
+  updated_at: string | null;
+  created_at: string | null;
+};
+
 type ExpoPushResult = {
   ok: boolean;
   details?: unknown;
@@ -26,6 +41,9 @@ type OutboxDiagnosticRow = {
   type: string | null;
   status: string | null;
   created_at: string | null;
+  payload?: any;
+  has_push_token?: boolean;
+  latest_token_at?: string | null;
 };
 
 function getSupabaseAdmin() {
@@ -71,12 +89,9 @@ function maskEmail(email: string | null | undefined) {
 }
 
 async function logNoPendingPushDiagnostics(supabase: any) {
-  const { data, error } = await supabase
-    .from("notifications_outbox")
-    .select("id, recipient_email, type, status, created_at")
-    .eq("type", "friend_event_created")
-    .order("created_at", { ascending: false })
-    .limit(10);
+  const { data, error } = await supabase.rpc("get_recent_push_notification_diagnostics", {
+    p_limit: 10,
+  });
 
   if (error) {
     console.warn("Push diagnostics failed", { error: error.message });
@@ -89,12 +104,152 @@ async function logNoPendingPushDiagnostics(supabase: any) {
     type: row.type,
     status: row.status,
     created_at: row.created_at,
+    thread_id: row.payload?.thread_id || null,
+    message_id: row.payload?.message_id || null,
+    has_push_token: row.has_push_token === true,
+    latest_token_at: row.latest_token_at || null,
   }));
 
   console.log("Push diagnostics: no pending jobs", {
-    recent_friend_event_created_count: rows.length,
-    recent_friend_event_created: rows,
+    recent_push_candidate_count: rows.length,
+    recent_push_candidates: rows,
   });
+}
+
+const PUSH_TYPES = [
+  "invite_created",
+  "chat_message_batch",
+  "event_updated",
+  "rsvp_received",
+  "join_request_created",
+  "join_request_approved",
+  "join_request_denied",
+  "event_cancelled",
+  "host_message",
+  "rsvp_deadline_reminder",
+  "event_dm_message",
+  "guest_rsvp_confirmation",
+  "reach_out_suggestion",
+  "friend_event_created",
+];
+
+async function getPendingPushJobs(supabase: any, limit = 50): Promise<Job[]> {
+  const { data: tokenRows, error: tokenError } = await supabase
+    .from("push_tokens")
+    .select("email_lc,device_token,updated_at,created_at")
+    .not("email_lc", "is", null)
+    .not("device_token", "is", null)
+    .order("updated_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false, nullsFirst: false });
+
+  if (tokenError) {
+    throw tokenError;
+  }
+
+  const tokenByEmail = new Map<string, string>();
+
+  for (const tokenRow of (tokenRows || []) as PushTokenRow[]) {
+    const email = tokenRow.email_lc?.toLowerCase().trim();
+    const token = tokenRow.device_token?.trim();
+
+    if (email && token && !tokenByEmail.has(email)) {
+      tokenByEmail.set(email, token);
+    }
+  }
+
+  const recipientEmails = Array.from(tokenByEmail.keys());
+
+  if (recipientEmails.length === 0) {
+    return [];
+  }
+
+  const { data: outboxRows, error: outboxError } = await supabase
+    .from("notifications_outbox")
+    .select("id,event_id,recipient_email,type,payload")
+    .eq("status", "pending")
+    .in("type", PUSH_TYPES)
+    .order("created_at", { ascending: false })
+    .limit(Math.max(limit * 20, 500));
+
+  if (outboxError) {
+    throw outboxError;
+  }
+
+  const rows = (outboxRows || []) as OutboxRow[];
+
+  return rows.flatMap((row) => {
+    const email = row.recipient_email?.toLowerCase().trim();
+    const deviceToken = email ? tokenByEmail.get(email) : null;
+
+    if (!deviceToken) {
+      return [];
+    }
+
+    return [
+      {
+        id: row.id,
+        event_id: row.event_id,
+        recipient_email: row.recipient_email,
+        type: row.type,
+        payload: row.payload,
+        device_token: deviceToken,
+      },
+    ];
+  }).slice(0, limit);
+}
+
+async function markPushSent(supabase: any, id: string): Promise<boolean> {
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("notifications_outbox")
+    .update({
+      status: "sent",
+      processed_at: now,
+      last_sent_at: now,
+      last_error: null,
+    })
+    .eq("id", id)
+    .eq("status", "pending")
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return Boolean(data);
+}
+
+function formatPushError(error: unknown) {
+  if (typeof error === "string") {
+    return error;
+  }
+
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+}
+
+async function markPushFailed(supabase: any, id: string, error: unknown): Promise<void> {
+  const now = new Date().toISOString();
+  const { error: updateError } = await supabase
+    .from("notifications_outbox")
+    .update({
+      status: "failed",
+      processed_at: now,
+      last_error: formatPushError(error).slice(0, 2000),
+    })
+    .eq("id", id)
+    .eq("status", "pending");
+
+  if (updateError) {
+    console.warn("Push failed but not marked failed", {
+      id,
+      error: updateError.message,
+    });
+  }
 }
 
 function renderNotification(job: Job, badgeCount: number) {
@@ -253,21 +408,18 @@ export async function POST(request: Request) {
   const enqueueResult = await supabase.rpc("enqueue_final_rsvp_deadline_reminders");
 
   if (enqueueResult.error) {
-    return NextResponse.json(
-      { error: enqueueResult.error.message },
-      { status: 500 }
-    );
+    console.warn("Skipping RSVP deadline reminder enqueue", {
+      error: enqueueResult.error.message,
+    });
   }
 
-  const { data, error } = await supabase.rpc("get_pending_push_notifications", {
-    p_limit: 50,
-  });
+  let jobs: Job[];
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    jobs = await getPendingPushJobs(supabase, 50);
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || String(err) }, { status: 500 });
   }
-
-  const jobs = (data || []) as Job[];
 
   if (jobs.length === 0) {
     await logNoPendingPushDiagnostics(supabase);
@@ -295,18 +447,18 @@ export async function POST(request: Request) {
           event_id: job.event_id,
           details: delivery.details,
         });
+        await markPushFailed(supabase, job.id, delivery.details);
         failed++;
         continue;
       }
 
-      const { data: markedSent, error: markError } = await supabase.rpc("mark_push_sent", { p_id: job.id });
+      const markedSent = await markPushSent(supabase, job.id);
 
-      if (markError || !markedSent) {
+      if (!markedSent) {
         console.warn("Push delivered but not marked sent", {
           id: job.id,
           type: job.type,
           event_id: job.event_id,
-          error: markError?.message,
         });
         skipped++;
         continue;
@@ -320,6 +472,7 @@ export async function POST(request: Request) {
         event_id: job.event_id,
         error: err?.message || String(err),
       });
+      await markPushFailed(supabase, job.id, err?.message || String(err));
       failed++;
     }
   }

@@ -14,8 +14,12 @@
     "build:ios:production": "npm run build:ios:production --workspace=apps/mobile",
     "build:android:development": "npm run build:android:development --workspace=apps/mobile",
     "build:android:production": "npm run build:android:production --workspace=apps/mobile",
-    "web": "npm run dev --workspace=apps/web",
-    "build:web": "npm run build --workspace=apps/web"
+    "web": "npm run dev:development --workspace=apps/web --",
+    "web:development": "npm run dev:development --workspace=apps/web --",
+    "web:production": "npm run dev:production --workspace=apps/web --",
+    "build:web": "npm run build:production --workspace=apps/web",
+    "build:web:development": "npm run build:development --workspace=apps/web --",
+    "build:web:production": "npm run build:production --workspace=apps/web --"
   },
   "devDependencies": {
     "babel-plugin-module-resolver": "^5.0.2",
