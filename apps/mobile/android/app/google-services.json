@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "584767169510",
-    "project_id": "pallinky",
-    "storage_bucket": "pallinky.firebasestorage.app"
+    "project_number": "904733943081",
+    "project_id": "pallinky-92e02",
+    "storage_bucket": "pallinky-92e02.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:584767169510:android:7c7d268c85633e75206c27",
+        "mobilesdk_app_id": "1:904733943081:android:677a12959b080c32afc338",
         "android_client_info": {
           "package_name": "com.nancy.pallinky"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyB-5Z4iSrcTJ2r8g00jcqePqYPseVeDh1w"
+          "current_key": "AIzaSyBfgTYxfg3B20w1707Y8o1ENP3ArAK9oHc"
         }
       ],
       "services": {

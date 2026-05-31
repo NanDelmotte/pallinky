@@ -33,6 +33,7 @@ type PushTokenRow = {
 type ExpoPushResult = {
   ok: boolean;
   details?: unknown;
+  ticketIds?: string[];
 };
 
 type OutboxDiagnosticRow = {
@@ -167,6 +168,7 @@ async function getPendingPushJobs(supabase: any, limit = 50): Promise<Job[]> {
     .from("notifications_outbox")
     .select("id,event_id,recipient_email,type,payload")
     .eq("status", "pending")
+    .is("processed_at", null)
     .in("type", PUSH_TYPES)
     .order("created_at", { ascending: false })
     .limit(Math.max(limit * 20, 500));
@@ -198,13 +200,32 @@ async function getPendingPushJobs(supabase: any, limit = 50): Promise<Job[]> {
   }).slice(0, limit);
 }
 
+async function claimPushJob(supabase: any, id: string): Promise<boolean> {
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("notifications_outbox")
+    .update({
+      processed_at: now,
+    })
+    .eq("id", id)
+    .eq("status", "pending")
+    .is("processed_at", null)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return Boolean(data);
+}
+
 async function markPushSent(supabase: any, id: string): Promise<boolean> {
   const now = new Date().toISOString();
   const { data, error } = await supabase
     .from("notifications_outbox")
     .update({
       status: "sent",
-      processed_at: now,
       last_sent_at: now,
       last_error: null,
     })
@@ -233,12 +254,10 @@ function formatPushError(error: unknown) {
 }
 
 async function markPushFailed(supabase: any, id: string, error: unknown): Promise<void> {
-  const now = new Date().toISOString();
   const { error: updateError } = await supabase
     .from("notifications_outbox")
     .update({
       status: "failed",
-      processed_at: now,
       last_error: formatPushError(error).slice(0, 2000),
     })
     .eq("id", id)
@@ -347,6 +366,8 @@ function renderNotification(job: Job, badgeCount: number) {
     to: job.device_token,
     sound: "default",
     channelId: "default",
+    priority: "high",
+    ttl: 60 * 60,
     badge: badgeCount,
     title: content.title,
     body: content.body,
@@ -389,7 +410,11 @@ async function sendExpoPush(message: ReturnType<typeof renderNotification>): Pro
     return { ok: false, details: failedTicket };
   }
 
-  return { ok: true, details: body };
+  return {
+    ok: true,
+    details: body,
+    ticketIds: tickets.map((ticket: any) => ticket?.id).filter(Boolean),
+  };
 }
 
 export async function POST(request: Request) {
@@ -436,6 +461,13 @@ export async function POST(request: Request) {
     seen.add(job.id);
 
     try {
+      const claimed = await claimPushJob(supabase, job.id);
+
+      if (!claimed) {
+        skipped++;
+        continue;
+      }
+
       const badgeCount = await getBadgeCount(supabase, job.recipient_email);
       const message = renderNotification(job, badgeCount);
       const delivery = await sendExpoPush(message);
@@ -451,6 +483,13 @@ export async function POST(request: Request) {
         failed++;
         continue;
       }
+
+      console.log("Push delivery accepted", {
+        id: job.id,
+        type: job.type,
+        event_id: job.event_id,
+        ticket_ids: delivery.ticketIds || [],
+      });
 
       const markedSent = await markPushSent(supabase, job.id);
 
