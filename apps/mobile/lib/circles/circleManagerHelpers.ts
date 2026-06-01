@@ -8,7 +8,6 @@ import { supabase } from '@pallinky/core';
 import {
   Circle,
   CircleMemberRow,
-  DeviceContactRow,
 } from '../../components/circles/circleManagerTypes';
 
 function normalizeEmail(value: string | null | undefined) {
@@ -129,71 +128,4 @@ export async function removeMember(memberId: string) {
     .eq('id', memberId);
 
   if (error) throw error;
-}
-
-export async function loadUploadedContacts(): Promise<DeviceContactRow[]> {
-  const { data, error } = await supabase.rpc('get_my_device_contacts');
-  if (error) throw error;
-
-  return ((data as DeviceContactRow[]) || []).filter(
-    (c) => Boolean(c?.id) && Boolean(c.email_lc || c.phone_e164),
-  );
-}
-
-export async function addUploadedContactsToCircle(circleId: string, contactIds: string[]) {
-  const { error } = await supabase.rpc('add_device_contacts_to_circle', {
-    p_circle_id: circleId,
-    p_contact_ids: contactIds,
-  });
-
-  if (error) throw error;
-}
-import type { RawDeviceContact } from '../../components/circles/circleManagerTypes';
-
-export async function addRawDeviceContactsToCircle(
-  circle: Circle,
-  contacts: RawDeviceContact[],
-): Promise<{ added: number; skipped: number }> {
-  let added = 0;
-  let skipped = 0;
-
-  const existingPhones = new Set(
-    circle.members
-      .map((m) => normalizePhone(m.member_phone_e164))
-      .filter(Boolean),
-  );
-
-  const seenPhones = new Set<string>();
-
-  for (const contact of contacts) {
-    const primary =
-      normalizePhone(contact.primaryPhone) ||
-      normalizePhone(contact.phoneNumbers?.[0]);
-
-    if (!primary) {
-      skipped++;
-      continue;
-    }
-
-    if (existingPhones.has(primary) || seenPhones.has(primary)) {
-      skipped++;
-      continue;
-    }
-
-    try {
-      await addMemberToCircle({
-        circle,
-        member_name: contact.displayName || null,
-        member_email_lc: null,
-        member_phone_e164: primary,
-      });
-
-      seenPhones.add(primary);
-      added++;
-    } catch {
-      skipped++;
-    }
-  }
-
-  return { added, skipped };
 }

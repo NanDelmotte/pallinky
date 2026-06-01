@@ -277,7 +277,7 @@ export default function FormalWhenScreen() {
     setShowSpecificModal(false);
     setShowPicker(false);
     setShowEndPicker(false);
-    router.replace('/create/invite-options');
+    router.replace('/create/event-details');
   };
 
   const continueSeries = () => {
@@ -285,13 +285,13 @@ export default function FormalWhenScreen() {
     setShowSeriesModal(false);
     setShowPicker(false);
     setShowEndPicker(false);
-    router.replace('/create/invite-options');
+    router.replace('/create/event-details');
   };
 
   const continueOptions = () => {
     updateForm('whenMode', 'options');
     setShowOptionsModal(false);
-    router.replace('/create/invite-options');
+    router.replace('/create/event-details');
   };
 
   const whenCards = [
@@ -322,7 +322,7 @@ export default function FormalWhenScreen() {
       example: t('create_when_unsure_example'),
       onPress: () => {
         updateForm('whenMode', 'unsure');
-        router.replace('/create/invite-options');
+        router.replace('/create/event-details');
       },
     },
   ] as const;

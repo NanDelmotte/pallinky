@@ -328,7 +328,7 @@ function Avatar({
 }
 
 export default function GuestPollPage() {
-  const { slug } = useLocalSearchParams<{ slug: string }>();
+  const { slug, token } = useLocalSearchParams<{ slug: string; token?: string }>();
   const router = useRouter();
   const { userEmail, loading: sessionLoading } = useSession();
 
@@ -786,6 +786,7 @@ setSelectedDates((prev) =>
         p_selected_dates: notThisTime ? [] : selectedDates,
 p_note: note.trim() || null,
 p_status: notThisTime ? 'no' : 'interested',
+        p_guest_token: typeof token === 'string' ? token : null,
       });
 
       if (error) throw error;

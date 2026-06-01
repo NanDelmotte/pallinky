@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
-import * as Contacts from 'expo-contacts';
 
 import { StyledText } from '@pallinky/ui';
 import { supabase, useSession } from '@pallinky/core';
@@ -348,15 +347,7 @@ export default function PeopleScreen() {
       const hiddenPeopleSuggestionIds = await getDismissedPeopleSuggestionIds(emailLower);
       setDismissedPeopleSuggestionIds(hiddenPeopleSuggestionIds);
 
-      let nextDeviceContactCount = 0;
-      const { status } = await Contacts.getPermissionsAsync();
-      if (status === 'granted') {
-        const { data: contacts } = await Contacts.getContactsAsync({
-          fields: [Contacts.Fields.Emails],
-          pageSize: 1,
-        });
-        nextDeviceContactCount = contacts?.length || 0;
-      }
+      const nextDeviceContactCount = 0;
       setDeviceContactCount(nextDeviceContactCount);
 
       const { data: profile } = await supabase
@@ -395,7 +386,6 @@ export default function PeopleScreen() {
         myRsvpsRes,
         circlesRes,
         socialIntentRes,
-        deviceContactsRes,
       ] = await Promise.all([
         supabase.from('events').select('*').eq('host_email', emailLower),
 
@@ -419,8 +409,6 @@ export default function PeopleScreen() {
           .select('*')
           .eq('user_email', emailLower)
           .eq('keep_in_loop', true),
-
-        supabase.rpc('get_my_device_contacts'),
       ]);
 
       const circleRows = (circlesRes.data || []) as CircleRow[];
@@ -614,7 +602,7 @@ export default function PeopleScreen() {
         socialCircles,
         relationships: relationshipRows || [],
         socialIntent: socialIntentRes.data || [],
-        contacts: deviceContactsRes.data || [],
+        contacts: [],
         chatSummaries,
         accessByEventId: Object.fromEntries(
           allEvents.map((ev: any) => [String(ev.id), { can_see: true }])

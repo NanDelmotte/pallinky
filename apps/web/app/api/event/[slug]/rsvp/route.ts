@@ -11,6 +11,7 @@ type Body = {
   selectedDates?: string[];
   note?: string;
   lang?: string;
+  guestToken?: string | null;
 };
 
 function normalizeEmail(value: string) {
@@ -34,6 +35,7 @@ export async function POST(
     const cleanPhone = (body.phone || '').trim() || null;
     const selectedDates = Array.isArray(body.selectedDates) ? body.selectedDates : [];
     const note = (body.note || '').trim();
+    const inviteGuestToken = (body.guestToken || '').trim() || null;
     const allowedStatuses = new Set(['yes', 'maybe', 'no', 'interested']);
     const status = allowedStatuses.has(body.status || '') ? body.status : 'interested';
 
@@ -79,6 +81,7 @@ export async function POST(
         p_status: status,
         p_phone_e164: cleanPhone,
         p_message: note || null,
+        p_guest_token: inviteGuestToken,
       });
 
       if (error) {
@@ -162,6 +165,7 @@ export async function POST(
         p_selected_dates: selectedDates,
         p_note: note || null,
         p_status: 'interested',
+        p_guest_token: inviteGuestToken,
       });
 
       if (error) {

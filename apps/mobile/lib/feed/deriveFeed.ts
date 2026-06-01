@@ -36,8 +36,7 @@ export type FeedSignal =
   | 'suggested_connection'
   | 'unread_event_chat'
   | 'seeing_soon'
-  | 'quick_start_prompt'
-  | 'import_contacts_prompt';
+  | 'quick_start_prompt';
 
 export type FeedIdentity = {
   key: string | null;
@@ -289,12 +288,11 @@ const secondDegreeEventIds = new Set(
 
   const upcomingEventCount = upcomingEvents.length;
   const networkActivityCount = invites.length + upcomingEventCount;
-  const hasImportedContacts = contacts.length > 0;
 
   let directRelationshipCount = directIdentityMap.size;
 
   let feedState: FeedState = 'early_network';
-  if (!hasImportedContacts && directRelationshipCount === 0 && upcomingEventCount === 0) {
+  if (directRelationshipCount === 0 && upcomingEventCount === 0) {
     feedState = 'cold_start';
   } else if (
     directRelationshipCount >= 5 ||
@@ -879,15 +877,6 @@ const secondDegreeEventIds = new Set(
         mutualBridgeCount: bridgeList.length,
         bridges: bridgeList,
       },
-    });
-  }
-
-  if (!hasImportedContacts && directRelationshipCount < 5) {
-    items.push({
-      id: 'import_contacts_prompt',
-      type: 'import_contacts_prompt',
-      priority: 140,
-      payload: { route: '/circles' },
     });
   }
 

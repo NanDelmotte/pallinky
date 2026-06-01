@@ -702,7 +702,9 @@ setPollResponses([]);
       const invitesPromise = canSeeInviteList
         ? supabase
             .from('event_invites')
-            .select('id, invitee_name, invitee_email_lc, invitee_phone_e164, created_at, status, revoked_at')
+            .select(
+              'id, invitee_name, invitee_email_lc, invitee_phone_e164, created_at, status, revoked_at, source_type, source_ref, invite_link_mode'
+            )
 .eq('event_id', eventData.id)
 .is('revoked_at', null)
 .order('created_at', { ascending: false })
@@ -1056,13 +1058,21 @@ setInvites(invitesRes.data || []);
     if (isPoll) {
       return {
         label: myRsvp ? t('event_edit_vote') : t('event_vote_on_dates'),
-        onPress: () => router.push(`/event/${slug}/guest-poll` as any),
+        onPress: () =>
+          router.push({
+            pathname: '/event/[slug]/guest-poll',
+            params: { slug, token: typeof token === 'string' ? token : '' },
+          } as any),
       };
     }
 
     return {
       label: myStatus ? t('event_edit_rsvp') : t('event_rsvp'),
-      onPress: () => router.push(`/event/${slug}/formalRSVP` as any),
+      onPress: () =>
+        router.push({
+          pathname: '/event/[slug]/formalRSVP',
+          params: { slug, token: typeof token === 'string' ? token : '' },
+        } as any),
     };
   })();
 
@@ -1073,12 +1083,14 @@ setInvites(invitesRes.data || []);
 
   const handleInvitePress = () => {
     router.push({
-      pathname: isFixedDate ? '/create/success' : '/create/success-vibe',
+      pathname: '/create/event-success',
       params: {
         slug: event.slug,
         manage_handle: event.manage_handle,
         title: event.title,
         visibility: String(event.visibility ?? 3),
+        visible_in_feed: String(event.visible_in_feed ?? event.visibility !== 1),
+        requires_approval: String(event.requires_approval ?? false),
       },
     } as any);
   };

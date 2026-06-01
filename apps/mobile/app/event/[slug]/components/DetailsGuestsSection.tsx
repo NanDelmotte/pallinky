@@ -217,6 +217,10 @@ export default function DetailsGuestsSection({
 
       const inviteRows = (invites || [])
         .map((inv: any) => {
+          if (inv.source_type === 'external_share' || inv.source_type === 'group_share') {
+            return null;
+          }
+
           const emailLc = normalizeEmail(inv.invitee_email_lc);
           const fallbackName = getInviteName(inv);
           const label = profileNamesByEmail[emailLc] || fallbackName;

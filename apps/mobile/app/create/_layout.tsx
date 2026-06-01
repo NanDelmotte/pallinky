@@ -88,6 +88,13 @@ export default function CreateLayout() {
           }}
         />
         <Stack.Screen
+          name="event-success"
+          options={{
+            gestureEnabled: false,
+            presentation: 'card',
+          }}
+        />
+        <Stack.Screen
           name="success"
           options={{
             gestureEnabled: false,

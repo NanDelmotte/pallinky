@@ -187,8 +187,6 @@ PODS:
     - ExpoModulesCore
   - ExpoClipboard (55.0.13):
     - ExpoModulesCore
-  - ExpoContacts (55.0.14):
-    - ExpoModulesCore
   - ExpoCrypto (55.0.15):
     - ExpoModulesCore
   - ExpoDevice (55.0.17):
@@ -2566,7 +2564,6 @@ DEPENDENCIES:
   - ExpoAsset (from `../../../node_modules/expo-asset/ios`)
   - ExpoCalendar (from `../../../node_modules/expo-calendar/ios`)
   - ExpoClipboard (from `../../../node_modules/expo-clipboard/ios`)
-  - ExpoContacts (from `../../../node_modules/expo-contacts/ios`)
   - ExpoCrypto (from `../../../node_modules/expo-crypto/ios`)
   - ExpoDevice (from `../../../node_modules/expo-device/ios`)
   - "ExpoDomWebView (from `../../../node_modules/@expo/dom-webview/ios`)"
@@ -2716,8 +2713,6 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/expo-calendar/ios"
   ExpoClipboard:
     :path: "../../../node_modules/expo-clipboard/ios"
-  ExpoContacts:
-    :path: "../../../node_modules/expo-contacts/ios"
   ExpoCrypto:
     :path: "../../../node_modules/expo-crypto/ios"
   ExpoDevice:
@@ -2950,7 +2945,6 @@ SPEC CHECKSUMS:
   ExpoAsset: 7721c5c4ae2a7c3c8147a046727ac6c020b05648
   ExpoCalendar: b6256830f2effeee5e8ba5e327fd6e3d0eb78683
   ExpoClipboard: 5d1b0cd2686406f21e616f2d9b3431259dee2e6a
-  ExpoContacts: 9b16b5a573c3d899b2d70c86adfb948cff58e997
   ExpoCrypto: e7f4a14eaa6d6a6a2196cd7391d171c84be0b1aa
   ExpoDevice: b8a65afe42c3c5934eb6983870672fe785b39dea
   ExpoDomWebView: b2e9d601f9cb77d3c97da73234e175b64be91928

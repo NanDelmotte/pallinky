@@ -85,6 +85,42 @@ function getResponseLabel(status?: string | null, isDatePoll?: boolean) {
   return 'Response saved';
 }
 
+function PrivateInviteGate({ pageFont }: { pageFont: string }) {
+  return (
+    <main
+      style={{
+        fontFamily: pageFont,
+        minHeight: '100vh',
+        backgroundColor: SYSTEM.background,
+        color: SYSTEM.text,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px',
+      }}
+    >
+      <section
+        style={{
+          width: '100%',
+          maxWidth: '440px',
+          backgroundColor: SYSTEM.surface,
+          border: `1px solid ${SYSTEM.borderSoft}`,
+          borderRadius: '24px',
+          padding: '24px',
+          textAlign: 'center',
+        }}
+      >
+        <h1 style={{ margin: '0 0 10px', fontSize: '26px', fontWeight: 900 }}>
+          Private invite
+        </h1>
+        <p style={{ margin: 0, fontSize: '16px', lineHeight: 1.5, color: SYSTEM.textMuted }}>
+          Ask the host for your personal invite link.
+        </p>
+      </section>
+    </main>
+  );
+}
+
 export default async function EventPage({ params, searchParams }: Props) {
   const { slug } = await params;
   const { token = '' } = await searchParams;
@@ -146,7 +182,20 @@ if (guestToken) {
       rememberedEmail = requestTokenRow.requester_email_lc.toLowerCase().trim();
     }
   }
-}
+	}
+
+  if (event.visibility !== 3) {
+    const { data: accessRows } = await supabase.rpc('get_event_access_decision', {
+      p_event_id: event.id,
+      p_viewer_email: rememberedEmail || null,
+      p_guest_token: guestToken,
+    });
+    const access = Array.isArray(accessRows) ? accessRows[0] : accessRows;
+
+    if (access?.can_see !== true) {
+      return <PrivateInviteGate pageFont={pageFont} />;
+    }
+  }
 
   let existingGuest: {
     name: string;
@@ -498,7 +547,7 @@ if (guestToken) {
           ) : null}
 
           <div id="rsvp-form">
-            <RSVPButton event={event} existingGuest={existingGuest} />
+            <RSVPButton event={event} existingGuest={existingGuest} guestToken={guestToken} />
           </div>
         </div>
       </div>
