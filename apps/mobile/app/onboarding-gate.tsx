@@ -18,7 +18,11 @@ type RsvpEvent = {
   slug: string;
   title: string;
   hostName: string;
+  isHost: boolean;
+  isInviteContinuation: boolean;
 };
+
+type GateAction = 'event' | 'events' | 'learn';
 
 function extractGuestToken(value: string | null) {
   if (!value) return '';
@@ -108,7 +112,7 @@ export default function OnboardingGateScreen() {
 
       const { data: eventRow, error: eventError } = await supabase
         .from('events')
-        .select('slug, title, host_name')
+        .select('slug, title, host_name, host_email')
         .eq('id', eventId)
         .maybeSingle();
 
@@ -126,6 +130,8 @@ export default function OnboardingGateScreen() {
         slug: String(eventRow.slug),
         title: eventRow.title || t('people_event_fallback'),
         hostName: eventRow.host_name || t('common_someone'),
+        isHost: eventRow.host_email?.toLowerCase().trim() === email,
+        isInviteContinuation: !!pendingDestination,
       });
     } catch {
       router.replace({
@@ -159,6 +165,11 @@ export default function OnboardingGateScreen() {
     } as any);
   };
 
+  const openMyEvents = async () => {
+    await AsyncStorage.removeItem(PENDING_INVITE_DESTINATION_KEY);
+    router.replace('/(tabs)' as any);
+  };
+
   if (loading || sessionLoading) {
     return (
       <View style={styles.center}>
@@ -171,32 +182,76 @@ export default function OnboardingGateScreen() {
     return null;
   }
 
+  const primaryAction: GateAction = rsvpEvent.isInviteContinuation ? 'event' : 'events';
+  const secondaryActions: GateAction[] = rsvpEvent.isInviteContinuation
+    ? ['learn', 'events']
+    : ['event', 'learn'];
+
+  const renderEventAction = (variant: 'primary' | 'secondary') => (
+    <TouchableOpacity
+      style={variant === 'primary' ? styles.primary : styles.secondary}
+      onPress={() => {
+        void openEvent();
+      }}
+    >
+      <Text style={variant === 'primary' ? styles.primaryText : styles.secondaryText}>
+        {t('rsvp_gate_view_event')}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  const renderLearnAction = (variant: 'primary' | 'secondary') => (
+    <TouchableOpacity
+      style={variant === 'primary' ? styles.primary : styles.secondary}
+      onPress={openOnboarding}
+    >
+      <Text style={variant === 'primary' ? styles.primaryText : styles.secondaryText}>
+        {t('rsvp_gate_learn_more')}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  const renderEventsAction = (variant: 'primary' | 'secondary') => (
+    <TouchableOpacity
+      style={variant === 'primary' ? styles.primary : styles.secondary}
+      onPress={() => {
+        void openMyEvents();
+      }}
+    >
+      <Text style={variant === 'primary' ? styles.primaryText : styles.secondaryText}>
+        {t('rsvp_gate_my_events')}
+      </Text>
+    </TouchableOpacity>
+  );
+
+  const renderAction = (action: GateAction, variant: 'primary' | 'secondary') => {
+    if (action === 'event') return renderEventAction(variant);
+    if (action === 'events') return renderEventsAction(variant);
+    return renderLearnAction(variant);
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.iconWrap}>
         <Ionicons name="checkmark-circle-outline" size={34} color={SYSTEM.primary} />
       </View>
 
-      <Text style={styles.title}>{t('rsvp_gate_title')}</Text>
+      <Text style={styles.title}>
+        {rsvpEvent.isHost ? t('rsvp_gate_host_title') : t('rsvp_gate_title')}
+      </Text>
       <Text style={styles.body}>
-        {t('rsvp_gate_body', {
-          event: rsvpEvent.title,
-          host: rsvpEvent.hostName,
-        })}
+        {rsvpEvent.isHost
+          ? t('rsvp_gate_host_body', { event: rsvpEvent.title })
+          : t('rsvp_gate_body', {
+              event: rsvpEvent.title,
+              host: rsvpEvent.hostName,
+            })}
       </Text>
 
-      <TouchableOpacity
-        style={styles.primary}
-        onPress={() => {
-          void openEvent();
-        }}
-      >
-        <Text style={styles.primaryText}>{t('rsvp_gate_view_event')}</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.secondary} onPress={openOnboarding}>
-        <Text style={styles.secondaryText}>{t('rsvp_gate_learn_more')}</Text>
-      </TouchableOpacity>
+      {renderAction(primaryAction, 'primary')}
+      {secondaryActions.map((action) => (
+        <React.Fragment key={action}>{renderAction(action, 'secondary')}</React.Fragment>
+      ))}
     </View>
   );
 }

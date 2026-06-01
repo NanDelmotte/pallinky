@@ -63,7 +63,7 @@ function normalizeEmail(value: string | null | undefined) {
 }
 
 export default function FormalRSVP() {
-  const { slug } = useLocalSearchParams<{ slug: string }>();
+  const { slug, token } = useLocalSearchParams<{ slug: string; token?: string }>();
   const router = useRouter();
   const { session, userEmail: sessionEmail } = useSession();
 
@@ -257,6 +257,7 @@ export default function FormalRSVP() {
         p_email: cleanGuestEmail,
         p_status: selectedStatus,
         p_message: message.trim() || null,
+        p_guest_token: typeof token === 'string' ? token : null,
       });
 
       if (error) throw error;

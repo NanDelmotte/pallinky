@@ -75,9 +75,11 @@ type ExistingGuest = {
 export default function RSVPButton({
   event,
   existingGuest,
+  guestToken,
 }: {
   event: any;
   existingGuest: ExistingGuest;
+  guestToken?: string | null;
 }) {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState(existingGuest?.email || '');
@@ -202,6 +204,7 @@ export default function RSVPButton({
           name: cleanName,
           email: cleanEmail,
           phone: cleanPhone || null,
+          guestToken: guestToken || null,
           status: finalStatus,
           selectedDates,
           note,
@@ -225,18 +228,18 @@ export default function RSVPButton({
         return;
       }
 
-      const guestToken = result?.guest_token || null;
+      const resultGuestToken = result?.guest_token || null;
       const confirmationStatus = result?.join_request_created ? 'pending' : finalStatus;
 
-      if (guestToken) {
-        document.cookie = `pallinky_guest_token=${guestToken}; path=/; max-age=31536000`;
+      if (resultGuestToken) {
+        document.cookie = `pallinky_guest_token=${resultGuestToken}; path=/; max-age=31536000`;
         document.cookie = `pallinky_guest_email=${cleanEmail}; path=/; max-age=31536000`;
       }
 
       const fallbackThanksUrl = buildThanksUrl({
         slug: event.slug,
         finalStatus: confirmationStatus,
-        token: guestToken,
+        token: resultGuestToken,
         isUpdate: wasExistingGuest,
       });
 
@@ -251,8 +254,8 @@ export default function RSVPButton({
             redirectUrl.searchParams.set('theme', themeKey);
           }
 
-          if (guestToken) {
-            redirectUrl.searchParams.set('token', guestToken);
+          if (resultGuestToken) {
+            redirectUrl.searchParams.set('token', resultGuestToken);
           }
 
           window.location.href = redirectUrl.toString();

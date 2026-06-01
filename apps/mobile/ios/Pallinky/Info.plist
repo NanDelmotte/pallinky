@@ -62,8 +62,6 @@
 	<string>Pallinky uses your calendar so you can add an event to your schedule after you create or join a plan.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Pallinky uses your camera so you can take a profile photo.</string>
-	<key>NSContactsUsageDescription</key>
-	<string>Pallinky uses your contacts to help you quickly invite friends to your events.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Allow $(PRODUCT_NAME) to access your Face ID biometric data.</string>
 	<key>NSLocalNetworkUsageDescription</key>

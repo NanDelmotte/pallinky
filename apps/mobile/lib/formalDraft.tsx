@@ -76,7 +76,7 @@ function buildInitialFormalDraft(
     host_name: '',
     host_email: '',
 
-    visibility: 3,
+    visibility: 2,
 
     visible_in_feed: true,
     requires_approval: false,

@@ -595,13 +595,12 @@ export default function CircleManagerSheet({
       const userEmail = normalizeEmail(session?.user?.email);
       if (!userEmail) throw new Error("Please sign in first.");
 
-      const [predictedRes, deviceContactsRes, hiddenRes] = await Promise.all([
+      const [predictedRes, hiddenRes] = await Promise.all([
         supabase
           .from("predicted_circles")
           .select("name, email_lc, total_hangouts, avatar_url")
           .neq("email_lc", userEmail)
           .order("total_hangouts", { ascending: false }),
-        supabase.rpc("get_my_device_contacts"),
         supabase
           .from("hidden_people")
           .select("email_lc, phone_e164, matched_user_id")
@@ -609,12 +608,10 @@ export default function CircleManagerSheet({
       ]);
 
       if (predictedRes.error) throw predictedRes.error;
-      if (deviceContactsRes.error) throw deviceContactsRes.error;
       if (hiddenRes.error) throw hiddenRes.error;
 
       const predictedFriends = (predictedRes.data as PredictedFriend[]) || [];
-      const deviceContacts =
-        (deviceContactsRes.data as DeviceContactRow[]) || [];
+      const deviceContacts: DeviceContactRow[] = [];
       const hiddenRows = (hiddenRes.data as HiddenPersonRow[]) || [];
 
       const profileEmailSet = new Set<string>();

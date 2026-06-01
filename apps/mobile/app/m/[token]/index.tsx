@@ -320,15 +320,14 @@ export default function ManageEventScreen() {
             style={styles.actionItem}
             onPress={() =>
               router.push({
-                pathname:
-                  event.event_type === "formal"
-                    ? "/create/success"
-                    : "/create/success-vibe",
+                pathname: "/create/event-success",
                 params: {
                   slug: event.slug,
                   manage_handle: event.manage_handle || token,
                   title: event.title,
                   visibility: String(event.visibility ?? 3),
+                  visible_in_feed: String(event.visible_in_feed ?? event.visibility !== 1),
+                  requires_approval: String(event.requires_approval ?? false),
                 },
               })
             }

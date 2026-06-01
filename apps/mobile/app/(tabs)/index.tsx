@@ -19,7 +19,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import * as Contacts from 'expo-contacts';
 import { Ionicons } from '@expo/vector-icons';
 
 import { supabase, useSession } from '@pallinky/core';
@@ -162,16 +161,7 @@ useEffect(() => {
       const theme = await SecureStore.getItemAsync('pallinky_theme');
       if (theme) setThemeKey(theme);
 
-      const { status } = await Contacts.getPermissionsAsync();
-      let nextDeviceContactCount = 0;
-      if (status === 'granted') {
-        const { data: contacts } = await Contacts.getContactsAsync({
-          fields: [Contacts.Fields.Emails],
-          pageSize: 1,
-        });
-        nextDeviceContactCount = contacts?.length || 0;
-      }
-      setDeviceContactCount(nextDeviceContactCount);
+      setDeviceContactCount(0);
 
       const [{ data: profile }, { data: mePeople }] = await Promise.all([
         supabase
@@ -223,7 +213,6 @@ const [
         myRsvpsByPersonRes,
         myVibeResponsesRes,
         circlesRes,
-        deviceContactsRes,
       ] = await Promise.all([
         supabase.from('events').select('*').eq('host_email', emailLower),
 
@@ -257,7 +246,6 @@ const [
               .order('created_at', { ascending: false })
           : Promise.resolve({ data: [] }),
 
-        supabase.rpc('get_my_device_contacts'),
       ]);
 
       const myRsvpRows = Array.from(
@@ -519,7 +507,7 @@ const [
   invites: visibleInvites,
   socialCircles,
   relationships: relationshipRows || [],
-  contacts: deviceContactsRes.data || [],
+  contacts: [],
   chatSummaries,
   accessByEventId,
   userEmail: emailLower,
@@ -936,38 +924,6 @@ function StartSomethingSection({
         </Pressable>
       ))}
     </ScrollView>
-  );
-}
-
-function ImportCoffeeCard({
-  theme,
-  onPress,
-  lang,
-}: {
-  theme: any;
-  onPress: () => void;
-  lang: AppLanguage;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.utilityCard,
-        { borderColor: theme.border || '#e5e7eb', backgroundColor: '#ffffff' },
-        pressed && { opacity: 0.92 },
-      ]}
-    >
-      <View style={styles.utilityIconWrap}>
-        <Ionicons name="cafe-outline" size={20} color="#1f2a1b" />
-      </View>
-      <View style={{ flex: 1 }}>
-        <StyledText style={styles.utilityTitle}>{t(lang, 'home_import_coffee_title')}</StyledText>
-        <StyledText style={styles.utilitySubtitle}>
-          {t(lang, 'home_import_coffee_subtitle')}
-        </StyledText>
-      </View>
-      <Ionicons name="chevron-forward" size={18} color="#64748b" />
-    </Pressable>
   );
 }
 

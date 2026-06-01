@@ -518,7 +518,7 @@ const initialEndsAt = endsAtParam ? new Date(endsAtParam) : null;
         const row = Array.isArray(data) ? data[0] : data;
 
         router.replace({
-          pathname: '/create/success',
+          pathname: '/create/event-success',
           params: {
             slug: row.slug,
             manage_handle: row.manage_handle,
@@ -558,7 +558,7 @@ const initialEndsAt = endsAtParam ? new Date(endsAtParam) : null;
       });
 
       router.replace({
-        pathname: '/create/success-vibe',
+        pathname: '/create/event-success',
         params: {
           slug: result.slug,
           manage_handle: result.manage_handle,

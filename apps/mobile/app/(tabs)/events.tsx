@@ -38,7 +38,6 @@ type EventRow = Record<string, any>;
 type RsvpRow = Record<string, any>;
 type InviteRow = Record<string, any>;
 type VibeResponseRow = Record<string, any>;
-type DeviceContactRow = Record<string, any>;
 
 const FALLBACK_IMAGE =
   'https://images.unsplash.com/photo-1493246318656-5bbd4afb293c?q=80&w=1000&auto=format&fit=crop';
@@ -386,7 +385,6 @@ export default function EventsScreen() {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [rsvps, setRsvps] = useState<RsvpRow[]>([]);
   const [invites, setInvites] = useState<InviteRow[]>([]);
-  const [contacts, setContacts] = useState<DeviceContactRow[]>([]);
   const [userPersonIds, setUserPersonIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -408,20 +406,18 @@ export default function EventsScreen() {
         setEvents([]);
         setRsvps([]);
         setInvites([]);
-        setContacts([]);
         return;
       }
 
       setRefreshing(true);
 
-      const [eventsRes, rsvpsRes, invitesRes, contactsRes] = await Promise.all([
+      const [eventsRes, rsvpsRes, invitesRes] = await Promise.all([
         supabase
           .from('events')
           .select(`*, responses:vibe_responses(*)`)
           .order('created_at', { ascending: false }),
         supabase.from('rsvps').select('*'),
         supabase.from('event_invites').select('*'),
-        supabase.rpc('get_my_device_contacts'),
       ]);
 
       if (eventsRes.error) throw eventsRes.error;
@@ -446,7 +442,6 @@ export default function EventsScreen() {
       setEvents(eventsRes.data || []);
       setRsvps(rsvpsRes.data || []);
       setInvites(invitesRes.data || []);
-      setContacts(contactsRes.data || []);
     } catch (e: any) {
       console.error('Events load failed:', e.message);
       Alert.alert('Load failed', 'Could not load events right now.');
@@ -476,12 +471,6 @@ export default function EventsScreen() {
         if (email) emailSet.add(email);
       });
 
-      const contactAvatarByEmail = Object.fromEntries(
-        (contacts || [])
-          .filter((c: any) => normalizeEmail(c.email_lc))
-          .map((c: any) => [normalizeEmail(c.email_lc), c.avatar_uri || ''])
-      );
-
       const profileEmails = Array.from(emailSet);
 
       let profileAvatarByEmail: Record<string, string> = {};
@@ -507,14 +496,13 @@ export default function EventsScreen() {
       }
 
       setAvatarByEmail({
-        ...contactAvatarByEmail,
         ...profileAvatarByEmail,
       });
       setNameByEmail(profileNameByEmail);
     };
 
     void loadProfiles();
-  }, [events, rsvps, contacts]);
+  }, [events, rsvps]);
 
   const derived = useMemo(() => {
     const involvedEvents = events.filter((ev) => {

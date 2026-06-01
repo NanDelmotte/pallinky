@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   ScrollView,
   StatusBar,
@@ -70,15 +69,23 @@ const COLORS = {
   overlay: "rgba(31, 42, 27, 0.35)",
 };
 
-function visibilitySummary(
-  visibleInFeed: boolean,
-  requiresApproval: boolean,
+function toDateOnly(value: Date) {
+  return value.toISOString().slice(0, 10);
+}
+
+function formatDeadlineLabel(
+  value: string | null,
   translate: (key: TranslationKey) => string,
+  locale: string,
 ) {
-  if (visibleInFeed && requiresApproval) return translate("visibility_public_approval");
-  if (visibleInFeed && !requiresApproval) return translate("visibility_public_open");
-  if (!visibleInFeed && requiresApproval) return translate("visibility_link_approval");
-  return translate("visibility_link_open");
+  if (!value) return translate("create_deadline_select_date");
+
+  const date = new Date(`${value}T12:00:00`);
+  return date.toLocaleDateString(locale, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 function stripLocationFromDescription(value: string) {
@@ -165,15 +172,21 @@ export default function EditCreateScreen() {
     initialEndsAt && !Number.isNaN(initialEndsAt.getTime()) ? initialEndsAt : null;
 
   const [loading, setLoading] = useState(false);
+  const [locationExpanded, setLocationExpanded] = useState(false);
+  const [sharingExpanded, setSharingExpanded] = useState(false);
+  const [rsvpExpanded, setRsvpExpanded] = useState(false);
+  const [hostExpanded, setHostExpanded] = useState(false);
 
   const [showPicker, setShowPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
-
-  const [showVisibilityModal, setShowVisibilityModal] = useState(false);
+  const [showDeadlinePicker, setShowDeadlinePicker] = useState(false);
 
   const [tempDate, setTempDate] = useState(initialStartsAt);
   const [tempEndDate, setTempEndDate] = useState(
     initialEndDate || new Date(initialStartsAt.getTime() + 60 * 60 * 1000),
+  );
+  const [tempDeadlineDate, setTempDeadlineDate] = useState<Date>(
+    rsvpDeadlineParam ? new Date(`${rsvpDeadlineParam}T12:00:00`) : new Date(),
   );
 
   const [form, setForm] = useState<FormState>({
@@ -239,6 +252,23 @@ export default function EditCreateScreen() {
   ) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
+
+  const legacyVisibility = form.visible_in_feed ? 2 : 1;
+  const derivedForwardingMode = form.requires_approval ? "host_approval" : null;
+  const hasLocationDetails = !!form.location.trim() || !!form.external_url.trim();
+  const locationSummary = hasLocationDetails
+    ? [form.location.trim(), form.external_url.trim()].filter(Boolean).join(" - ")
+    : "Add a place, address, or useful link";
+  const sharingSummary = `${form.visible_in_feed ? "Extended network can see it" : "Invite link only"} - ${
+    form.requires_approval ? "approval on" : "anyone can RSVP"
+  }`;
+  const rsvpSummary = form.rsvp_deadline
+    ? `${formatDeadlineLabel(form.rsvp_deadline, t, dateLocale)}${
+        form.send_rsvp_reminders ? " - reminders on" : ""
+      }`
+    : form.send_rsvp_reminders
+      ? "No deadline - reminders on"
+      : "No deadline set";
 
   const onIOSChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
     if (selectedDate) setTempDate(selectedDate);
@@ -329,12 +359,30 @@ export default function EditCreateScreen() {
     });
   };
 
-  const openVisibilityConfig = () => {
-    setShowVisibilityModal(true);
+  const onIOSDeadlineChange = (
+    _event: DateTimePickerEvent,
+    selectedDate?: Date,
+  ) => {
+    if (selectedDate) setTempDeadlineDate(selectedDate);
   };
 
-  const saveVisibilityConfig = () => {
-    setShowVisibilityModal(false);
+  const confirmIOSDeadline = () => {
+    updateForm("rsvp_deadline", toDateOnly(tempDeadlineDate));
+    setShowDeadlinePicker(false);
+  };
+
+  const openAndroidDeadlinePicker = () => {
+    DateTimePickerAndroid.open({
+      value: form.rsvp_deadline
+        ? new Date(`${form.rsvp_deadline}T12:00:00`)
+        : new Date(),
+      mode: "date",
+      onChange: (event, date) => {
+        if (event.type === "set" && date) {
+          updateForm("rsvp_deadline", toDateOnly(date));
+        }
+      },
+    });
   };
 
   const saveChanges = async () => {
@@ -404,7 +452,7 @@ export default function EditCreateScreen() {
         p_gif_key: null,
         p_event_type: eventType,
         p_proposed_dates: proposedDates,
-        p_visibility: null,
+        p_visibility: legacyVisibility,
         p_visible_in_feed: form.visible_in_feed,
         p_requires_approval: form.requires_approval,
         p_invite_list_visibility: "host_only",
@@ -412,8 +460,9 @@ export default function EditCreateScreen() {
         p_send_rsvp_reminders: form.send_rsvp_reminders,
         p_remind_after_days: form.remind_after_days,
         p_rsvp_deadline: form.rsvp_deadline,
-        p_send_final_reminder_at_deadline: form.send_final_reminder_at_deadline,
-        p_forwarding_mode: null,
+        p_send_final_reminder_at_deadline:
+          !!form.rsvp_deadline && form.send_rsvp_reminders,
+        p_forwarding_mode: derivedForwardingMode,
         p_event_time_zone: startsAt ? getLocalTimeZone() : null,
         p_external_url: externalUrl,
       });
@@ -631,68 +680,269 @@ export default function EditCreateScreen() {
             style={[styles.inputStyle, styles.detailsInput]}
           />
 
-          <StyledText style={styles.sectionLabel}>{t("manage_label_where")}</StyledText>
-          <View style={styles.locationWrap}>
-            <LocationSearch
-              value={form.location}
-              onChange={(nextValue) => updateForm("location", nextValue)}
-            />
+          <View style={styles.detailSection}>
+            <TouchableOpacity
+              style={styles.collapsibleHeader}
+              onPress={() => setLocationExpanded((current) => !current)}
+            >
+              <View style={styles.collapsibleText}>
+                <StyledText style={styles.detailSectionTitle}>Location</StyledText>
+                <StyledText style={styles.sectionHintCompact}>
+                  {locationSummary}
+                </StyledText>
+              </View>
+              <Ionicons
+                name={locationExpanded ? "chevron-up" : "chevron-down"}
+                size={20}
+                color={COLORS.primary}
+              />
+            </TouchableOpacity>
+
+            {locationExpanded ? (
+              <>
+                <StyledText style={styles.sectionLabel}>{t("manage_label_where")}</StyledText>
+                <View style={styles.locationWrap}>
+                  <LocationSearch
+                    value={form.location}
+                    onChange={(nextValue) => updateForm("location", nextValue)}
+                  />
+                </View>
+
+                <StyledText style={styles.sectionLabel}>{t("external_link_label")}</StyledText>
+                <StyledInput
+                  placeholder={t("external_link_placeholder")}
+                  value={form.external_url}
+                  onChangeText={(text: string) => updateForm("external_url", text)}
+                  keyboardType="url"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  style={styles.inputStyle}
+                />
+              </>
+            ) : null}
           </View>
 
-          <StyledText style={styles.sectionLabel}>{t("external_link_label")}</StyledText>
-          <StyledInput
-            placeholder={t("external_link_placeholder")}
-            value={form.external_url}
-            onChangeText={(text: string) => updateForm("external_url", text)}
-            keyboardType="url"
-            autoCapitalize="none"
-            autoCorrect={false}
-            style={styles.inputStyle}
-          />
-          <StyledText style={styles.helperText}>
-            {t("external_link_helper")}
-          </StyledText>
+          <View style={styles.detailSection}>
+            <TouchableOpacity
+              style={styles.collapsibleHeader}
+              onPress={() => setSharingExpanded((current) => !current)}
+            >
+              <View style={styles.collapsibleText}>
+                <StyledText style={styles.detailSectionTitle}>Event sharing</StyledText>
+                <StyledText style={styles.sectionHintCompact}>
+                  {sharingSummary}
+                </StyledText>
+              </View>
+              <Ionicons
+                name={sharingExpanded ? "chevron-up" : "chevron-down"}
+                size={20}
+                color={COLORS.primary}
+              />
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.pwaInput}
-            onPress={openVisibilityConfig}
-          >
-            <View>
-              <StyledText style={styles.label}>{t("manage_label_who_can_join")}</StyledText>
-              <StyledText style={styles.pwaInputText}>
-                {visibilitySummary(
-                  form.visible_in_feed,
-                  form.requires_approval,
-                  t,
+            {sharingExpanded ? (
+              <>
+                <TouchableOpacity
+                  style={styles.optionRow}
+                  onPress={() => updateForm("visible_in_feed", !form.visible_in_feed)}
+                >
+                  <Ionicons
+                    name={form.visible_in_feed ? "checkbox-outline" : "square-outline"}
+                    size={22}
+                    color={COLORS.primary}
+                  />
+
+                  <View style={styles.optionCopy}>
+                    <StyledText style={styles.optionTitle}>
+                      My extended network can see this event
+                    </StyledText>
+                    <StyledText style={styles.optionHint}>
+                      I want my friends and their friends to know about my event.
+                    </StyledText>
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.optionRow}
+                  onPress={() => updateForm("requires_approval", !form.requires_approval)}
+                >
+                  <Ionicons
+                    name={form.requires_approval ? "checkbox-outline" : "square-outline"}
+                    size={22}
+                    color={COLORS.primary}
+                  />
+
+                  <View style={styles.optionCopy}>
+                    <StyledText style={styles.optionTitle}>
+                      Approve guests before they join
+                    </StyledText>
+                    <StyledText style={styles.optionHint}>
+                      I want to approve first before people join.
+                    </StyledText>
+                  </View>
+                </TouchableOpacity>
+              </>
+            ) : null}
+          </View>
+
+          <View style={styles.detailSection}>
+            <TouchableOpacity
+              style={styles.collapsibleHeader}
+              onPress={() => setRsvpExpanded((current) => !current)}
+            >
+              <View style={styles.collapsibleText}>
+                <StyledText style={styles.detailSectionTitle}>RSVP deadline</StyledText>
+                <StyledText style={styles.sectionHintCompact}>
+                  {rsvpSummary}
+                </StyledText>
+              </View>
+              <Ionicons
+                name={rsvpExpanded ? "chevron-up" : "chevron-down"}
+                size={20}
+                color={COLORS.primary}
+              />
+            </TouchableOpacity>
+
+            {rsvpExpanded ? (
+              <>
+                <StyledText style={styles.sectionHint}>
+                  Useful when you need a headcount for tickets, reservations, or planning.
+                </StyledText>
+
+                <TouchableOpacity
+                  style={styles.deadlineField}
+                  onPress={() => {
+                    if (Platform.OS === "android") {
+                      openAndroidDeadlinePicker();
+                    } else {
+                      setTempDeadlineDate(
+                        form.rsvp_deadline
+                          ? new Date(`${form.rsvp_deadline}T12:00:00`)
+                          : new Date(),
+                      );
+                      setShowDeadlinePicker(true);
+                    }
+                  }}
+                >
+                  <StyledText style={styles.deadlineFieldText}>
+                    {formatDeadlineLabel(form.rsvp_deadline, t, dateLocale)}
+                  </StyledText>
+
+                  <Ionicons
+                    name="chevron-down"
+                    size={18}
+                    color={COLORS.textMuted}
+                  />
+                </TouchableOpacity>
+
+                {!!form.rsvp_deadline && (
+                  <TouchableOpacity
+                    style={styles.clearDeadlineBtn}
+                    onPress={() => updateForm("rsvp_deadline", null)}
+                  >
+                    <StyledText style={styles.clearDeadlineText}>
+                      Clear date
+                    </StyledText>
+                  </TouchableOpacity>
                 )}
-              </StyledText>
-            </View>
-            <Ionicons
-              name="settings-outline"
-              size={20}
-              color={COLORS.textMuted}
-            />
-          </TouchableOpacity>
 
-          <StyledText style={styles.sectionLabel}>
-            {t("create_details_from")}
-          </StyledText>
+                {showDeadlinePicker && Platform.OS === "ios" && (
+                  <View style={styles.iosDeadlinePickerWrap}>
+                    <View style={styles.iosDeadlinePickerHeader}>
+                      <TouchableOpacity onPress={() => setShowDeadlinePicker(false)}>
+                        <StyledText style={styles.iosCancelText}>
+                          {t("common_cancel")}
+                        </StyledText>
+                      </TouchableOpacity>
 
-          <StyledInput
-            placeholder={t("manage_name_placeholder")}
-            value={form.host_name}
-            onChangeText={(t: string) => updateForm("host_name", t)}
-            style={styles.inputStyle}
-          />
+                      <TouchableOpacity onPress={confirmIOSDeadline}>
+                        <StyledText style={styles.iosConfirmText}>
+                          {t("common_confirm")}
+                        </StyledText>
+                      </TouchableOpacity>
+                    </View>
 
-          <StyledInput
-            placeholder={t("manage_email_placeholder")}
-            value={form.host_email}
-            onChangeText={(t: string) => updateForm("host_email", t)}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            style={styles.inputStyle}
-          />
+                    <DateTimePicker
+                      value={tempDeadlineDate}
+                      mode="date"
+                      display="inline"
+                      onChange={onIOSDeadlineChange}
+                      accentColor={COLORS.primary}
+                    />
+                  </View>
+                )}
+
+                <TouchableOpacity
+                  style={styles.optionRow}
+                  onPress={() =>
+                    updateForm("send_rsvp_reminders", !form.send_rsvp_reminders)
+                  }
+                >
+                  <Ionicons
+                    name={form.send_rsvp_reminders ? "checkbox-outline" : "square-outline"}
+                    size={22}
+                    color={COLORS.primary}
+                  />
+
+                  <View style={styles.optionCopy}>
+                    <StyledText style={styles.optionTitle}>
+                      Remind people who have not answered
+                    </StyledText>
+                    <StyledText style={styles.optionHint}>
+                      We will remind your invited guests once a day until they RSVP.
+                    </StyledText>
+                  </View>
+                </TouchableOpacity>
+              </>
+            ) : null}
+          </View>
+
+          <View style={styles.detailSection}>
+            <TouchableOpacity
+              style={styles.collapsibleHeader}
+              onPress={() => setHostExpanded((current) => !current)}
+            >
+              <View style={styles.collapsibleText}>
+                <StyledText style={styles.detailSectionTitle}>
+                  {t("create_details_from")}
+                </StyledText>
+                <StyledText style={styles.sectionHintCompact}>
+                  {form.host_name || form.host_email
+                    ? `From ${form.host_name || form.host_email}`
+                    : "Add host details"}
+                </StyledText>
+              </View>
+              <Ionicons
+                name={hostExpanded ? "chevron-up" : "chevron-down"}
+                size={20}
+                color={COLORS.primary}
+              />
+            </TouchableOpacity>
+
+            {hostExpanded ? (
+              <>
+                <StyledText style={styles.sectionHint}>
+                  This is how guests will see the host.
+                </StyledText>
+
+                <StyledInput
+                  placeholder={t("manage_name_placeholder")}
+                  value={form.host_name}
+                  onChangeText={(t: string) => updateForm("host_name", t)}
+                  style={styles.inputStyle}
+                />
+
+                <StyledInput
+                  placeholder={t("manage_email_placeholder")}
+                  value={form.host_email}
+                  onChangeText={(t: string) => updateForm("host_email", t)}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  style={styles.inputStyle}
+                />
+              </>
+            ) : null}
+          </View>
 
           <TouchableOpacity
             style={[styles.saveBtn, !canSave && styles.disabledBtn]}
@@ -708,79 +958,6 @@ export default function EditCreateScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <Modal visible={showVisibilityModal} transparent animationType="slide">
-        <View style={styles.modalOverlayBottom}>
-          <View style={styles.modalCard}>
-            <ScrollView keyboardShouldPersistTaps="handled">
-              <View style={styles.compactSection}>
-                <StyledText style={styles.compactHeading}>
-                  {t("create_details_social_visibility")}
-                </StyledText>
-
-                <TouchableOpacity
-                  style={styles.checkboxRow}
-                  onPress={() =>
-                    updateForm("visible_in_feed", !form.visible_in_feed)
-                  }
-                >
-                  <Ionicons
-                    name={
-                      form.visible_in_feed
-                        ? "checkbox-outline"
-                        : "square-outline"
-                    }
-                    size={22}
-                    color={COLORS.primary}
-                  />
-                  <StyledText style={styles.radioRowText}>
-                    {t("create_details_people_can_see")}
-                  </StyledText>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.checkboxRow}
-                  onPress={() =>
-                    updateForm("requires_approval", !form.requires_approval)
-                  }
-                >
-                  <Ionicons
-                    name={
-                      form.requires_approval
-                        ? "checkbox-outline"
-                        : "square-outline"
-                    }
-                    size={22}
-                    color={COLORS.primary}
-                  />
-                  <StyledText style={styles.radioRowText}>
-                    {t("create_details_approve_attendees")}
-                  </StyledText>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.modalActionsBottom}>
-                <TouchableOpacity
-                  style={styles.modalSecondaryBtn}
-                  onPress={() => {
-                    setShowVisibilityModal(false);
-                  }}
-                >
-                  <StyledText style={styles.modalSecondaryText}>
-                    {t("common_cancel")}
-                  </StyledText>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.modalPrimaryBtn}
-                  onPress={saveVisibilityConfig}
-                >
-                  <StyledText style={styles.modalPrimaryText}>{t("common_save")}</StyledText>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -834,6 +1011,40 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     lineHeight: 22,
     marginBottom: 18,
+  },
+
+  sectionHintCompact: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+    lineHeight: 18,
+  },
+
+  detailSection: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: COLORS.borderSoft,
+    padding: 16,
+    marginBottom: 14,
+  },
+
+  detailSectionTitle: {
+    fontSize: 20,
+    lineHeight: 24,
+    fontWeight: "900",
+    color: COLORS.text,
+    marginBottom: 4,
+  },
+
+  collapsibleHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+
+  collapsibleText: {
+    flex: 1,
   },
 
   label: {
@@ -1053,6 +1264,31 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 8,
+  },
+
+  optionRow: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    paddingVertical: 10,
+  },
+
+  optionCopy: {
+    flex: 1,
+    marginLeft: 10,
+  },
+
+  optionTitle: {
+    color: COLORS.text,
+    fontSize: 15,
+    fontWeight: "800",
+    lineHeight: 20,
+  },
+
+  optionHint: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 2,
   },
 
   reminderInlineRow: {

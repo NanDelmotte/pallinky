@@ -55,10 +55,6 @@ export default function PrivacyPage() {
               locations, invite lists, RSVPs
             </li>
             <li>
-              <strong>Contacts (optional):</strong> if you grant access, we use
-              your contacts to help you invite people
-            </li>
-            <li>
               <strong>Usage data:</strong> basic interaction data to improve the
               app
             </li>
@@ -99,12 +95,12 @@ export default function PrivacyPage() {
             marginBottom: 18,
           }}
         >
-          <h2 style={{ margin: '0 0 12px' }}>Contacts access</h2>
+          <h2 style={{ margin: '0 0 12px' }}>Contacts</h2>
 
           <p style={{ margin: '0 0 14px' }}>
-            If you allow access to your contacts, Pallinky will only use this
-            data to help you select people to invite. Contacts are not shared or
-            uploaded unless you take an action such as sending an invite.
+            Pallinky does not import your phone contacts. You can invite people
+            by sharing a personal invite link through apps like WhatsApp,
+            Messages, or email.
           </p>
         </section>
 

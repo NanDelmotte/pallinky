@@ -65,9 +65,6 @@ export default {
         NSLocationWhenInUseUsageDescription:
           'Pallinky uses your location while you use the app to suggest nearby venues and help you choose an address for your plan.',
 
-        NSContactsUsageDescription:
-          'Pallinky uses your contacts to help you quickly invite friends to your events.',
-
         NSPhotoLibraryUsageDescription:
           'Pallinky uses your photo library so you can choose a profile photo or add an image to an event.',
 

@@ -5,16 +5,13 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import * as Contacts from 'expo-contacts';
 import {
   ActivityIndicator,
   Alert,
   FlatList,
   Image,
   Keyboard,
-  Linking,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   Share,
@@ -29,13 +26,11 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StyledText } from '@pallinky/ui';
 import { buildInviteMessage, supabase } from '@pallinky/core';
 import { goBackOrReplace } from '../../lib/navigation';
-import MyPeopleSection from 'components/people/MyPeopleSection';
 import CircleManagerSheet from '../../components/circles/CircleManagerSheet';
 import {
   Circle,
   CircleMemberRow,
   CircleRow,
-  DeviceContactRow,
 } from '../../components/circles/circleManagerTypes';
 
 type PersonSource = 'pallinky' | 'contact';
@@ -110,14 +105,6 @@ interface UnifiedPerson {
   phone_e164: string | null;
   matched_user_id: string | null;
   person_id: string | null;
-}
-
-interface RawContactChoice {
-  key: string;
-  name: string;
-  email_lc: string | null;
-  phone_e164: string | null;
-  device_contact_id: string | null;
 }
 
 const COLORS = {
@@ -219,31 +206,6 @@ function dedupePeople(people: UnifiedPerson[]) {
   return result;
 }
 
-function getMergedSelectionIdsForRawContacts(
-  importedContacts: RawContactChoice[],
-  mergedPeople: UnifiedPerson[],
-) {
-  const selectionIds = new Set<string>();
-
-  for (const contact of importedContacts) {
-    const email = normalizeEmail(contact.email_lc);
-    const phone = normalizePhone(contact.phone_e164);
-
-    const match = mergedPeople.find((person) => {
-      const personEmail = normalizeEmail(person.email_lc);
-      const personPhone = normalizePhone(person.phone_e164);
-
-      return Boolean((email && personEmail === email) || (phone && personPhone === phone));
-    });
-
-    if (match?.selection_id) {
-      selectionIds.add(match.selection_id);
-    }
-  }
-
-  return Array.from(selectionIds);
-}
-
 export default function CircleSharePickerScreen() {
   const { slug, circleId } = useLocalSearchParams<{ slug: string; circleId?: string }>();
 
@@ -253,7 +215,6 @@ export default function CircleSharePickerScreen() {
   const [userId, setUserId] = useState<string>('');
   const [search, setSearch] = useState('');
   const [eventTitle, setEventTitle] = useState('this event');
-  const [contactPermissionStatus, setContactPermissionStatus] = useState<string | null>(null);
 
   const [circles, setCircles] = useState<Circle[]>([]);
   const [people, setPeople] = useState<UnifiedPerson[]>([]);
@@ -263,37 +224,16 @@ export default function CircleSharePickerScreen() {
   const [selectedPersonIds, setSelectedPersonIds] = useState<string[]>([]);
   const [didPreloadCircle, setDidPreloadCircle] = useState(false);
 
-  const [rawContactPickerVisible, setRawContactPickerVisible] = useState(false);
-  const [rawContactsLoading, setRawContactsLoading] = useState(false);
-  const [addingPeople, setAddingPeople] = useState(false);
-  const [rawContacts, setRawContacts] = useState<RawContactChoice[]>([]);
-  const [selectedRawContactKeys, setSelectedRawContactKeys] = useState<string[]>([]);
-  const [rawContactsSearch, setRawContactsSearch] = useState('');
-  const [showWhatsAppHelp, setShowWhatsAppHelp] = useState(false);
-
   const [circleManagerVisible, setCircleManagerVisible] = useState(false);
   const circleManagerMode: 'create' | 'edit' = 'create';
   const circleManagerInitialCircle: Circle | null = null;
 
   const [confirmVisible, setConfirmVisible] = useState(false);
 
-  async function loadContactPermissionStatus() {
-    try {
-      const permission = await Contacts.getPermissionsAsync();
-      const normalizedStatus =
-        permission.accessPrivileges === 'limited' ? 'limited' : String(permission.status);
-
-      setContactPermissionStatus(normalizedStatus);
-    } catch {
-      setContactPermissionStatus(null);
-    }
-  }
-
   const buildMergedPeople = useCallback(
     (
       predictedFriends: PredictedFriend[],
       relationships: RelationshipRow[],
-      deviceContacts: DeviceContactRow[],
       profileRows: ProfileAvatarRow[],
       hiddenRows: HiddenPersonRow[],
       userEmail: string,
@@ -396,115 +336,6 @@ export default function CircleSharePickerScreen() {
             phone_e164: null,
             matched_user_id: null,
             person_id: null,
-          });
-        });
-
-      deviceContacts
-        .filter((contact) => {
-          const cleanEmail = normalizeEmail(contact.email_lc);
-          const cleanPhone = normalizePhone(contact.phone_e164);
-          const matchedId = contact.matched_user_id || contact.matched_user_id || '';
-          const isSelf = cleanEmail !== '' && cleanEmail === userEmail;
-
-          if (isSelf) return false;
-          if (!cleanEmail && !cleanPhone) return false;
-          if (cleanEmail && hiddenEmailSet.has(cleanEmail)) return false;
-          if (cleanPhone && hiddenPhoneSet.has(cleanPhone)) return false;
-          if (matchedId && hiddenMatchedUserIdSet.has(matchedId)) return false;
-
-          return true;
-        })
-        .forEach((contact) => {
-          const email = normalizeEmail(contact.email_lc) || null;
-          const phone = normalizePhone(contact.phone_e164) || null;
-          if (!email && !phone) return;
-
-         const looksLikeUser = Boolean(
-  contact.is_user || contact.matched_user_id || profileNameByEmail.has(email || ''),
-);
-
-          const existing = email ? personMap.get(`email:${email}`) : null;
-
-          if (existing) {
-            const mergedDeviceContactId = contact.device_contact_id || existing.device_contact_id;
-            const mergedPhone = phone || existing.phone_e164;
-            const mergedEmail = existing.email_lc || email;
-            const mergedSelectionId = getSelectionId({
-              device_contact_id: mergedDeviceContactId,
-              phone_e164: mergedPhone,
-              email_lc: mergedEmail,
-            });
-
-            personMap.set(`email:${mergedEmail}`, {
-              ...existing,
-              key: `email:${mergedEmail}`,
-              selection_id: mergedSelectionId,
-              email_lc: mergedEmail,
-              name:
-  profileNameById.get(contact.matched_user_id || '') ||
-  (mergedEmail ? profileNameByEmail.get(mergedEmail) : '') ||
-  contact.display_name?.trim() ||
-  contact.name?.trim() ||
-  existing.name ||
-  (mergedEmail
-    ? emailToFallbackName(mergedEmail)
-    : phoneToFallbackName(mergedPhone || '')),
-  
-   
-              avatar_url:
-                profileAvatarById.get(contact.matched_user_id || contact.matched_user_id || '') ||
-                (mergedEmail ? profileAvatarByEmail.get(mergedEmail) : null) ||
-                existing.avatar_url ||
-                contact.avatar_url ||
-                contact.avatar_uri ||
-                null,
-              source: existing.source === 'pallinky' || looksLikeUser ? 'pallinky' : 'contact',
-              total_hangouts: existing.total_hangouts,
-              device_contact_id: mergedDeviceContactId,
-              phone_e164: mergedPhone,
-              matched_user_id:
-                contact.matched_user_id || contact.matched_user_id || existing.matched_user_id,
-              person_id: contact.person_id || existing.person_id,
-            });
-            return;
-          }
-
-          const selectionId = getSelectionId({
-            device_contact_id: contact.device_contact_id,
-            phone_e164: phone,
-            email_lc: email,
-          });
-
-          const key = email
-            ? `email:${email}`
-            : contact.device_contact_id
-              ? `device:${contact.device_contact_id}`
-              : phone
-                ? `phone:${phone}`
-                : `contact:${Math.random().toString(36).slice(2)}`;
-
-          personMap.set(key, {
-            key,
-            selection_id: selectionId,
-            email_lc: email,
-            name:
-  profileNameById.get(contact.matched_user_id || '') ||
-  (email ? profileNameByEmail.get(email) : '') ||
-  contact.display_name?.trim() ||
-  contact.name?.trim() ||
-  (email ? emailToFallbackName(email) : phoneToFallbackName(phone || '')),
-            avatar_url:
-              profileAvatarById.get(contact.matched_user_id || contact.matched_user_id || '') ||
-              (email ? profileAvatarByEmail.get(email) : null) ||
-              contact.avatar_url ||
-              contact.avatar_uri ||
-              null,
-            source: looksLikeUser ? 'pallinky' : 'contact',
-            total_hangouts: 0,
-            device_contact_id: contact.device_contact_id || null,
-            phone_e164: phone,
-            matched_user_id: contact.matched_user_id || contact.matched_user_id || null,
-            person_id: contact.person_id || null,
           });
         });
 
@@ -678,7 +509,7 @@ export default function CircleSharePickerScreen() {
 
       setUserId(nextUserId);
 
-      const [eventRes, circleRes, predictedRes, deviceContactsRes, mePeopleRes] = await Promise.all([
+      const [eventRes, circleRes, predictedRes, mePeopleRes] = await Promise.all([
         supabase.from('events').select('id, title').eq('slug', slug).single(),
         supabase
           .from('social_circles')
@@ -686,7 +517,6 @@ export default function CircleSharePickerScreen() {
           .eq('user_id', nextUserId)
           .order('created_at', { ascending: false }),
  Promise.resolve({ data: [], error: null }), 
-        supabase.rpc('get_my_device_contacts'),
         supabase
           .from('people')
           .select('id, email_lc, matched_user_id')
@@ -717,7 +547,6 @@ export default function CircleSharePickerScreen() {
       if (eventRes.error) throw eventRes.error;
       if (circleRes.error) throw circleRes.error;
       if (predictedRes.error) throw predictedRes.error;
-      if (deviceContactsRes.error) throw deviceContactsRes.error;
       if (mePeopleRes.error) throw mePeopleRes.error;
       if (relationshipRes.error) throw relationshipRes.error;
       if (hiddenRes.error) throw hiddenRes.error;
@@ -726,7 +555,6 @@ export default function CircleSharePickerScreen() {
 
       const predictedFriends = (predictedRes.data as PredictedFriend[]) || [];
       const relationships = (relationshipRes.data as RelationshipRow[]) || [];
-      const deviceContacts = (deviceContactsRes.data as DeviceContactRow[]) || [];
       const hiddenRows = (hiddenRes.data as HiddenPersonRow[]) || [];
       const userPersonIds = Array.from(
         new Set(
@@ -800,13 +628,6 @@ export default function CircleSharePickerScreen() {
         if (matchedId) profileIdSet.add(matchedId);
       });
 
-      deviceContacts.forEach((contact) => {
-        const email = normalizeEmail(contact.email_lc);
-        const matchedId = contact.matched_user_id || contact.matched_user_id || '';
-        if (email) profileEmailSet.add(email);
-        if (matchedId) profileIdSet.add(matchedId);
-      });
-
       sharedEvents.forEach((event) => {
         const email = normalizeEmail(event.host_email);
         if (email) profileEmailSet.add(email);
@@ -871,7 +692,6 @@ export default function CircleSharePickerScreen() {
       const mergedPeople = buildMergedPeople(
         predictedFriends,
         relationships,
-        deviceContacts,
         profileRows,
         hiddenRows,
         userEmail,
@@ -903,7 +723,6 @@ export default function CircleSharePickerScreen() {
   useFocusEffect(
     React.useCallback(() => {
       void fetchData();
-      void loadContactPermissionStatus();
     }, [fetchData]),
   );
 
@@ -1036,19 +855,6 @@ export default function CircleSharePickerScreen() {
       : recentConnections;
   }, [recentConnections, search]);
 
-  const filteredRawContacts = useMemo(() => {
-    const q = rawContactsSearch.trim().toLowerCase();
-    if (!q) return rawContacts;
-
-    return rawContacts.filter((contact) => {
-      return (
-        contact.name.toLowerCase().includes(q) ||
-        (contact.email_lc || '').toLowerCase().includes(q) ||
-        (contact.phone_e164 || '').toLowerCase().includes(q)
-      );
-    });
-  }, [rawContacts, rawContactsSearch]);
-
   function togglePerson(selectionId: string) {
     Keyboard.dismiss();
     if (!selectionId) return;
@@ -1085,173 +891,6 @@ export default function CircleSharePickerScreen() {
     }
 
     setSelectedPersonIds((prev) => prev.filter((id) => id !== item.personSelectionId));
-  }
-
-  async function ensureLimitedContactsAccess() {
-    const permission = await Contacts.getPermissionsAsync();
-
-    let finalStatus =
-      permission.accessPrivileges === 'limited' ? 'limited' : String(permission.status);
-
-    if (finalStatus !== 'granted' && finalStatus !== 'limited') {
-      const request = await Contacts.requestPermissionsAsync();
-
-      finalStatus =
-        request.accessPrivileges === 'limited' ? 'limited' : String(request.status);
-    }
-
-    if (finalStatus !== 'granted' && finalStatus !== 'limited') {
-      throw new Error('Please enable contacts access in Settings.');
-    }
-
-    setContactPermissionStatus(finalStatus);
-    return finalStatus;
-  }
-
-  async function uploadPayloadToSupabase(
-    payload: {
-      display_name: string | null;
-      email_lc: string | null;
-      phone_e164: string | null;
-      device_contact_id: string | null;
-      avatar_uri: null;
-    }[],
-  ) {
-    if (!payload.length) return;
-
-    const { error: upsertError } = await supabase.rpc('upsert_device_contacts', {
-      p_contacts: payload,
-    });
-
-    if (upsertError) throw upsertError;
-
-    const { error: matchError } = await supabase.rpc('match_device_contacts');
-    if (matchError) throw matchError;
-  }
-
-  async function loadNewPhoneContactsFromDevice() {
-    const { data } = await Contacts.getContactsAsync({
-      fields: [Contacts.Fields.Emails, Contacts.Fields.PhoneNumbers],
-    });
-
-    const deduped = new Map<string, RawContactChoice>();
-
-    for (const contact of data || []) {
-      const firstEmail = normalizeEmail(contact.emails?.[0]?.email) || null;
-      const firstPhone = normalizePhone(contact.phoneNumbers?.[0]?.number) || null;
-      const deviceId = contact.id || null;
-
-      if (!firstEmail && !firstPhone) continue;
-
-      const key = firstEmail
-        ? `email:${firstEmail}`
-        : firstPhone
-          ? `phone:${firstPhone}`
-          : `device:${deviceId}`;
-
-      if (deduped.has(key)) continue;
-
-      deduped.set(key, {
-        key,
-        name:
-          contact.name?.trim() ||
-          (firstEmail ? emailToFallbackName(firstEmail) : phoneToFallbackName(firstPhone || '')),
-        email_lc: firstEmail,
-        phone_e164: firstPhone,
-        device_contact_id: deviceId,
-      });
-    }
-
-    const nextRawContacts = Array.from(deduped.values()).sort((a, b) => a.name.localeCompare(b.name));
-
-    setRawContacts(nextRawContacts);
-    setSelectedRawContactKeys([]);
-    setRawContactsSearch('');
-    setShowWhatsAppHelp(false);
-    setRawContactPickerVisible(true);
-  }
-
-  async function openChooseRawContacts() {
-    setAddingPeople(true);
-    setRawContactsLoading(true);
-
-    try {
-      const finalStatus = await ensureLimitedContactsAccess();
-
-      if (Platform.OS === 'ios' && finalStatus === 'limited') {
-        Alert.alert(
-          'Add more contacts',
-          'To add new people, allow access to more contacts in Settings.',
-          [
-            {
-              text: 'Open Settings',
-              onPress: () => Linking.openURL('app-settings:'),
-            },
-            { text: 'Cancel', style: 'cancel' },
-          ],
-        );
-        return;
-      }
-
-      await fetchData();
-      await loadNewPhoneContactsFromDevice();
-    } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Could not load contacts.');
-      setRawContactPickerVisible(false);
-    } finally {
-      setAddingPeople(false);
-      setRawContactsLoading(false);
-    }
-  }
-
-  async function handleAddSelectedRawContacts() {
-    if (!selectedRawContactKeys.length) {
-      Alert.alert('Select at least one contact.');
-      return;
-    }
-
-    setAddingPeople(true);
-
-    try {
-      const selectedContacts = rawContacts.filter((contact) =>
-        selectedRawContactKeys.includes(contact.key),
-      );
-
-      const payload = selectedContacts.map((contact) => ({
-        display_name: contact.name || null,
-        email_lc: contact.email_lc,
-        phone_e164: contact.phone_e164,
-        device_contact_id: contact.device_contact_id,
-        avatar_uri: null,
-      }));
-
-      await uploadPayloadToSupabase(payload);
-
-      const refreshedPeople = await fetchData();
-      await loadContactPermissionStatus();
-
-      const importedSelectionIds = getMergedSelectionIdsForRawContacts(
-        selectedContacts,
-        refreshedPeople,
-      );
-
-      setSelectedPersonIds((prev) => Array.from(new Set([...prev, ...importedSelectionIds])));
-      setRawContactPickerVisible(false);
-      setSelectedRawContactKeys([]);
-      setRawContactsSearch('');
-      setRawContacts([]);
-      setShowWhatsAppHelp(false);
-    } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Could not add contacts.');
-    } finally {
-      setAddingPeople(false);
-    }
-  }
-
-  function toggleRawContact(key: string) {
-    setSelectedRawContactKeys((prev) =>
-      prev.includes(key) ? prev.filter((id) => id !== key) : [...prev, key],
-    );
   }
 
   function openConfirm() {
@@ -1398,12 +1037,14 @@ export default function CircleSharePickerScreen() {
         invitee_email_lc: string | null;
         invitee_phone_e164: string | null;
         person_id: string | null;
+        invitee_name: string | null;
+        guest_token: string | null;
       }[] = [];
 
       if (existingEmails.length || existingPhones.length || existingPersonIds.length) {
         let existingQuery = supabase
           .from('event_invites')
-          .select('invitee_email_lc, invitee_phone_e164, person_id')
+          .select('invitee_name, invitee_email_lc, invitee_phone_e164, person_id, guest_token')
           .eq('event_id', eventData.id);
 
         if (existingEmails.length + existingPhones.length + existingPersonIds.length > 1) {
@@ -1455,27 +1096,59 @@ export default function CircleSharePickerScreen() {
       });
 
       if (rowsToInsert.length > 0) {
-        const { error: inviteError } = await supabase.from('event_invites').insert(rowsToInsert);
+        const { data: insertedRows, error: inviteError } = await supabase
+          .from('event_invites')
+          .insert(rowsToInsert)
+          .select('invitee_name, invitee_email_lc, invitee_phone_e164, person_id, guest_token');
         if (inviteError) throw inviteError;
+        existingInviteRows = [...existingInviteRows, ...((insertedRows || []) as typeof existingInviteRows)];
       }
 
             // invite_created notifications are produced by the DB trigger on event_invites.
       // Do not insert invite notifications here.
 
-      const shouldOpenShareSheet = personResults.some(
-        (person) =>
-          !(person.source === 'pallinky' || !!person.matched_user_id) &&
-          Boolean(person.phone_e164 || person.email_lc),
-      );
+      const inviteTokenForPerson = (person: (typeof personResults)[number]) => {
+        const email = normalizeEmail(person.email_lc);
+        const phone = normalizePhone(person.phone_e164);
+        const personId = person.person_id || '';
+
+        return existingInviteRows.find((row) => {
+          if (row.invitee_email_lc && email && row.invitee_email_lc === email) return true;
+          if (row.invitee_phone_e164 && phone && row.invitee_phone_e164 === phone) return true;
+          if (row.person_id && personId && row.person_id === personId) return true;
+          return false;
+        })?.guest_token || null;
+      };
+
+      const externalInviteLinks = personResults
+        .filter(
+          (person) =>
+            !(person.source === 'pallinky' || !!person.matched_user_id) &&
+            Boolean(person.phone_e164 || person.email_lc),
+        )
+        .map((person) => ({
+          name: person.name,
+          link: `https://pallinky.com/event/${slug}?token=${encodeURIComponent(
+            inviteTokenForPerson(person) || '',
+          )}`,
+        }))
+        .filter((invite) => !invite.link.endsWith('token='));
 
       setConfirmVisible(false);
 
-      if (shouldOpenShareSheet) {
+      if (externalInviteLinks.length > 0) {
         await new Promise((resolve) => setTimeout(resolve, 250));
-        const message = buildInviteMessage({
-          title: eventTitle,
-          link: `https://pallinky.com/event/${slug}`,
-        });
+        const message =
+          externalInviteLinks.length === 1
+            ? buildInviteMessage({
+                title: eventTitle,
+                link: externalInviteLinks[0].link,
+              })
+            : [
+                `You're invited to ${eventTitle}`,
+                '',
+                ...externalInviteLinks.map((invite) => `${invite.name}: ${invite.link}`),
+              ].join('\n');
         await Share.share({ message });
       }
 
