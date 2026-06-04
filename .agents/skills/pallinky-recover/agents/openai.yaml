@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pallinky Recover"
+  short_description: "Safely recover confusing or failed work"
+  default_prompt: "Use $pallinky-recover to assess this task and recommend the safest next action."
