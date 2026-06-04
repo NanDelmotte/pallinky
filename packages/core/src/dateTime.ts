@@ -20,6 +20,16 @@ export function getEventTimeZone(event?: { event_time_zone?: string | null } | n
   return isValidTimeZone(event?.event_time_zone) ? event!.event_time_zone! : undefined;
 }
 
+function resolveEventTimeZone(
+  event?: { event_time_zone?: string | null } | string | null
+) {
+  if (typeof event === 'string') {
+    return isValidTimeZone(event) ? event : undefined;
+  }
+
+  return getEventTimeZone(event ?? null);
+}
+
 export function formatInEventTimeZone(
   value: string | Date | null | undefined,
   options: Intl.DateTimeFormatOptions,
@@ -30,8 +40,7 @@ export function formatInEventTimeZone(
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return '';
 
-  const eventTimeZone =
-    typeof event === 'string' ? event : getEventTimeZone(event ?? null);
+  const eventTimeZone = resolveEventTimeZone(event);
 
   return date.toLocaleString(undefined, {
     ...options,
@@ -48,8 +57,7 @@ export function getEventDayOfMonth(
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return null;
 
-  const eventTimeZone =
-    typeof event === 'string' ? event : getEventTimeZone(event ?? null);
+  const eventTimeZone = resolveEventTimeZone(event);
 
   const parts = new Intl.DateTimeFormat(undefined, {
     day: 'numeric',
