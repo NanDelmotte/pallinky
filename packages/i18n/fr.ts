@@ -753,6 +753,15 @@ invite_options_friends_title: "Ouvert aux amis d'amis",
 invite_options_friends_badge: "Ouvert",
 invite_options_friends_body:
   "Permettez aux amis de vos amis de découvrir l'activité et de demander à rejoindre. Une façon naturelle d'élargir votre cercle social.",
+invite_options_group_title: "Envoyer un lien dans une discussion de groupe",
+invite_options_group_body:
+  "Un lien que plusieurs personnes peuvent utiliser.",
+invite_options_individuals_title: "Envoyer un lien à plusieurs personnes",
+invite_options_individuals_body:
+  "Utilisez des liens séparés à usage unique lorsque vous invitez les personnes une par une.",
+invite_options_approval_title: "Les personnes doivent-elles recevoir votre approbation ?",
+invite_options_approval_yes: "Oui, j’approuve d’abord les personnes",
+invite_options_approval_no: "Non, toute personne avec le lien peut répondre",
   create_when_specific_subtitle: "Je sais déjà quand cela aura lieu.",
   create_when_options_title: "Quelques options",
   create_when_options_subtitle: "Je veux proposer quelques dates et laisser les gens choisir.",

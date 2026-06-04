@@ -768,6 +768,15 @@ invite_options_friends_title: "Open to friends of friends",
 invite_options_friends_badge: "Open",
 invite_options_friends_body:
   "Let friends-of-friends discover and request to join. The natural way to grow your social world.",
+  invite_options_group_title: "Send a link to a group chat",
+  invite_options_group_body:
+    "One link that more than one person can use.",
+  invite_options_individuals_title: "Send a link to many individuals",
+  invite_options_individuals_body:
+    "Use separate single-use links when you invite people one by one.",
+  invite_options_approval_title: "Do people need your approval to join?",
+  invite_options_approval_yes: "Yes, I approve people first",
+  invite_options_approval_no: "No, anyone with the link can RSVP",
   create_details_people_can_see: "People can see I’m doing this",
   create_details_approve_attendees: "I approve attendees first",
   create_deadline_select_date: "Select date",

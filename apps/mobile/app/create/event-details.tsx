@@ -93,10 +93,6 @@ export default function FormalDetailsScreen() {
 
   const [loading, setLoading] = useState(false);
   const submitLockRef = useRef(false);
-  const [locationExpanded, setLocationExpanded] = useState(false);
-  const [sharingExpanded, setSharingExpanded] = useState(false);
-  const [hostExpanded, setHostExpanded] = useState(false);
-  const [rsvpExpanded, setRsvpExpanded] = useState(false);
   const [showDeadlinePicker, setShowDeadlinePicker] = useState(false);
 
   const [tempDeadlineDate, setTempDeadlineDate] = useState<Date>(
@@ -107,20 +103,6 @@ export default function FormalDetailsScreen() {
   const requiresApproval = form.requires_approval ?? false;
   const legacyVisibility = getLegacyVisibility(visibleInFeed);
   const derivedForwardingMode = requiresApproval ? 'host_approval' : null;
-  const hasLocationDetails = !!form.location.trim() || !!form.external_url.trim();
-  const locationSummary = hasLocationDetails
-    ? [form.location.trim(), form.external_url.trim()].filter(Boolean).join(' - ')
-    : 'Add a place, address, or useful link';
-  const rsvpSummary = form.rsvp_deadline
-    ? `${formatDeadlineLabel(form.rsvp_deadline, t, dateLocale)}${
-        form.send_rsvp_reminders ? ' - reminders on' : ''
-      }`
-    : form.send_rsvp_reminders
-    ? 'No deadline - reminders on'
-    : 'No deadline set';
-  const sharingSummary = `${visibleInFeed ? 'Extended network can see it' : 'Invite link only'} - ${
-    requiresApproval ? 'approval on' : 'anyone can RSVP'
-  }`;
 
   useEffect(() => {
     initializeFromPrefill({
@@ -165,7 +147,7 @@ export default function FormalDetailsScreen() {
   }, [updateForm]);
 
   const goBack = () => {
-    router.replace('/create/event-type');
+    router.replace('/create/invite-options');
   };
 
   const canSave =
@@ -629,328 +611,101 @@ export default function FormalDetailsScreen() {
             </View>
 
             <View style={styles.detailSection}>
-              <TouchableOpacity
-                style={styles.collapsibleHeader}
-                onPress={() => setLocationExpanded((current) => !current)}
-              >
-                <View style={styles.collapsibleText}>
-                  <StyledText style={styles.sectionTitle}>Location</StyledText>
-                  <StyledText style={styles.sectionHintCompact}>
-                    {locationSummary}
-                  </StyledText>
-                </View>
-                <Ionicons
-                  name={locationExpanded ? 'chevron-up' : 'chevron-down'}
-                  size={20}
-                  color={COLORS.primary}
+              <StyledText style={styles.sectionTitle}>Location</StyledText>
+
+              <View style={styles.locationWrap}>
+                <LocationSearch
+                  value={form.location}
+                  onChange={(nextValue) =>
+                    updateForm(
+                      'location',
+                      nextValue
+                    )
+                  }
                 />
-              </TouchableOpacity>
-
-              {locationExpanded ? (
-                <>
-                  <StyledText style={styles.fieldLabel}>{t('manage_label_where')}</StyledText>
-
-                  <View style={styles.locationWrap}>
-                    <LocationSearch
-                      value={form.location}
-                      onChange={(nextValue) =>
-                        updateForm(
-                          'location',
-                          nextValue
-                        )
-                      }
-                    />
-                  </View>
-
-                  <StyledText style={styles.fieldLabel}>{t('external_link_label')}</StyledText>
-
-                  <StyledInput
-                    placeholder={t('external_link_placeholder')}
-                    value={form.external_url}
-                    onChangeText={(text: string) =>
-                      updateForm(
-                        'external_url',
-                        text
-                      )
-                    }
-                    keyboardType="url"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    style={styles.inputStyle}
-                  />
-                </>
-              ) : null}
-
+              </View>
             </View>
 
             <View style={styles.detailSection}>
+              <StyledText style={styles.sectionTitle}>RSVP deadline</StyledText>
+
               <TouchableOpacity
-                style={styles.collapsibleHeader}
-                onPress={() => setSharingExpanded((current) => !current)}
+                style={styles.deadlineField}
+                onPress={() => {
+                  if (Platform.OS === 'android') {
+                    openAndroidDeadlinePicker();
+                  } else {
+                    setTempDeadlineDate(
+                      form.rsvp_deadline
+                        ? new Date(
+                            `${form.rsvp_deadline}T12:00:00`
+                          )
+                        : new Date()
+                    );
+                    setShowDeadlinePicker(true);
+                  }
+                }}
               >
-                <View style={styles.collapsibleText}>
-                  <StyledText style={styles.sectionTitle}>Event sharing</StyledText>
-                  <StyledText style={styles.sectionHintCompact}>
-                    {sharingSummary}
-                  </StyledText>
-                </View>
+                <StyledText style={styles.deadlineFieldText}>
+                  {formatDeadlineLabel(
+                    form.rsvp_deadline,
+                    t,
+                    dateLocale
+                  )}
+                </StyledText>
+
                 <Ionicons
-                  name={sharingExpanded ? 'chevron-up' : 'chevron-down'}
-                  size={20}
-                  color={COLORS.primary}
+                  name="chevron-down"
+                  size={18}
+                  color={COLORS.textMuted}
                 />
               </TouchableOpacity>
 
-              {sharingExpanded ? (
-                <>
-                  <TouchableOpacity
-                    style={styles.optionRow}
-                    onPress={() =>
-                      updateForm(
-                        'visible_in_feed',
-                        !visibleInFeed
-                      )
-                    }
-                  >
-                    <Ionicons
-                      name={
-                        visibleInFeed
-                          ? 'checkbox-outline'
-                          : 'square-outline'
-                      }
-                      size={22}
-                      color={COLORS.primary}
-                    />
-
-                    <View style={styles.optionCopy}>
-                      <StyledText style={styles.optionTitle}>
-                        My extended network can see this event
-                      </StyledText>
-                      <StyledText style={styles.optionHint}>
-                        I want my friends and their friends to know about my event.
-                      </StyledText>
-                    </View>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.optionRow}
-                    onPress={() =>
-                      updateForm(
-                        'requires_approval',
-                        !requiresApproval
-                      )
-                    }
-                  >
-                    <Ionicons
-                      name={
-                        requiresApproval
-                          ? 'checkbox-outline'
-                          : 'square-outline'
-                      }
-                      size={22}
-                      color={COLORS.primary}
-                    />
-
-                    <View style={styles.optionCopy}>
-                      <StyledText style={styles.optionTitle}>
-                        Approve guests before they join
-                      </StyledText>
-                      <StyledText style={styles.optionHint}>
-                        I want to approve first before people join.
-                      </StyledText>
-                    </View>
-                  </TouchableOpacity>
-                </>
-              ) : null}
-            </View>
-
-            <View style={styles.detailSection}>
-              <TouchableOpacity
-                style={styles.collapsibleHeader}
-                onPress={() => setRsvpExpanded((current) => !current)}
-              >
-                <View style={styles.collapsibleText}>
-                  <StyledText style={styles.sectionTitle}>RSVP deadline</StyledText>
-                  <StyledText style={styles.sectionHintCompact}>
-                    {rsvpSummary}
+              {!!form.rsvp_deadline && (
+                <TouchableOpacity
+                  style={styles.clearDeadlineBtn}
+                  onPress={() =>
+                    updateForm(
+                      'rsvp_deadline',
+                      null
+                    )
+                  }
+                >
+                  <StyledText style={styles.clearDeadlineText}>
+                    Clear date
                   </StyledText>
-                </View>
-                <Ionicons
-                  name={rsvpExpanded ? 'chevron-up' : 'chevron-down'}
-                  size={20}
-                  color={COLORS.primary}
-                />
-              </TouchableOpacity>
+                </TouchableOpacity>
+              )}
 
-              {rsvpExpanded ? (
-                <>
-                  <StyledText style={styles.sectionHint}>
-                    Useful when you need a headcount for tickets, reservations, or planning.
-                  </StyledText>
-
-                  <TouchableOpacity
-                    style={styles.deadlineField}
-                    onPress={() => {
-                      if (Platform.OS === 'android') {
-                        openAndroidDeadlinePicker();
-                      } else {
-                        setTempDeadlineDate(
-                          form.rsvp_deadline
-                            ? new Date(
-                                `${form.rsvp_deadline}T12:00:00`
-                              )
-                            : new Date()
-                        );
-                        setShowDeadlinePicker(true);
-                      }
-                    }}
-                  >
-                    <StyledText style={styles.deadlineFieldText}>
-                      {formatDeadlineLabel(
-                        form.rsvp_deadline,
-                        t,
-                        dateLocale
-                      )}
-                    </StyledText>
-
-                    <Ionicons
-                      name="chevron-down"
-                      size={18}
-                      color={COLORS.textMuted}
-                    />
-                  </TouchableOpacity>
-
-                  {!!form.rsvp_deadline && (
+              {showDeadlinePicker && Platform.OS === 'ios' && (
+                <View style={styles.iosDeadlinePickerWrap}>
+                  <View style={styles.iosDeadlinePickerHeader}>
                     <TouchableOpacity
-                      style={styles.clearDeadlineBtn}
                       onPress={() =>
-                        updateForm(
-                          'rsvp_deadline',
-                          null
-                        )
+                        setShowDeadlinePicker(false)
                       }
                     >
-                      <StyledText style={styles.clearDeadlineText}>
-                        Clear date
+                      <StyledText style={styles.iosCancelText}>
+                        {t('common_cancel')}
                       </StyledText>
                     </TouchableOpacity>
-                  )}
 
-                  {showDeadlinePicker && Platform.OS === 'ios' && (
-                    <View style={styles.iosDeadlinePickerWrap}>
-                      <View style={styles.iosDeadlinePickerHeader}>
-                        <TouchableOpacity
-                          onPress={() =>
-                            setShowDeadlinePicker(false)
-                          }
-                        >
-                          <StyledText style={styles.iosCancelText}>
-                            {t('common_cancel')}
-                          </StyledText>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity onPress={confirmIOSDeadline}>
-                          <StyledText style={styles.iosConfirmText}>
-                            {t('common_confirm')}
-                          </StyledText>
-                        </TouchableOpacity>
-                      </View>
-
-                      <DateTimePicker
-                        value={tempDeadlineDate}
-                        mode="date"
-                        display="inline"
-                        onChange={onIOSDeadlineChange}
-                        accentColor={COLORS.primary}
-                      />
-                    </View>
-                  )}
-
-                  <TouchableOpacity
-                    style={styles.optionRow}
-                    onPress={() =>
-                      updateForm(
-                        'send_rsvp_reminders',
-                        !form.send_rsvp_reminders
-                      )
-                    }
-                  >
-                    <Ionicons
-                      name={
-                        form.send_rsvp_reminders
-                          ? 'checkbox-outline'
-                          : 'square-outline'
-                      }
-                      size={22}
-                      color={COLORS.primary}
-                    />
-
-                    <View style={styles.optionCopy}>
-                      <StyledText style={styles.optionTitle}>
-                        Remind people who have not answered
+                    <TouchableOpacity onPress={confirmIOSDeadline}>
+                      <StyledText style={styles.iosConfirmText}>
+                        {t('common_confirm')}
                       </StyledText>
-                      <StyledText style={styles.optionHint}>
-                        We will remind your invited guests once a day until they RSVP.
-                      </StyledText>
-                    </View>
-                  </TouchableOpacity>
-                </>
-              ) : null}
-            </View>
+                    </TouchableOpacity>
+                  </View>
 
-            <View style={styles.detailSection}>
-              <TouchableOpacity
-                style={styles.collapsibleHeader}
-                onPress={() => setHostExpanded((current) => !current)}
-              >
-                <View style={styles.collapsibleText}>
-                  <StyledText style={styles.sectionTitle}>
-                    {t('create_details_from')}
-                  </StyledText>
-                  <StyledText style={styles.sectionHintCompact}>
-                    {form.host_name || form.host_email ? `From ${form.host_name || form.host_email}` : 'Add host details'}
-                  </StyledText>
+                  <DateTimePicker
+                    value={tempDeadlineDate}
+                    mode="date"
+                    display="inline"
+                    onChange={onIOSDeadlineChange}
+                    accentColor={COLORS.primary}
+                  />
                 </View>
-                <Ionicons
-                  name={hostExpanded ? 'chevron-up' : 'chevron-down'}
-                  size={20}
-                  color={COLORS.primary}
-                />
-              </TouchableOpacity>
-
-              {hostExpanded ? (
-                <>
-                  <StyledText style={styles.sectionHint}>
-                    This is how guests will see the host.
-                  </StyledText>
-
-                  <StyledInput
-                    placeholder={t('manage_name_placeholder')}
-                    value={form.host_name}
-                    onChangeText={(t: string) =>
-                      updateForm(
-                        'host_name',
-                        t
-                      )
-                    }
-                    style={styles.inputStyle}
-                  />
-
-                  <StyledInput
-                    placeholder={t('manage_email_placeholder')}
-                    value={form.host_email}
-                    onChangeText={(t: string) =>
-                      updateForm(
-                        'host_email',
-                        t
-                      )
-                    }
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    style={styles.inputStyle}
-                  />
-                </>
-              ) : null}
+              )}
             </View>
 
             <View style={styles.nav}>

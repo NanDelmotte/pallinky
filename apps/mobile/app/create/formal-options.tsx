@@ -61,7 +61,7 @@ export default function FormalOptionsScreen() {
   };
 
   const goForward = () => {
-    router.replace("/create/event-details");
+    router.replace("/create/invite-options");
   };
 
   return (
