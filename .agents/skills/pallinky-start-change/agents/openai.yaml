@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pallinky Start Change"
+  short_description: "Start a focused Pallinky change safely"
+  default_prompt: "Use $pallinky-start-change to help me start this Pallinky change."

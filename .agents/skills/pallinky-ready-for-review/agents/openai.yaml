@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pallinky Ready for Review"
+  short_description: "Verify and prepare a Pallinky change"
+  default_prompt: "Use $pallinky-ready-for-review to verify and prepare this change for review."
