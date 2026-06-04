@@ -862,4 +862,13 @@ invite_options_friends_title: "Open voor vrienden van vrienden",
 invite_options_friends_badge: "Open",
 invite_options_friends_body:
   "Laat vrienden van vrienden het ontdekken en een verzoek indienen om deel te nemen. Een natuurlijke manier om je sociale kring uit te breiden.",
+invite_options_group_title: "Stuur een link naar een groepschat",
+invite_options_group_body:
+  "Eén link die meer dan één persoon kan gebruiken.",
+invite_options_individuals_title: "Stuur een link naar meerdere personen",
+invite_options_individuals_body:
+  "Gebruik aparte links voor eenmalig gebruik als je mensen één voor één uitnodigt.",
+invite_options_approval_title: "Moeten mensen eerst jouw goedkeuring krijgen?",
+invite_options_approval_yes: "Ja, ik keur mensen eerst goed",
+invite_options_approval_no: "Nee, iedereen met de link kan RSVP'en",
 };

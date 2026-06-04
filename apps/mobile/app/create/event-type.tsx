@@ -62,6 +62,22 @@ export default function FormalWhenScreen() {
 
   const sameMinute = (a: Date, b: Date) => a.getTime() === b.getTime();
 
+  const mergeDatePart = (current: Date, selectedDate: Date) => {
+    const nextDate = new Date(current);
+    nextDate.setFullYear(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth(),
+      selectedDate.getDate()
+    );
+    return nextDate;
+  };
+
+  const mergeTimePart = (current: Date, selectedDate: Date) => {
+    const nextDate = new Date(current);
+    nextDate.setHours(selectedDate.getHours(), selectedDate.getMinutes(), 0, 0);
+    return nextDate;
+  };
+
   const openSpecific = () => {
     updateForm('whenMode', 'specific');
     setTempDate(form.specificDate || new Date());
@@ -121,7 +137,15 @@ export default function FormalWhenScreen() {
   };
 
   const onIOSChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
-    if (selectedDate) setTempDate(selectedDate);
+    if (selectedDate) {
+      setTempDate((current) => mergeDatePart(current, selectedDate));
+    }
+  };
+
+  const onIOSTimeChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (selectedDate) {
+      setTempDate((current) => mergeTimePart(current, selectedDate));
+    }
   };
 
   const confirmIOSDate = () => {
@@ -209,7 +233,15 @@ export default function FormalWhenScreen() {
     form.endDate || new Date(startDate.getTime() + 60 * 60 * 1000);
 
   const onIOSEndChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
-    if (selectedDate) setTempEndDate(selectedDate);
+    if (selectedDate) {
+      setTempEndDate((current) => mergeDatePart(current, selectedDate));
+    }
+  };
+
+  const onIOSEndTimeChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (selectedDate) {
+      setTempEndDate((current) => mergeTimePart(current, selectedDate));
+    }
   };
 
   const confirmIOSEndDate = () => {
@@ -277,7 +309,7 @@ export default function FormalWhenScreen() {
     setShowSpecificModal(false);
     setShowPicker(false);
     setShowEndPicker(false);
-    router.replace('/create/event-details');
+    router.replace('/create/invite-options');
   };
 
   const continueSeries = () => {
@@ -285,13 +317,13 @@ export default function FormalWhenScreen() {
     setShowSeriesModal(false);
     setShowPicker(false);
     setShowEndPicker(false);
-    router.replace('/create/event-details');
+    router.replace('/create/invite-options');
   };
 
   const continueOptions = () => {
     updateForm('whenMode', 'options');
     setShowOptionsModal(false);
-    router.replace('/create/event-details');
+    router.replace('/create/invite-options');
   };
 
   const whenCards = [
@@ -322,7 +354,7 @@ export default function FormalWhenScreen() {
       example: t('create_when_unsure_example'),
       onPress: () => {
         updateForm('whenMode', 'unsure');
-        router.replace('/create/event-details');
+        router.replace('/create/invite-options');
       },
     },
   ] as const;
@@ -450,9 +482,18 @@ export default function FormalWhenScreen() {
 
                   <DateTimePicker
                     value={tempDate}
-                    mode="datetime"
-                    display="spinner"
+                    mode="date"
+                    display="inline"
                     onChange={onIOSChange}
+                    accentColor={COLORS.primary}
+                    style={{ width: '100%' }}
+                  />
+
+                  <DateTimePicker
+                    value={tempDate}
+                    mode="time"
+                    display="spinner"
+                    onChange={onIOSTimeChange}
                     minuteInterval={15}
                     style={{ width: '100%' }}
                   />
@@ -510,9 +551,18 @@ export default function FormalWhenScreen() {
 
                   <DateTimePicker
                     value={tempEndDate}
-                    mode="datetime"
-                    display="spinner"
+                    mode="date"
+                    display="inline"
                     onChange={onIOSEndChange}
+                    accentColor={COLORS.primary}
+                    style={{ width: '100%' }}
+                  />
+
+                  <DateTimePicker
+                    value={tempEndDate}
+                    mode="time"
+                    display="spinner"
+                    onChange={onIOSEndTimeChange}
                     minuteInterval={15}
                     style={{ width: '100%' }}
                   />
@@ -577,9 +627,18 @@ export default function FormalWhenScreen() {
 
                   <DateTimePicker
                     value={tempDate}
-                    mode="datetime"
-                    display="spinner"
+                    mode="date"
+                    display="inline"
                     onChange={onIOSChange}
+                    accentColor={COLORS.primary}
+                    style={{ width: '100%' }}
+                  />
+
+                  <DateTimePicker
+                    value={tempDate}
+                    mode="time"
+                    display="spinner"
+                    onChange={onIOSTimeChange}
                     minuteInterval={15}
                     style={{ width: '100%' }}
                   />
@@ -688,9 +747,18 @@ export default function FormalWhenScreen() {
 
                   <DateTimePicker
                     value={tempEndDate}
-                    mode="datetime"
-                    display="spinner"
+                    mode="date"
+                    display="inline"
                     onChange={onIOSEndChange}
+                    accentColor={COLORS.primary}
+                    style={{ width: '100%' }}
+                  />
+
+                  <DateTimePicker
+                    value={tempEndDate}
+                    mode="time"
+                    display="spinner"
+                    onChange={onIOSEndTimeChange}
                     minuteInterval={15}
                     style={{ width: '100%' }}
                   />
@@ -759,9 +827,18 @@ export default function FormalWhenScreen() {
                 <>
                   <DateTimePicker
                     value={tempDate}
-                    mode="datetime"
-                    display="spinner"
+                    mode="date"
+                    display="inline"
                     onChange={onIOSChange}
+                    accentColor={COLORS.primary}
+                    style={{ width: '100%' }}
+                  />
+
+                  <DateTimePicker
+                    value={tempDate}
+                    mode="time"
+                    display="spinner"
+                    onChange={onIOSTimeChange}
                     minuteInterval={15}
                     style={{ width: '100%' }}
                   />

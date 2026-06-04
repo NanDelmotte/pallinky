@@ -113,6 +113,7 @@ export default function EventSuccessScreen() {
     visibility,
     visible_in_feed,
     requires_approval,
+    invite_option,
     circleId,
   } = useLocalSearchParams<{
     slug: string;
@@ -122,6 +123,7 @@ export default function EventSuccessScreen() {
     visibility?: string;
     visible_in_feed?: string;
     requires_approval?: string;
+    invite_option?: string;
     circleId?: string;
   }>();
 
@@ -190,13 +192,23 @@ export default function EventSuccessScreen() {
   }, [shareLink, slug, t, title]);
 
   const openNativeShareChoice = useCallback(() => {
+    if (invite_option === 'individuals') {
+      void shareNative('single');
+      return;
+    }
+
+    if (invite_option === 'group') {
+      void shareNative('multi');
+      return;
+    }
+
     if (visibilityMode === 3) {
       void shareNative('multi');
       return;
     }
 
     setShareChoiceVisible(true);
-  }, [shareNative, visibilityMode]);
+  }, [invite_option, shareNative, visibilityMode]);
 
   useEffect(() => {
     const timer = setTimeout(() => setShowConfetti(false), 4000);
@@ -519,6 +531,8 @@ export default function EventSuccessScreen() {
             visible_in_feed || ''
           )}&requires_approval=${encodeURIComponent(
             requires_approval || ''
+          )}&invite_option=${encodeURIComponent(
+            invite_option || ''
           )}&circleId=${encodeURIComponent(
             circleId || ''
           )}`}
@@ -539,7 +553,13 @@ export default function EventSuccessScreen() {
                 {t('create_success_share_choice_body')}
               </StyledText>
 
-              <TouchableOpacity style={styles.shareChoiceButton} onPress={() => shareNative('single')}>
+              <TouchableOpacity
+                style={styles.shareChoiceButton}
+                onPress={() => {
+                  setShareChoiceVisible(false);
+                  void shareNative('single');
+                }}
+              >
                 <Ionicons name="person-outline" size={20} color="#fff" />
                 <View style={styles.shareChoiceButtonTextWrap}>
                   <StyledText style={styles.shareChoiceButtonTitle}>
@@ -553,7 +573,10 @@ export default function EventSuccessScreen() {
 
               <TouchableOpacity
                 style={[styles.shareChoiceButton, styles.shareChoiceSecondaryButton]}
-                onPress={() => shareNative('multi')}
+                onPress={() => {
+                  setShareChoiceVisible(false);
+                  void shareNative('multi');
+                }}
               >
                 <Ionicons name="people-outline" size={20} color={COLORS.primary} />
                 <View style={styles.shareChoiceButtonTextWrap}>
