@@ -19,11 +19,19 @@
     "web:production": "npm run dev:production --workspace=apps/web --",
     "build:web": "npm run build:production --workspace=apps/web",
     "build:web:development": "npm run build:development --workspace=apps/web --",
-    "build:web:production": "npm run build:production --workspace=apps/web --"
+    "build:web:production": "npm run build:production --workspace=apps/web --",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck:mobile": "tsc --noEmit -p apps/mobile/tsconfig.json",
+    "typecheck:web": "tsc --noEmit -p apps/web/tsconfig.json",
+    "typecheck": "npm run typecheck:mobile && npm run typecheck:web",
+    "lint": "npm run lint --workspace=apps/mobile && npm run lint --workspace=apps/web",
+    "check": "npm run lint && npm run typecheck && npm test"
   },
   "devDependencies": {
     "babel-plugin-module-resolver": "^5.0.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.6"
   },
   "overrides": {
     "react": "19.2.0",
