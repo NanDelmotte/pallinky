@@ -24,13 +24,6 @@ For each distinct feature, bug, or review:
 Use a fresh thread for each distinct change. Continue an existing thread for
 follow-up work on the same branch or pull request.
 
-## Starting A Task
-
-Use `$pallinky-start-change` for new work. Give Codex the outcome, relevant
-context, and what "done" looks like. Include screenshots or examples for visual
-changes. Codex will ask the right questions and pull in the relevant Superpowers
-workflow.
-
 ## Pallinky Project Skills
 
 Pallinky includes three project-specific skills. They wrap the usual Superpowers
@@ -44,33 +37,6 @@ workflows and keep the repository-specific rules close to the task:
 
 These skills live in `.agents/skills` and travel with the repository. Use them
 as shortcuts; the safety rules in `AGENTS.md` still apply automatically.
-
-## Worktrees And Branches
-
-A Worktree is a separate working copy that lets Codex make isolated Git changes
-without disturbing other work. Start meaningful code changes there, and use
-Local only when Codex recommends it for a tiny docs tweak or for existing local
-test setup. Parallel work is possible with separate Worktrees, but large tasks
-are easier to review when kept serial.
-
-If you are unsure where work lives, ask:
-
-```text
-I am unsure which workspace mode or branch I am using. Check the current state
-and recommend the safest next action without losing work.
-```
-
-## Implementation And Testing
-
-Before a change is ready, two layers of verification must pass:
-
-1. Codex runs the relevant automated checks, such as tests, linting, type
-   checks, builds, and code review.
-2. You manually test the affected user journey using a checklist written by
-   Codex.
-
-Codex should identify every affected surface and provide separate manual test
-steps where needed. Shared code may require checking both mobile and web.
 
 ## Reviewing The Result
 
