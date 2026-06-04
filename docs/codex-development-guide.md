@@ -11,11 +11,11 @@ For each distinct feature, bug, or review:
 
 1. Open Pallinky in the Codex app.
 2. Start a new thread in **Worktree** mode for a meaningful code change.
-3. Invoke `$pallinky-start-change`; describe the user outcome and what "done"
-   looks like.
+3. Invoke `$pallinky-start-change` and describe the user outcome and what
+   "done" looks like.
 4. Answer product questions and approve consequential decisions.
 5. Let Codex implement, test, review, and commit the change.
-6. Invoke `$pallinky-ready-for-review`.
+6. Invoke `$pallinky-ready-for-review` when the work looks complete.
 7. Complete the manual testing checklist Codex provides.
 8. Approve a push only when you are satisfied with the result.
 9. Review the pull request and merge it manually.
@@ -26,87 +26,32 @@ follow-up work on the same branch or pull request.
 
 ## Starting A Task
 
-You do not need to describe how to write the code. Describe the outcome you
-want, the relevant context, and what "done" looks like.
-
-Use the project skill as a starting point:
-
-```text
-$pallinky-start-change
-
-Help me make this change: [describe what the user should experience].
-
-Done when: [describe what I should be able to observe].
-```
-
-Screenshots and examples are useful for visual changes. Say what feels wrong or
-what outcome you want; you do not need to propose the technical fix.
-
-For unclear or larger ideas, add:
-
-```text
-Interview me about this idea one question at a time. Recommend an answer for
-each question and challenge unclear assumptions before planning the work:
-[describe the idea].
-```
-
-Codex should inspect the existing project before recommending an approach. It
-should explain choices in plain English when they affect users, security, data,
-cost, risk, or future flexibility.
-
-## Using Superpowers
-
-Superpowers provides structured workflows for planning, interviewing,
-implementation, testing, debugging, review, and completion. Using these skills
-is encouraged because they make work easier to understand and verify, but every
-skill is not necessary for every task.
-
-Useful workflows include:
-
-- New or unclear feature: brainstorming or interviewing, planning, TDD, review,
-  and verification.
-- Bug: systematic debugging, a regression test, the fix, review, and
-  verification.
-- Larger change: planning before implementation, followed by focused execution
-  and review.
-- Urgent production bug: focused diagnosis and hotfix while preserving tests,
-  manual merge, and manual release safeguards.
-
-You can explicitly invoke a skill by typing `$` in the composer and selecting
-it. You can also ask Codex which Superpowers workflow it recommends.
+Use `$pallinky-start-change` for new work. Give Codex the outcome, relevant
+context, and what "done" looks like. Include screenshots or examples for visual
+changes. Codex will ask the right questions and pull in the relevant Superpowers
+workflow.
 
 ## Pallinky Project Skills
 
-Pallinky includes three project-specific skills that combine this repository's
-workflow with relevant Superpowers skills:
+Pallinky includes three project-specific skills. They wrap the usual Superpowers
+workflows and keep the repository-specific rules close to the task:
 
 - `$pallinky-start-change`: shape and begin a focused feature or bug fix.
-- `$pallinky-ready-for-review`: verify completed work, prepare manual tests and
-  the completion report, commit, then request approval before pushing.
-- `$pallinky-recover`: explain confusing or failed work and recommend the safest
-  next action without losing changes.
+- `$pallinky-ready-for-review`: verify completed work, prepare manual tests,
+  and package the completion report.
+- `$pallinky-recover`: explain confusing or failed work and recommend the
+  safest next action without losing changes.
 
 These skills live in `.agents/skills` and travel with the repository. Use them
 as shortcuts; the safety rules in `AGENTS.md` still apply automatically.
 
 ## Worktrees And Branches
 
-A Worktree is a separate working copy of Pallinky. It lets Codex make isolated
-Git changes without disturbing other work.
-
-For a meaningful code change:
-
-1. Start the thread in **Worktree** mode.
-2. Ask Codex to create a clearly named Git branch before committing.
-3. Keep discussion, implementation, testing, and review in that task's thread.
-4. Ask Codex to prepare a pull request after you approve pushing the branch.
-
-Use **Local** mode for tiny documentation changes or when testing requires the
-existing local development environment and Codex recommends using it.
-
-Running tasks in parallel is possible when each task uses a separate Worktree.
-Avoid running multiple large implementation tasks at the same time because
-their changes may conflict and become difficult to review.
+A Worktree is a separate working copy that lets Codex make isolated Git changes
+without disturbing other work. Start meaningful code changes there, and use
+Local only when Codex recommends it for a tiny docs tweak or for existing local
+test setup. Parallel work is possible with separate Worktrees, but large tasks
+are easier to review when kept serial.
 
 If you are unsure where work lives, ask:
 
@@ -117,10 +62,6 @@ and recommend the safest next action without losing work.
 
 ## Implementation And Testing
 
-Encourage Codex to use test-driven development where practical: create a test
-that demonstrates the required behavior, implement the change, then verify that
-the test passes.
-
 Before a change is ready, two layers of verification must pass:
 
 1. Codex runs the relevant automated checks, such as tests, linting, type
@@ -128,14 +69,14 @@ Before a change is ready, two layers of verification must pass:
 2. You manually test the affected user journey using a checklist written by
    Codex.
 
-Codex must identify every affected surface and provide separate manual test
-steps where needed. A shared-code change may require checking both mobile and
-web behavior.
-
-When reviewing visual work, attach screenshots or use the Codex app's Review
-pane or browser comments to point at specific problems.
+Codex should identify every affected surface and provide separate manual test
+steps where needed. Shared code may require checking both mobile and web.
 
 ## Reviewing The Result
+
+Invoke `$pallinky-ready-for-review` when the work looks complete. It prepares
+the completion report and the manual testing checklist before you decide
+whether to push.
 
 Before asking you to approve a push, merge, migration, or release, Codex should
 provide a completion report containing:
@@ -147,13 +88,6 @@ provide a completion report containing:
 - Branch and commit details
 - Whether a push, merge, migration, or release is recommended
 - Rollback instructions for consequential changes
-
-Invoke `$pallinky-ready-for-review` when implementation appears complete. It
-runs the verification and review-preparation workflow, but still requires your
-approval before pushing.
-
-Use the Codex app's Review pane to inspect changed files and leave inline
-comments. You can ask Codex to run `/review` and address any blocking findings.
 
 Do not merge when automated checks fail, manual testing is incomplete, or known
 blocking issues remain.
@@ -263,14 +197,3 @@ For an urgent production bug, ask Codex to:
 - Never manually edit production data without a reviewed plan.
 - Never trigger a production release without understanding impact and rollback.
 - Never mix unrelated changes in one thread, branch, or pull request.
-
-## Glossary
-
-- **Branch**: a named line of Git changes for one task.
-- **Commit**: a saved checkpoint containing a set of changes.
-- **Worktree**: a separate working copy used to isolate a task.
-- **Push**: uploading local branch commits to GitHub.
-- **Pull request**: GitHub's review page for a proposed branch change.
-- **Merge**: accepting a pull request into `main`.
-- **Rebase**: updating a task branch so it is based on the latest `main`.
-- **Rollback**: returning to a previously working version after a problem.
