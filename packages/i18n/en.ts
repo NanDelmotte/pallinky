@@ -751,30 +751,10 @@ create_when_unsure_example: "Who'd be down for a weekend hike soon?",
   create_details_social_settings: "SOCIAL SETTINGS",
   create_details_from: "Who’s this from?",
   create_details_social_visibility: "Social visibility",
-  invite_options_title: "How do you want to invite people?",
-invite_options_subtitle: "Choose how this plan should spread.",
-
-invite_options_direct_title: "Send directly",
-invite_options_direct_badge: "Private",
-invite_options_direct_body:
-  "Share to contacts in the app or send it straight into a WhatsApp thread.",
-
-invite_options_circle_title: "Visible to your circle",
-invite_options_circle_badge: "Visible",
-invite_options_circle_body:
-  "Your direct contacts can see and join — perfect for close friends.",
-
-invite_options_friends_title: "Open to friends of friends",
-invite_options_friends_badge: "Open",
-invite_options_friends_body:
-  "Let friends-of-friends discover and request to join. The natural way to grow your social world.",
-  invite_options_group_title: "Send a link to a group chat",
-  invite_options_group_body:
-    "One link that more than one person can use.",
-  invite_options_individuals_title: "Send a link to many individuals",
-  invite_options_individuals_body:
-    "Use separate single-use links when you invite people one by one.",
-  invite_options_approval_title: "Do people need your approval to join?",
+  invite_options_title: "Who can RSVP to this event.",
+  invite_options_invite_only_title: "Only the people I invite can RSVP",
+  invite_options_feed_title: "Friends of Friends can RSVP",
+  invite_options_approval_title: "Do friends of friends need your approval to join?",
   invite_options_approval_yes: "Yes, I approve people first",
   invite_options_approval_no: "No, anyone with the link can RSVP",
   create_details_people_can_see: "People can see I’m doing this",
@@ -797,12 +777,6 @@ invite_options_friends_body:
   create_success_share_pallinky_invite: "Pallinky invite",
   create_success_share_inside_pallinky: "Inside Pallinky",
   create_success_share_outside_pallinky: "Outside Pallinky",
-  create_success_share_choice_title: "Who are you sending this to?",
-  create_success_share_choice_body: "Inviting separate people? Choose Personal link each time.",
-  create_success_personal_link_title: "Personal link",
-  create_success_personal_link_body: "Single-use link gives you more control on who gets to RSVP",
-  create_success_group_link_title: "Group link",
-  create_success_group_link_body: "More than one person can use this link. Good to send in a group chat",
   create_success_share_native: "Share",
   create_success_qr_title: "Scan to open event",
   create_success_show_qr: "Show QR code",

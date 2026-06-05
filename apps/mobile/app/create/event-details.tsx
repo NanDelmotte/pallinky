@@ -440,7 +440,6 @@ export default function FormalDetailsScreen() {
             visibility: String(legacyVisibility),
             visible_in_feed: String(visibleInFeed),
             requires_approval: String(requiresApproval),
-            invite_option: form.invite_option ?? '',
           },
         });
 
@@ -532,7 +531,6 @@ export default function FormalDetailsScreen() {
           visibility: String(legacyVisibility),
           visible_in_feed: String(visibleInFeed),
           requires_approval: String(requiresApproval),
-          invite_option: form.invite_option ?? '',
         },
       });
     } catch (e: any) {

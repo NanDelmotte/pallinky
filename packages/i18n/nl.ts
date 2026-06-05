@@ -798,12 +798,6 @@ export const nl: Record<TranslationKey, string> = {
   create_success_share_pallinky_invite: "Pallinky-uitnodiging",
   create_success_share_inside_pallinky: "Binnen Pallinky",
   create_success_share_outside_pallinky: "Buiten Pallinky",
-  create_success_share_choice_title: "Naar wie stuur je dit?",
-  create_success_share_choice_body: "Nodig je losse mensen uit? Kies elke keer Persoonlijke link.",
-  create_success_personal_link_title: "Persoonlijke link",
-  create_success_personal_link_body: "Een link voor eenmalig gebruik geeft je meer controle over wie kan reageren",
-  create_success_group_link_title: "Groepslink",
-  create_success_group_link_body: "Meer dan één persoon kan deze link gebruiken. Handig om in een groepschat te sturen",
   create_success_share_native: "Delen",
   create_success_qr_title: "Scan om evenement te openen",
   create_success_show_qr: "QR-code tonen",
@@ -845,30 +839,10 @@ create_when_options_badge: "Opties voorstellen",
 create_when_options_example: "Vr avond / Za lunch / Zo brunch — stem hieronder",
 create_when_unsure_badge: "Even aftasten",
 create_when_unsure_example: "Wie heeft binnenkort zin in een weekendwandeling?",
-invite_options_title: "Hoe wil je mensen uitnodigen?",
-invite_options_subtitle: "Kies hoe dit plan zich mag verspreiden.",
-
-invite_options_direct_title: "Direct uitnodigen",
-invite_options_direct_badge: "Privé",
-invite_options_direct_body:
-  "Deel met contacten in de app of stuur het rechtstreeks naar een WhatsApp-gesprek.",
-
-invite_options_circle_title: "Zichtbaar voor je kring",
-invite_options_circle_badge: "Zichtbaar",
-invite_options_circle_body:
-  "Je directe contacten kunnen het zien en deelnemen — perfect voor goede vrienden.",
-
-invite_options_friends_title: "Open voor vrienden van vrienden",
-invite_options_friends_badge: "Open",
-invite_options_friends_body:
-  "Laat vrienden van vrienden het ontdekken en een verzoek indienen om deel te nemen. Een natuurlijke manier om je sociale kring uit te breiden.",
-invite_options_group_title: "Stuur een link naar een groepschat",
-invite_options_group_body:
-  "Eén link die meer dan één persoon kan gebruiken.",
-invite_options_individuals_title: "Stuur een link naar meerdere personen",
-invite_options_individuals_body:
-  "Gebruik aparte links voor eenmalig gebruik als je mensen één voor één uitnodigt.",
-invite_options_approval_title: "Moeten mensen eerst jouw goedkeuring krijgen?",
+invite_options_title: "Wie kan RSVP'en voor dit evenement?",
+invite_options_invite_only_title: "Alleen de mensen die ik uitnodig kunnen RSVP'en",
+invite_options_feed_title: "Vrienden van vrienden kunnen RSVP'en",
+invite_options_approval_title: "Moeten vrienden van vrienden eerst jouw goedkeuring krijgen?",
 invite_options_approval_yes: "Ja, ik keur mensen eerst goed",
 invite_options_approval_no: "Nee, iedereen met de link kan RSVP'en",
 };
