@@ -12,7 +12,6 @@ import {
   Dimensions,
   Image,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Share,
   ScrollView,
@@ -113,7 +112,6 @@ export default function EventSuccessScreen() {
     visibility,
     visible_in_feed,
     requires_approval,
-    invite_option,
     circleId,
   } = useLocalSearchParams<{
     slug: string;
@@ -123,7 +121,6 @@ export default function EventSuccessScreen() {
     visibility?: string;
     visible_in_feed?: string;
     requires_approval?: string;
-    invite_option?: string;
     circleId?: string;
   }>();
 
@@ -138,7 +135,6 @@ export default function EventSuccessScreen() {
   const [identityVisible, setIdentityVisible] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [qrExpanded, setQrExpanded] = useState(false);
-  const [shareChoiceVisible, setShareChoiceVisible] = useState(false);
   const [pendingChatThreadId, setPendingChatThreadId] = useState<string | null>(null);
   const [chatAttachReady, setChatAttachReady] = useState(false);
   const shareLink = useMemo(() => `https://pallinky.com/event/${slug}`, [slug]);
@@ -151,20 +147,20 @@ export default function EventSuccessScreen() {
     )}`;
   }, [shareLink]);
 
-  const shareNative = useCallback(async (mode: 'single' | 'multi' = 'single') => {
-    let personalLink = shareLink;
+  const shareNative = useCallback(async () => {
+    let groupLink = shareLink;
 
     try {
       const { data, error } = await supabase.rpc('create_external_event_invite', {
         p_slug: slug,
         p_invitee_name: null,
-        p_link_mode: mode,
+        p_link_mode: 'multi',
       });
 
       if (error) throw error;
 
       const inviteRow = Array.isArray(data) ? data[0] : data;
-      personalLink = inviteRow?.invite_url || shareLink;
+      groupLink = inviteRow?.invite_url || shareLink;
     } catch (err) {
       console.error('Failed to create external event invite link', err);
       const detail = getInviteLinkErrorMessage(err);
@@ -176,13 +172,13 @@ export default function EventSuccessScreen() {
     }
 
     try {
-      const message = buildInviteMessage({ title, link: personalLink });
+      const message = buildInviteMessage({ title, link: groupLink });
       await Share.share({ message });
     } catch (err) {
       console.error('Failed to open native share sheet', err);
 
       try {
-        await Clipboard.setStringAsync(personalLink);
+        await Clipboard.setStringAsync(groupLink);
         Alert.alert(t('create_success_link_copied'), t('create_success_link_copied_body'));
       } catch (copyErr) {
         console.error('Failed to copy invite link after share sheet error', copyErr);
@@ -190,25 +186,6 @@ export default function EventSuccessScreen() {
       }
     }
   }, [shareLink, slug, t, title]);
-
-  const openNativeShareChoice = useCallback(() => {
-    if (invite_option === 'individuals') {
-      void shareNative('single');
-      return;
-    }
-
-    if (invite_option === 'group') {
-      void shareNative('multi');
-      return;
-    }
-
-    if (visibilityMode === 3) {
-      void shareNative('multi');
-      return;
-    }
-
-    setShareChoiceVisible(true);
-  }, [invite_option, shareNative, visibilityMode]);
 
   useEffect(() => {
     const timer = setTimeout(() => setShowConfetti(false), 4000);
@@ -303,39 +280,16 @@ export default function EventSuccessScreen() {
     }
 
     if (pendingAction === 'native') {
-      openNativeShareChoice();
+      void shareNative();
     }
 
     setPendingAction(null);
     setIdentityVisible(false);
-  }, [isHost, pendingAction, slug, title, circleId, openNativeShareChoice]);
-
-  const requireHost = (action: PendingAction) => {
-    if (isHost) {
-      if (action === 'share') {
-        router.push({
-          pathname: '/circles/share-picker',
-          params: { slug, title, circleId },
-        });
-      }
-
-      if (action === 'circles') {
-        router.push({
-          pathname: '/circles/share-picker',
-          params: { slug, title, circleId },
-        });
-      }
-
-      return;
-    }
-
-    setPendingAction(action);
-    setIdentityVisible(true);
-  };
+  }, [isHost, pendingAction, slug, title, circleId, shareNative]);
 
   const requireNativeShare = () => {
     if (isHost) {
-      openNativeShareChoice();
+      void shareNative();
       return;
     }
 
@@ -421,6 +375,7 @@ export default function EventSuccessScreen() {
               <StyledText style={styles.label}>{t('event_share')}</StyledText>
 
               <View style={styles.buttonRow}>
+                {/*
                 <TouchableOpacity
                   style={styles.pallinkyShareBtn}
                   onPress={() => requireHost('share')}
@@ -441,6 +396,7 @@ export default function EventSuccessScreen() {
                     </StyledText>
                   </View>
                 </TouchableOpacity>
+                */}
 
                 <TouchableOpacity
                   style={styles.shareBtn}
@@ -455,9 +411,11 @@ export default function EventSuccessScreen() {
                     <StyledText style={[styles.btnText, styles.externalBtnText]}>
                       {t('create_success_share_link')}
                     </StyledText>
+                    {/*
                     <StyledText style={[styles.btnSubText, styles.externalBtnSubText]}>
                       {t('create_success_share_outside_pallinky')}
                     </StyledText>
+                    */}
                   </View>
                 </TouchableOpacity>
               </View>
@@ -531,73 +489,11 @@ export default function EventSuccessScreen() {
             visible_in_feed || ''
           )}&requires_approval=${encodeURIComponent(
             requires_approval || ''
-          )}&invite_option=${encodeURIComponent(
-            invite_option || ''
           )}&circleId=${encodeURIComponent(
             circleId || ''
           )}`}
         />
 
-        <Modal
-          visible={shareChoiceVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setShareChoiceVisible(false)}
-        >
-          <View style={styles.shareChoiceOverlay}>
-            <View style={styles.shareChoiceCard}>
-              <StyledText style={styles.shareChoiceTitle}>
-                {t('create_success_share_choice_title')}
-              </StyledText>
-              <StyledText style={styles.shareChoiceBody}>
-                {t('create_success_share_choice_body')}
-              </StyledText>
-
-              <TouchableOpacity
-                style={styles.shareChoiceButton}
-                onPress={() => {
-                  setShareChoiceVisible(false);
-                  void shareNative('single');
-                }}
-              >
-                <Ionicons name="person-outline" size={20} color="#fff" />
-                <View style={styles.shareChoiceButtonTextWrap}>
-                  <StyledText style={styles.shareChoiceButtonTitle}>
-                    {t('create_success_personal_link_title')}
-                  </StyledText>
-                  <StyledText style={styles.shareChoiceButtonSub}>
-                    {t('create_success_personal_link_body')}
-                  </StyledText>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.shareChoiceButton, styles.shareChoiceSecondaryButton]}
-                onPress={() => {
-                  setShareChoiceVisible(false);
-                  void shareNative('multi');
-                }}
-              >
-                <Ionicons name="people-outline" size={20} color={COLORS.primary} />
-                <View style={styles.shareChoiceButtonTextWrap}>
-                  <StyledText style={[styles.shareChoiceButtonTitle, { color: COLORS.primary }]}>
-                    {t('create_success_group_link_title')}
-                  </StyledText>
-                  <StyledText style={[styles.shareChoiceButtonSub, { color: COLORS.textMuted }]}>
-                    {t('create_success_group_link_body')}
-                  </StyledText>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.shareChoiceCancel}
-                onPress={() => setShareChoiceVisible(false)}
-              >
-                <StyledText style={styles.shareChoiceCancelText}>Cancel</StyledText>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
       </SafeAreaView>
     </>
   );
@@ -925,75 +821,4 @@ const styles = StyleSheet.create({
   studioTextWrap: { flex: 1 },
   studioBtnTitle: { fontSize: 15, fontWeight: '800', color: COLORS.text },
 
-  shareChoiceOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(31, 42, 27, 0.35)',
-    justifyContent: 'center',
-    padding: 24,
-  },
-
-  shareChoiceCard: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 24,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: COLORS.borderSoft,
-  },
-
-  shareChoiceTitle: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: COLORS.text,
-    marginBottom: 8,
-  },
-
-  shareChoiceBody: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: COLORS.textMuted,
-    marginBottom: 18,
-  },
-
-  shareChoiceButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: COLORS.primary,
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 10,
-  },
-
-  shareChoiceSecondaryButton: {
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-
-  shareChoiceButtonTextWrap: {
-    flex: 1,
-  },
-
-  shareChoiceButtonTitle: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '900',
-  },
-
-  shareChoiceButtonSub: {
-    color: 'rgba(255,255,255,0.82)',
-    fontSize: 12,
-    marginTop: 2,
-  },
-
-  shareChoiceCancel: {
-    alignItems: 'center',
-    paddingTop: 8,
-  },
-
-  shareChoiceCancelText: {
-    color: COLORS.textMuted,
-    fontSize: 14,
-    fontWeight: '800',
-  },
 });

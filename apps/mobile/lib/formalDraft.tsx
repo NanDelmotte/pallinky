@@ -12,7 +12,7 @@ export type VisibilityText = 'host_only' | 'guests_can_see';
 export type ForwardingMode = 'free' | 'host_approval' | null;
 export type ReminderDays = 1 | 2 | 3 | 5 | 7;
 export type WhenMode = 'specific' | 'series' | 'options' | 'unsure';
-export type InviteOption = 'individuals' | 'group' | null;
+export type InviteOption = 'group' | null;
 
 export type FormalDraftState = {
   title: string;

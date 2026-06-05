@@ -34,22 +34,21 @@ const COLORS = {
 export default function InviteOptionsScreen() {
   const { t } = useI18n();
   const { form, updateForm } = useFormalDraft();
-  const isGroup = form.invite_option === 'group';
 
-  const chooseIndividuals = () => {
-    updateForm('invite_option', 'individuals');
+  const chooseInviteOnly = () => {
+    updateForm('invite_option', 'group');
     updateForm('visible_in_feed', false);
     updateForm('requires_approval', false);
   };
 
-  const chooseGroup = () => {
+  const chooseFriendsOfFriends = () => {
     updateForm('invite_option', 'group');
-    updateForm('visible_in_feed', false);
+    updateForm('visible_in_feed', true);
   };
 
   const goForward = () => {
     if (!form.invite_option) {
-      chooseGroup();
+      chooseInviteOnly();
     }
 
     router.replace('/create/event-details');
@@ -78,25 +77,44 @@ export default function InviteOptionsScreen() {
           <TouchableOpacity
             style={[
               styles.optionCard,
-              form.invite_option === 'group' && styles.optionCardSelected,
+              form.invite_option === 'group' &&
+                !form.visible_in_feed &&
+                styles.optionCardSelected,
             ]}
             activeOpacity={0.9}
-            onPress={chooseGroup}
+            onPress={chooseInviteOnly}
           >
             <View style={styles.optionIcon}>
-              <Ionicons name="chatbubbles-outline" size={24} color={COLORS.primary} />
+              <Ionicons name="lock-closed-outline" size={24} color={COLORS.primary} />
             </View>
             <View style={styles.optionCopy}>
               <StyledText style={styles.optionTitle}>
-                {t('invite_options_group_title')}
-              </StyledText>
-              <StyledText style={styles.optionBody}>
-                {t('invite_options_group_body')}
+                {t('invite_options_invite_only_title')}
               </StyledText>
             </View>
           </TouchableOpacity>
 
-          {isGroup ? (
+          <TouchableOpacity
+            style={[
+              styles.optionCard,
+              form.invite_option === 'group' &&
+                form.visible_in_feed &&
+                styles.optionCardSelected,
+            ]}
+            activeOpacity={0.9}
+            onPress={chooseFriendsOfFriends}
+          >
+            <View style={styles.optionIcon}>
+              <Ionicons name="people-circle-outline" size={24} color={COLORS.primary} />
+            </View>
+            <View style={styles.optionCopy}>
+              <StyledText style={styles.optionTitle}>
+                {t('invite_options_feed_title')}
+              </StyledText>
+            </View>
+          </TouchableOpacity>
+
+          {form.invite_option === 'group' && form.visible_in_feed ? (
             <View style={styles.approvalBox}>
               <StyledText style={styles.approvalTitle}>
                 {t('invite_options_approval_title')}
@@ -131,27 +149,6 @@ export default function InviteOptionsScreen() {
               </TouchableOpacity>
             </View>
           ) : null}
-
-          <TouchableOpacity
-            style={[
-              styles.optionCard,
-              form.invite_option === 'individuals' && styles.optionCardSelected,
-            ]}
-            activeOpacity={0.9}
-            onPress={chooseIndividuals}
-          >
-            <View style={styles.optionIcon}>
-              <Ionicons name="people-outline" size={24} color={COLORS.primary} />
-            </View>
-            <View style={styles.optionCopy}>
-              <StyledText style={styles.optionTitle}>
-                {t('invite_options_individuals_title')}
-              </StyledText>
-              <StyledText style={styles.optionBody}>
-                {t('invite_options_individuals_body')}
-              </StyledText>
-            </View>
-          </TouchableOpacity>
 
           <View style={styles.nav}>
             <TouchableOpacity style={styles.btn} onPress={() => router.replace('/create/event-type')}>
@@ -235,12 +232,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '900',
     lineHeight: 23,
-    marginBottom: 4,
-  },
-  optionBody: {
-    color: COLORS.textMuted,
-    fontSize: 14,
-    lineHeight: 20,
   },
   approvalBox: {
     backgroundColor: COLORS.surface,
