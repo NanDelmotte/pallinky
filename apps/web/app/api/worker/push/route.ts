@@ -4,6 +4,7 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
+import { formatRsvpReceivedBody } from "../../../../lib/notifications/rsvpCopy";
 import { createClient } from "@supabase/supabase-js";
 
 type Job = {
@@ -312,14 +313,11 @@ function renderNotification(job: Job, badgeCount: number) {
     },
     rsvp_received: {
       title: "New RSVP",
-      body:
-        job.payload?.response === "interested"
-          ? `${guestName} is interested in ${eventTitle}`
-          : job.payload?.response === "maybe"
-          ? `${guestName} might come to ${eventTitle}`
-          : job.payload?.response === "no"
-          ? `${guestName} can't make it to ${eventTitle}`
-          : `${guestName} is coming to ${eventTitle}`,
+      body: formatRsvpReceivedBody({
+        guestName,
+        eventTitle,
+        response: job.payload?.response,
+      }),
     },
     join_request_created: {
       title: "Join request",

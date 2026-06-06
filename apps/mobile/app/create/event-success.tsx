@@ -31,6 +31,10 @@ import { useI18n } from '@pallinky/i18n/client';
 import { buildInviteMessage, supabase, useHostGate, useSession } from '@pallinky/core';
 
 import IdentityModal from '../../components/IdentityModal';
+import {
+  PENDING_CHAT_EVENT_THREAD_KEY,
+  parsePendingChatEventContext,
+} from '../../lib/pendingChatEventContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -50,7 +54,6 @@ const COLORS = {
 };
 
 type PendingAction = 'share' | 'circles' | 'native' | null;
-const PENDING_CHAT_EVENT_THREAD_KEY = 'pallinky:pending_chat_event_thread';
 
 function getInviteLinkErrorMessage(error: unknown) {
   if (!error || typeof error !== 'object') return '';
@@ -194,11 +197,15 @@ export default function EventSuccessScreen() {
 
   useEffect(() => {
     AsyncStorage.getItem(PENDING_CHAT_EVENT_THREAD_KEY)
-      .then((raw) => {
-        if (!raw) return;
-        const parsed = JSON.parse(raw);
-        const nextThreadId = typeof parsed?.threadId === 'string' ? parsed.threadId : '';
-        if (nextThreadId) setPendingChatThreadId(nextThreadId);
+      .then(async (raw) => {
+        const context = parsePendingChatEventContext(raw);
+
+        if (!context) {
+          if (raw) await AsyncStorage.removeItem(PENDING_CHAT_EVENT_THREAD_KEY);
+          return;
+        }
+
+        setPendingChatThreadId(context.threadId);
       })
       .catch((err) => {
         console.error('Failed to load pending chat thread', err);
