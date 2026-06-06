@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -15,8 +14,6 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { supabase, useSession } from '@pallinky/core';
 import { StyledText } from '@pallinky/ui';
 import { goBackOrReplace } from '../../lib/navigation';
-
-const PENDING_CHAT_EVENT_THREAD_KEY = 'pallinky:pending_chat_event_thread';
 
 type EventRow = {
   id: string;
@@ -156,16 +153,10 @@ export default function AttachEventPage() {
       return;
     }
 
-    try {
-      await AsyncStorage.setItem(
-        PENDING_CHAT_EVENT_THREAD_KEY,
-        JSON.stringify({ threadId: String(threadId) })
-      );
-    } catch (err) {
-      console.error('Failed to store pending chat event thread', err);
-    }
-
-    router.push('/create' as any);
+    router.push({
+      pathname: '/create',
+      params: { chatThreadId: String(threadId) },
+    } as any);
   }, [router, threadId]);
 
   return (

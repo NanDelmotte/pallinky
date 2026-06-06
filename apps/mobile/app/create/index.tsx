@@ -13,12 +13,16 @@ import {
   View,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { router, Stack } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 import { StyledText } from "@pallinky/ui";
 import { Ionicons } from "@expo/vector-icons";
 import { useSession } from "@pallinky/core";
 import { useI18n } from "@pallinky/i18n/client";
 import type { TranslationKey } from "@pallinky/i18n/types";
+import {
+  PENDING_CHAT_EVENT_THREAD_KEY,
+  serializePendingChatEventContext,
+} from "../../lib/pendingChatEventContext";
 
 type QuickStart = {
   labelKey: TranslationKey;
@@ -132,6 +136,7 @@ const QUICK_STARTS: QuickStart[] = [
 ];
 
 export default function CreateLaunchpad() {
+  const { chatThreadId } = useLocalSearchParams<{ chatThreadId?: string }>();
   const { session } = useSession();
   const { t } = useI18n();
   const [customCards, setCustomCards] = useState<CustomQuickStart[]>([]);
@@ -145,6 +150,22 @@ export default function CreateLaunchpad() {
       AMBIENT_LINE_KEYS[Math.floor(Math.random() * AMBIENT_LINE_KEYS.length)],
     );
   }, [t]);
+
+  useEffect(() => {
+    const nextThreadId =
+      typeof chatThreadId === "string" ? chatThreadId.trim() : "";
+
+    const updatePendingChatContext = nextThreadId
+      ? AsyncStorage.setItem(
+          PENDING_CHAT_EVENT_THREAD_KEY,
+          serializePendingChatEventContext(nextThreadId),
+        )
+      : AsyncStorage.removeItem(PENDING_CHAT_EVENT_THREAD_KEY);
+
+    updatePendingChatContext.catch((err) => {
+      console.error("Failed to update pending chat event context", err);
+    });
+  }, [chatThreadId]);
 
   useEffect(() => {
     AsyncStorage.getItem(CUSTOM_CARDS_KEY).then((raw) => {
