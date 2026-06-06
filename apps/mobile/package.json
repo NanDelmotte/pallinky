@@ -12,6 +12,7 @@
     "lint": "expo lint",
     "build:ios:development": "npm run validate-env:development && EXPO_NO_CAPABILITY_SYNC=1 eas build --profile development --platform ios",
     "build:ios:production": "npm run validate-env:production && EXPO_NO_CAPABILITY_SYNC=1 eas build --profile production --platform ios",
+    "submit:ios:production": "npm run validate-env:production && EXPO_PUBLIC_APP_VARIANT=production eas submit --platform ios --profile production",
     "build:android:development": "npm run validate-env:development && EXPO_NO_CAPABILITY_SYNC=1 eas build --profile development --platform android",
     "build:android:production": "npm run validate-env:production && EXPO_NO_CAPABILITY_SYNC=1 eas build --profile production --platform android",
     "validate-env:development": "node ./scripts/validate-public-env.js development",

@@ -10,6 +10,13 @@ Run this from the repository root:
 fly deploy --config apps/web/fly.toml --dockerfile apps/web/Dockerfile -a pallinky-prod
 ```
 
+If the Depot builder fails with an authorization or builder-release error, retry
+the same deploy through Fly's standard remote builder:
+
+```bash
+fly deploy --config apps/web/fly.toml --dockerfile apps/web/Dockerfile -a pallinky-prod --remote-only --depot=false
+```
+
 The web app now has the same development/production Supabase guardrail as mobile. Local web development defaults to the development project:
 
 ```bash
@@ -99,11 +106,12 @@ Run from repository root:
 ```bash
 npm run build:ios:development
 npm run build:ios:production
+npm run submit:ios:production
 npm run build:android:development
 npm run build:android:production
 ```
 
-These commands run EAS builds through `apps/mobile` with `EXPO_NO_CAPABILITY_SYNC=1`.
+These commands run EAS through `apps/mobile`. Build commands use `EXPO_NO_CAPABILITY_SYNC=1`, and the iOS submit command sets the production app variant before EAS reads the Expo config.
 
 ### Mobile environment separation
 

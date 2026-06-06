@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Local environment files and secrets
+.env
+.env.*
+!.env.example
+
+# Build outputs and caches
+.next/
+**/.next/
+dist/
+**/dist/
+web-build/
+out/
+**/out/
+coverage/
+*.tsbuildinfo
+.cache/
+metro-cache/
+.expo/
+.expo-shared/
+
+# Native mobile build outputs
+apps/mobile/ios/Pods/
+apps/mobile/ios/build/
+apps/mobile/android/build/
+apps/mobile/android/.gradle/
+apps/mobile/dist/
+apps/mobile/dist-google-key-check/
+
+# Tooling and local machine files
+.git/
+.github/
+.vscode/
+.idea/
+.DS_Store
+logs/
+*.log
+*.tmp
+*.swp
+
+# Supabase local/generated files
+supabase/.temp/
+apps/mobile/supabase/.temp/
+supabase/.branches/
+supabase/.cache/
+supabase/dev_schema.sql
+supabase/prod_*.sql
+supabase/*dump*.sql

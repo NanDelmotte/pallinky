@@ -12,6 +12,7 @@
     "mobile": "npm run mobile --workspace=apps/mobile",
     "build:ios:development": "npm run build:ios:development --workspace=apps/mobile",
     "build:ios:production": "npm run build:ios:production --workspace=apps/mobile",
+    "submit:ios:production": "npm run submit:ios:production --workspace=apps/mobile",
     "build:android:development": "npm run build:android:development --workspace=apps/mobile",
     "build:android:production": "npm run build:android:production --workspace=apps/mobile",
     "web": "npm run dev:development --workspace=apps/web --",
