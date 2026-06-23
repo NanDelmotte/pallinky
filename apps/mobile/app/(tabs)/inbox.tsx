@@ -21,6 +21,7 @@ import { ScrollView, Swipeable } from 'react-native-gesture-handler';
 import { StyledText } from '@pallinky/ui';
 import { supabase, useSession } from '@pallinky/core';
 import { useI18n } from '@pallinky/i18n/client';
+import { syncAppIconBadge } from '../../lib/appBadge';
 
 const COLORS = {
   background: '#F6F7F9',
@@ -327,6 +328,7 @@ useEffect(() => {
         });
 
         if (error) throw error;
+        void syncAppIconBadge();
       } catch (err: any) {
         console.log('Inbox dismiss error:', err);
         setRows(previousRows);
@@ -366,6 +368,7 @@ useEffect(() => {
                 : item
             )
           );
+          void syncAppIconBadge();
         } catch (err) {
           console.log('Chat inbox mark read error:', err);
         }
@@ -407,6 +410,7 @@ useEffect(() => {
               : item
           )
         );
+        void syncAppIconBadge();
       } catch (err) {
         console.log('Inbox mark read error:', err);
       }

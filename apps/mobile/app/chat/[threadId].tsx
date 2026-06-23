@@ -20,6 +20,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { supabase, useSession } from '@pallinky/core';
 import { GiphyPicker } from '@pallinky/ui';
+import { syncAppIconBadge } from '../../lib/appBadge';
 
 const COLORS = {
   background: '#F3F5F1',
@@ -232,6 +233,7 @@ export default function ChatThreadPage() {
         p_thread_id: threadId,
         p_user_email: viewerEmail,
       });
+      void syncAppIconBadge();
     } catch (err) {
       console.error(err);
       setThread(null);

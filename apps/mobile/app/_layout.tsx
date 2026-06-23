@@ -18,6 +18,7 @@ import { I18nProvider, useI18n } from '@pallinky/i18n/client';
 import { isAppLanguage } from '@pallinky/i18n';
 import EasUpdateModal from '../components/EasUpdateModal';
 import { useEasUpdate } from '../lib/useEasUpdate';
+import { syncAppIconBadge } from '../lib/appBadge';
 
 const PENDING_INVITE_DESTINATION_KEY = 'pallinky_pending_invite_destination_v1';
 
@@ -120,22 +121,6 @@ async function registerForPushNotifications() {
   await savePushTokenForCurrentUser(token);
 }
 
-async function syncBadgeWithInbox() {
-  try {
-    const { data, error } = await supabase.rpc('get_my_unread_inbox_count');
-
-    if (error) {
-      console.log('Badge sync error:', error);
-      return;
-    }
-
-    const count = typeof data === 'number' ? data : 0;
-    await Notifications.setBadgeCountAsync(count);
-  } catch (err) {
-    console.log('Badge sync exception:', err);
-  }
-}
-
 function AppNavigator() {
   const router = useRouter();
   const params = useGlobalSearchParams<{ lang?: string; locale?: string; language?: string }>();
@@ -155,7 +140,7 @@ function AppNavigator() {
       response: Notifications.NotificationResponse
     ) => {
       try {
-        await syncBadgeWithInbox();
+        await syncAppIconBadge();
 
         const data = response.notification.request.content.data as {
           event_id?: string;
@@ -287,7 +272,7 @@ function AppNavigator() {
         if (isAuthCallbackUrl(url)) {
           await completeSupabaseAuthFromUrl(url);
           await registerForPushNotifications();
-          await syncBadgeWithInbox();
+          await syncAppIconBadge();
         }
       } catch (err) {
         console.log('Incoming URL handling error:', err);
@@ -316,7 +301,7 @@ function AppNavigator() {
     const appStateSubscription = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
         void registerForPushNotifications();
-        void syncBadgeWithInbox();
+        void syncAppIconBadge();
       }
     });
 
@@ -328,12 +313,12 @@ function AppNavigator() {
         session?.user?.email
       ) {
         void registerForPushNotifications();
-        void syncBadgeWithInbox();
+        void syncAppIconBadge();
       }
     });
 
     void registerForPushNotifications();
-    void syncBadgeWithInbox();
+    void syncAppIconBadge();
 
     return () => {
       linkingSubscription.remove();
