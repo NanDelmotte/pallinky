@@ -488,7 +488,29 @@ export default function EditCreateScreen() {
           onPress={() => goBackOrReplace(router, token ? `/m/${token}` : "/(tabs)")}
           style={styles.navIconBtn}
         >
-          <Ionicons name="arrow-back" size={28} color={COLORS.primary} />
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+        </TouchableOpacity>
+
+        <View style={styles.topBarMeta}>
+          <StyledText style={styles.draftLabel}>{t("manage_edit_draft_label")}</StyledText>
+          <StyledText style={styles.savedLabel}>{t("manage_edit_invitation_status")}</StyledText>
+        </View>
+
+        <TouchableOpacity
+          style={[styles.topSaveBtn, !canSave && styles.topSaveBtnDisabled]}
+          onPress={saveChanges}
+          disabled={loading || !canSave}
+        >
+          {loading ? (
+            <ActivityIndicator color={COLORS.surface} size="small" />
+          ) : (
+            <>
+              <Ionicons name="checkmark" size={16} color={COLORS.surface} />
+              <StyledText numberOfLines={1} style={styles.topSaveText}>
+                {t("manage_save_changes")}
+              </StyledText>
+            </>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -500,60 +522,69 @@ export default function EditCreateScreen() {
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps="handled"
         >
-          <StyledText style={styles.stepTitle}>{t("manage_edit_event")}</StyledText>
-          <StyledText style={styles.sectionHint}>
-            {t("manage_update_hint")}
-          </StyledText>
+          <View style={styles.composer}>
+            <StyledInput
+              placeholder={t("manage_edit_title_placeholder")}
+              value={form.title}
+              onChangeText={(t: string) => updateForm("title", t)}
+              style={styles.titleInput}
+            />
 
-          <StyledText style={styles.label}>{t("manage_label_title")}</StyledText>
-          <StyledInput
-            placeholder={t("create_title_placeholder")}
-            value={form.title}
-            onChangeText={(t: string) => updateForm("title", t)}
-            style={styles.inputStyle}
-          />
+            <StyledInput
+              placeholder={t("manage_note_placeholder")}
+              value={form.description}
+              onChangeText={(t: string) => updateForm("description", t)}
+              multiline
+              style={styles.bodyInput}
+            />
+          </View>
 
-          <StyledText style={styles.label}>{t("manage_label_when")}</StyledText>
+          <View style={styles.editorToolbar}>
+            <View style={styles.toolbarGroup}>
+              <Ionicons name="time-outline" size={18} color={COLORS.textMuted} />
+              <StyledText style={styles.toolbarLabel}>{t("manage_label_when")}</StyledText>
+            </View>
 
-          <View style={styles.whenToggleRow}>
-            <TouchableOpacity
-              style={[
-                styles.whenToggleBtn,
-                form.whenMode === "specific" && styles.whenToggleBtnSelected,
-              ]}
-              onPress={() => updateForm("whenMode", "specific")}
-            >
-              <StyledText
+            <View style={styles.whenToggleRow}>
+              <TouchableOpacity
                 style={[
-                  styles.whenToggleText,
-                  form.whenMode === "specific" && styles.whenToggleTextSelected,
+                  styles.whenToggleBtn,
+                  form.whenMode === "specific" && styles.whenToggleBtnSelected,
                 ]}
+                onPress={() => updateForm("whenMode", "specific")}
               >
-                {t("manage_date")}
-              </StyledText>
-            </TouchableOpacity>
+                <StyledText
+                  style={[
+                    styles.whenToggleText,
+                    form.whenMode === "specific" && styles.whenToggleTextSelected,
+                  ]}
+                >
+                  {t("manage_date")}
+                </StyledText>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.whenToggleBtn,
-                form.whenMode === "options" && styles.whenToggleBtnSelected,
-              ]}
-              onPress={() => updateForm("whenMode", "options")}
-            >
-              <StyledText
+              <TouchableOpacity
                 style={[
-                  styles.whenToggleText,
-                  form.whenMode === "options" && styles.whenToggleTextSelected,
+                  styles.whenToggleBtn,
+                  form.whenMode === "options" && styles.whenToggleBtnSelected,
                 ]}
+                onPress={() => updateForm("whenMode", "options")}
               >
-                {t("manage_poll")}
-              </StyledText>
-            </TouchableOpacity>
+                <StyledText
+                  style={[
+                    styles.whenToggleText,
+                    form.whenMode === "options" && styles.whenToggleTextSelected,
+                  ]}
+                >
+                  {t("manage_poll")}
+                </StyledText>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {form.whenMode === "specific" && (
-            <>
-              <StyledText style={styles.label}>{t("manage_label_start_time")}</StyledText>
+            <View style={styles.metadataBlock}>
+              <StyledText style={styles.metadataTitle}>{t("manage_label_start_time")}</StyledText>
               <TouchableOpacity
                 style={styles.pwaInput}
                 onPress={() =>
@@ -570,7 +601,7 @@ export default function EditCreateScreen() {
                 </StyledText>
               </TouchableOpacity>
 
-              <StyledText style={styles.label}>{t("create_when_end_time")}</StyledText>
+              <StyledText style={styles.metadataTitle}>{t("create_when_end_time")}</StyledText>
               <TouchableOpacity
                 style={styles.pwaInput}
                 onPress={() =>
@@ -604,11 +635,11 @@ export default function EditCreateScreen() {
                   </StyledText>
                 </TouchableOpacity>
               )}
-            </>
+            </View>
           )}
 
           {form.whenMode === "options" && (
-            <View style={styles.dateOptionsWrap}>
+            <View style={[styles.metadataBlock, styles.dateOptionsWrap]}>
               <View style={styles.pollNeutralizer}>
                 <DateOptionPicker
                   value={form.pollOptions}
@@ -670,15 +701,6 @@ export default function EditCreateScreen() {
               />
             </View>
           )}
-
-          <StyledText style={styles.label}>{t("manage_label_description")}</StyledText>
-          <StyledInput
-            placeholder={t("manage_note_placeholder")}
-            value={form.description}
-            onChangeText={(t: string) => updateForm("description", t)}
-            multiline
-            style={[styles.inputStyle, styles.detailsInput]}
-          />
 
           <View style={styles.detailSection}>
             <TouchableOpacity
@@ -944,17 +966,6 @@ export default function EditCreateScreen() {
             ) : null}
           </View>
 
-          <TouchableOpacity
-            style={[styles.saveBtn, !canSave && styles.disabledBtn]}
-            onPress={saveChanges}
-            disabled={loading || !canSave}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <StyledText style={styles.saveBtnText}>{t("manage_save_changes")}</StyledText>
-            )}
-          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -967,50 +978,122 @@ const styles = StyleSheet.create({
 
   wrapper: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.surface,
   },
 
   topBar: {
     flexDirection: "row",
-    justifyContent: "flex-start",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 10,
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingTop: 8,
+    paddingBottom: 8,
+    backgroundColor: COLORS.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderSoft,
   },
 
   navIconBtn: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     justifyContent: "center",
     alignItems: "center",
   },
 
-  container: {
-    padding: 25,
-    paddingTop: 10,
-    paddingBottom: 40,
+  topBarMeta: {
+    flex: 1,
+    minWidth: 0,
   },
 
-  stepTitle: {
-    fontSize: 32,
+  draftLabel: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: "800",
+    lineHeight: 18,
+  },
+
+  savedLabel: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+
+  topSaveBtn: {
+    maxWidth: 140,
+    minHeight: 36,
+    borderRadius: 999,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+  },
+
+  topSaveBtnDisabled: {
+    opacity: 0.45,
+  },
+
+  topSaveText: {
+    color: COLORS.surface,
+    fontSize: 13,
+    fontWeight: "800",
+    flexShrink: 1,
+  },
+
+  container: {
+    paddingHorizontal: 24,
+    paddingTop: 26,
+    paddingBottom: 44,
+  },
+
+  composer: {
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderSoft,
+    paddingBottom: 24,
+    marginBottom: 8,
+  },
+
+  titleInput: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 0,
+    borderRadius: 0,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    marginBottom: 14,
+    minHeight: 54,
+    fontSize: 36,
+    lineHeight: 42,
     fontWeight: "900",
     color: COLORS.text,
-    marginBottom: 10,
+  },
+
+  bodyInput: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 0,
+    borderRadius: 0,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    minHeight: 180,
+    fontSize: 20,
+    lineHeight: 30,
+    color: COLORS.text,
+    textAlignVertical: "top",
   },
 
   sectionLabel: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 12,
+    fontWeight: "800",
     color: COLORS.text,
-    marginBottom: 12,
+    marginTop: 16,
+    marginBottom: 8,
   },
 
   sectionHint: {
-    fontSize: 15,
+    fontSize: 14,
     color: COLORS.textMuted,
-    lineHeight: 22,
-    marginBottom: 18,
+    lineHeight: 20,
+    marginBottom: 14,
   },
 
   sectionHintCompact: {
@@ -1021,17 +1104,15 @@ const styles = StyleSheet.create({
 
   detailSection: {
     backgroundColor: COLORS.surface,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: COLORS.borderSoft,
-    padding: 16,
-    marginBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderSoft,
+    paddingVertical: 18,
   },
 
   detailSectionTitle: {
-    fontSize: 20,
-    lineHeight: 24,
-    fontWeight: "900",
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: "800",
     color: COLORS.text,
     marginBottom: 4,
   },
@@ -1057,13 +1138,13 @@ const styles = StyleSheet.create({
   },
 
   inputStyle: {
-    fontSize: 18,
+    fontSize: 16,
     backgroundColor: COLORS.surface,
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 15,
+    borderRadius: 10,
+    padding: 13,
+    marginBottom: 10,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.borderSoft,
     color: COLORS.text,
   },
 
@@ -1084,15 +1165,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     backgroundColor: COLORS.surface,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 10,
+    padding: 13,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    marginBottom: 8,
+    borderColor: COLORS.borderSoft,
+    marginBottom: 12,
   },
 
   pwaInputText: {
-    fontSize: 18,
+    fontSize: 16,
     color: COLORS.text,
     fontWeight: "600",
   },
@@ -1109,32 +1190,29 @@ const styles = StyleSheet.create({
 
   whenToggleRow: {
     flexDirection: "row",
-    gap: 12,
-    marginBottom: 8,
+    gap: 8,
   },
 
   whenToggleBtn: {
-    flex: 1,
     backgroundColor: COLORS.surface,
-    borderRadius: 14,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    paddingVertical: 14,
+    borderColor: COLORS.borderSoft,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     alignItems: "center",
     justifyContent: "center",
   },
 
   whenToggleBtnSelected: {
-    borderWidth: 2,
     borderColor: COLORS.primary,
-    backgroundColor: "#fbfcfa",
+    backgroundColor: "#EEF4E9",
   },
 
   whenToggleText: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: "800",
     color: COLORS.textMuted,
-    letterSpacing: 0.8,
   },
 
   whenToggleTextSelected: {
@@ -1142,7 +1220,7 @@ const styles = StyleSheet.create({
   },
 
   dateOptionsWrap: {
-    marginTop: 8,
+    marginTop: 0,
   },
 
   pollNeutralizer: {
@@ -1153,23 +1231,41 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
 
-  saveBtn: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 18,
-    minHeight: 56,
+  editorToolbar: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    marginTop: 28,
+    justifyContent: "space-between",
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderSoft,
+    paddingVertical: 14,
   },
 
-  saveBtnText: {
-    color: "#fff",
-    fontSize: 17,
+  toolbarGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    flexShrink: 1,
+  },
+
+  toolbarLabel: {
+    color: COLORS.textMuted,
+    fontSize: 12,
     fontWeight: "800",
+    textTransform: "uppercase",
   },
 
-  disabledBtn: {
-    opacity: 0.45,
+  metadataBlock: {
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderSoft,
+    paddingVertical: 18,
+  },
+
+  metadataTitle: {
+    color: COLORS.textMuted,
+    fontSize: 12,
+    fontWeight: "800",
+    marginBottom: 8,
   },
 
   iosPickerContainer: {
