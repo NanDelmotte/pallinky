@@ -22,6 +22,7 @@ import { StyledText } from '@pallinky/ui';
 import { supabase } from '@pallinky/core';
 import { useI18n } from '@pallinky/i18n/client';
 import { goBackOrReplace } from '../../../../lib/navigation';
+import { syncAppIconBadge } from '../../../../lib/appBadge';
 
 const COLORS = {
   background: '#F6F7F9',
@@ -177,7 +178,10 @@ export default function EventDmThreadScreen() {
 
       if (error) {
         console.log('DM mark read error:', error);
+        return;
       }
+
+      void syncAppIconBadge();
     },
     [threadId]
   );

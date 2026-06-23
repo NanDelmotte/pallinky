@@ -30,6 +30,7 @@ import DetailsSeriesSection from './components/DetailsSeriesSection';
 import { useI18n } from '@pallinky/i18n/client';
 import type { AppLanguage } from '@pallinky/i18n/types';
 import { getExternalUrlDomain, normalizeExternalUrl } from '../../../lib/externalUrl';
+import { syncAppIconBadge } from '../../../lib/appBadge';
 
 const SYSTEM = {
   background: '#F6F7F9',
@@ -995,10 +996,16 @@ setInvites(invitesRes.data || []);
         await fetchData();
 
         if (event?.id) {
-          await supabase.rpc('mark_notification_group_read', {
+          const { error } = await supabase.rpc('mark_notification_group_read', {
             p_event_id: event.id,
             p_notification_type: null,
           });
+
+          if (error) {
+            console.log('Details mark notification read error:', error);
+          } else {
+            void syncAppIconBadge();
+          }
         }
       };
 
