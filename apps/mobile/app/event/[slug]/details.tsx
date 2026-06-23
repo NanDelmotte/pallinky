@@ -75,6 +75,10 @@ function getExternalLinkText(value: string | null | undefined, fallback: string)
   return getExternalUrlDomain(value) || fallback;
 }
 
+function getCollapsedDescription(value: string) {
+  return value.length > 156 ? `${value.slice(0, 156).trimEnd()}...` : value;
+}
+
 function getEventModel(event: any): EventModel {
   const eventType = normalizeStatus(event?.event_type);
   const isSeries = !!event?.series_id;
@@ -231,6 +235,53 @@ function HostHeaderSection({
   );
 }
 
+function ExpandableDescription({
+  description,
+  textStyle,
+  textColor,
+  accentColor,
+}: {
+  description: string | null | undefined;
+  textStyle: any;
+  textColor: string;
+  accentColor: string;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const cleanDescription = String(description || '').trim();
+  const collapsedDescription = getCollapsedDescription(cleanDescription);
+
+  if (!cleanDescription) return null;
+
+  return (
+    <TouchableOpacity
+      style={styles.eventInfoDescriptionToggle}
+      activeOpacity={0.82}
+      onPress={() => setIsExpanded((current) => !current)}
+      accessibilityRole="button"
+      accessibilityLabel={isExpanded ? 'Collapse event details' : 'Expand event details'}
+    >
+      <Text
+        style={[
+          textStyle,
+          !isExpanded && styles.eventInfoDescriptionCollapsed,
+          { color: textColor },
+        ]}
+        numberOfLines={isExpanded ? undefined : 3}
+        ellipsizeMode="tail"
+      >
+        {isExpanded ? cleanDescription : collapsedDescription}
+      </Text>
+
+      <Ionicons
+        name={isExpanded ? 'chevron-up' : 'chevron-down'}
+        size={18}
+        color={accentColor}
+        style={styles.eventInfoDescriptionChevron}
+      />
+    </TouchableOpacity>
+  );
+}
+
 function EventInfoSection({
   theme,
   locationText,
@@ -289,11 +340,12 @@ function EventInfoSection({
             </TouchableOpacity>
           )}
 
-          {!!description && (
-            <Text style={[styles.eventInfoDescription, { color: theme.text }]} numberOfLines={2}>
-              {description}
-            </Text>
-          )}
+          <ExpandableDescription
+            description={description}
+            textStyle={styles.eventInfoDescription}
+            textColor={theme.text}
+            accentColor={theme.accent}
+          />
         </View>
       </View>
 
@@ -1260,7 +1312,12 @@ setInvites(invitesRes.data || []);
 
           {!isFixedDate && description ? (
             <View style={styles.descriptionContainer}>
-              <Text style={[styles.descriptionText, { color: theme.text }]}>{description}</Text>
+              <ExpandableDescription
+                description={description}
+                textStyle={styles.descriptionText}
+                textColor={theme.text}
+                accentColor={theme.accent}
+              />
             </View>
           ) : null}
 {normalizeExternalUrl(event.external_url) ? (
@@ -1596,6 +1653,22 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 21,
     opacity: 0.82,
+    flex: 1,
+  },
+
+  eventInfoDescriptionCollapsed: {
+    maxHeight: 78,
+    overflow: 'hidden',
+  },
+
+  eventInfoDescriptionToggle: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 6,
+  },
+
+  eventInfoDescriptionChevron: {
+    marginBottom: 1,
   },
 
   infoRow: {
@@ -1618,6 +1691,7 @@ const styles = StyleSheet.create({
   descriptionText: {
     fontSize: 17,
     lineHeight: 26,
+    flex: 1,
   },
 
   pollContainer: {
