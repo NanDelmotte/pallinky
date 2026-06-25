@@ -30,6 +30,7 @@ import * as SecureStore from 'expo-secure-store';
 import { formatInEventTimeZone, supabase, useSession } from '@pallinky/core';
 import { CalendarButton } from '@pallinky/ui';
 import { Ionicons } from '@expo/vector-icons';
+import ExpandableDescription from '../../../components/ExpandableDescription';
 
 const SYSTEM = {
   background: '#F6F7F9',
@@ -373,11 +374,12 @@ export default function FormalRSVP() {
 
           {displayDescription ? (
             <View style={styles.descriptionContainer}>
-              <Text
-                style={[styles.descriptionText, { color: theme.text, opacity: 0.9 }, customFont]}
-              >
-                {displayDescription}
-              </Text>
+              <ExpandableDescription
+                description={displayDescription}
+                textStyle={[styles.descriptionText, { opacity: 0.9 }, customFont]}
+                textColor={theme.text}
+                accentColor={theme.accent}
+              />
             </View>
           ) : null}
 

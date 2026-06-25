@@ -24,6 +24,7 @@ import { useI18n } from '@pallinky/i18n/client';
 import { goBackOrReplace } from '../../../lib/navigation';
 
 import DateOptionPicker from '../../../components/DateOptionPicker';
+import ExpandableDescription from '../../../components/ExpandableDescription';
 import LocationSearch from '../../../components/LocationSearch';
 
 const COLORS = {
@@ -510,7 +511,14 @@ template: 'reach_out_suggestion',
           </Text>
         </TouchableOpacity>
 
-        {!!event.description && <Text style={styles.description}>{event.description}</Text>}
+        {!!event.description && (
+          <ExpandableDescription
+            description={event.description}
+            textStyle={styles.description}
+            textColor={COLORS.text}
+            accentColor={COLORS.primary}
+          />
+        )}
 
         {isHost ? (
           <>
