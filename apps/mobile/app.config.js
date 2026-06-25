@@ -18,8 +18,8 @@ export default {
     owner: 'nanbowles',
     scheme: 'pallinky',
 
-    version: '1.1.5',
-    runtimeVersion: '1.1.5',
+    version: '1.1.6',
+    runtimeVersion: '1.1.6',
 
     orientation: 'portrait',
     userInterfaceStyle: 'light',

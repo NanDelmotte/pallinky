@@ -13,9 +13,11 @@ export type ForwardingMode = 'free' | 'host_approval' | null;
 export type ReminderDays = 1 | 2 | 3 | 5 | 7;
 export type WhenMode = 'specific' | 'series' | 'options' | 'unsure';
 export type InviteOption = 'group' | null;
+export type CreationMode = 'event' | 'planning_chat';
 
 export type FormalDraftState = {
   title: string;
+  creation_mode: CreationMode;
   whenMode: WhenMode;
   specificDate: Date;
   seriesDates: Date[];
@@ -65,6 +67,7 @@ function buildInitialFormalDraft(
 
   return {
     title: prefill?.prefill_title || '',
+    creation_mode: 'event',
     whenMode: 'specific',
     specificDate: initialDate,
     seriesDates: [],

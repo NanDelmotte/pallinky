@@ -16,10 +16,15 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { StyledInput, StyledText } from "@pallinky/ui";
 import { useFormalDraft } from "../../lib/formalDraft";
 import { useI18n } from "@pallinky/i18n/client";
+import {
+  PENDING_CHAT_EVENT_THREAD_KEY,
+  serializePendingChatEventContext,
+} from "../../lib/pendingChatEventContext";
 
 const COLORS = {
   background: "#F6F7F9",
@@ -37,9 +42,28 @@ export default function FormalCreateScreen() {
     prefill_desc?: string;
     prefill_date?: string;
     prefill_nonce?: string;
+    creation_mode?: string;
+    chatThreadId?: string;
   }>();
 
   const { form, updateForm, resetForm } = useFormalDraft();
+  const isPlanningChat = form.creation_mode === 'planning_chat';
+
+  useEffect(() => {
+    const nextThreadId =
+      typeof params.chatThreadId === "string" ? params.chatThreadId.trim() : "";
+
+    const updatePendingChatContext = nextThreadId
+      ? AsyncStorage.setItem(
+          PENDING_CHAT_EVENT_THREAD_KEY,
+          serializePendingChatEventContext(nextThreadId),
+        )
+      : Promise.resolve();
+
+    updatePendingChatContext.catch((err) => {
+      console.error("Failed to update pending chat event context", err);
+    });
+  }, [params.chatThreadId]);
 
   useEffect(() => {
     if (typeof params.prefill_nonce !== "string") return;
@@ -58,7 +82,20 @@ export default function FormalCreateScreen() {
           ? params.prefill_date
           : undefined,
     });
-  }, [params.prefill_nonce, resetForm]);
+
+    if (params.creation_mode === 'planning_chat') {
+      updateForm('creation_mode', 'planning_chat');
+      updateForm('whenMode', 'unsure');
+    }
+  }, [
+    params.creation_mode,
+    params.prefill_date,
+    params.prefill_desc,
+    params.prefill_nonce,
+    params.prefill_title,
+    resetForm,
+    updateForm,
+  ]);
   const canContinue = !!form.title.trim();
 
   return (
@@ -85,11 +122,15 @@ export default function FormalCreateScreen() {
         >
           <View>
             <StyledText style={styles.stepTitle}>
-              {t("create_plan_question")}
+              {isPlanningChat ? t("create_planning_chat_question") : t("create_plan_question")}
             </StyledText>
 
             <StyledInput
-              placeholder={t("create_title_placeholder")}
+              placeholder={
+                isPlanningChat
+                  ? t("create_planning_chat_title_placeholder")
+                  : t("create_title_placeholder")
+              }
               value={form.title}
               onChangeText={(t: string) => updateForm("title", t)}
               style={styles.inputStyle}
@@ -100,7 +141,9 @@ export default function FormalCreateScreen() {
             <View style={[styles.nav, { justifyContent: "flex-end" }]}>
               <TouchableOpacity
                 style={[styles.btn, !canContinue && styles.disabledBtn]}
-                onPress={() => router.replace("/create/event-type")}
+                onPress={() =>
+                  router.replace(isPlanningChat ? "/create/invite-options" : "/create/event-type")
+                }
                 disabled={!canContinue}
               >
                 <Ionicons name="arrow-forward" size={28} color="#fff" />

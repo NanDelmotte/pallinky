@@ -19,6 +19,8 @@ type LinkedEvent = {
   event_id: string;
   event_slug: string | null;
   event_title: string | null;
+  event_type?: string | null;
+  proposed_dates?: string[] | null;
   starts_at: string | null;
   cover_image_url: string | null;
   host_name: string | null;
@@ -59,6 +61,13 @@ function formatMeta(event: LinkedEvent) {
   return parts.join(' • ');
 }
 
+function isPlanningEvent(event: LinkedEvent) {
+  return (
+    event.event_type === 'reach_out' ||
+    (!event.starts_at && (!Array.isArray(event.proposed_dates) || event.proposed_dates.length === 0))
+  );
+}
+
 export default function ChatEventsPage() {
   const { threadId } = useLocalSearchParams<{ threadId: string }>();
   const router = useRouter();
@@ -83,7 +92,42 @@ export default function ChatEventsPage() {
       });
 
       if (error) throw error;
-      setEvents((data || []) as LinkedEvent[]);
+
+      const linkedEvents = (data || []) as LinkedEvent[];
+      const eventIds = linkedEvents.map((event) => event.event_id).filter(Boolean);
+
+      if (eventIds.length === 0) {
+        setEvents([]);
+        return;
+      }
+
+      const { data: eventRows, error: eventRowsError } = await supabase
+        .from('events')
+        .select('id, event_type, proposed_dates')
+        .in('id', eventIds);
+
+      if (eventRowsError) throw eventRowsError;
+
+      const eventMetaById = new Map(
+        ((eventRows || []) as any[]).map((event) => [
+          String(event.id),
+          {
+            event_type: event.event_type || null,
+            proposed_dates: Array.isArray(event.proposed_dates) ? event.proposed_dates : [],
+          },
+        ])
+      );
+
+      setEvents(
+        linkedEvents.map((event) => {
+          const meta = eventMetaById.get(String(event.event_id));
+          return {
+            ...event,
+            event_type: meta?.event_type || null,
+            proposed_dates: meta?.proposed_dates || [],
+          };
+        })
+      );
     } catch (err) {
       console.error('Failed to load chat events', err);
       setEvents([]);
@@ -104,6 +148,10 @@ export default function ChatEventsPage() {
     const past: LinkedEvent[] = [];
 
     events.forEach((event) => {
+      if (isPlanningEvent(event)) {
+        return;
+      }
+
       const startsAtMs = event.starts_at ? new Date(event.starts_at).getTime() : Number.NaN;
       if (Number.isFinite(startsAtMs) && startsAtMs < now) {
         past.push(event);
@@ -122,7 +170,7 @@ export default function ChatEventsPage() {
     }
 
     router.push({
-      pathname: '/create',
+      pathname: '/create/formal',
       params: { chatThreadId: String(threadId) },
     } as any);
   }, [router, threadId]);
@@ -221,7 +269,7 @@ export default function ChatEventsPage() {
               </>
             ) : null}
 
-            {events.length === 0 ? (
+            {upcomingEvents.length === 0 && pastEvents.length === 0 ? (
               <View style={styles.emptyWrap}>
                 <StyledText style={styles.emptyTitle}>No events yet</StyledText>
                 <StyledText style={styles.emptyBody}>

@@ -18,7 +18,7 @@ const COLORS = {
 };
 
 export default function EventChatResolverPage() {
-  const { slug } = useLocalSearchParams<{ slug: string }>();
+  const { slug, token } = useLocalSearchParams<{ slug: string; token?: string }>();
   const router = useRouter();
   const { session } = useSession();
 
@@ -37,12 +37,41 @@ export default function EventChatResolverPage() {
       try {
         const { data: eventData, error: eventError } = await supabase
           .from('events')
-          .select('id, slug')
+          .select('id, slug, event_type, host_email')
           .eq('slug', slug)
           .single();
 
         if (eventError) throw eventError;
         if (!eventData?.id) throw new Error('Event not found');
+
+        const viewerEmailLc = viewerEmail.toLowerCase().trim();
+        const isHost = viewerEmailLc === String(eventData.host_email || '').toLowerCase().trim();
+
+        if (eventData.event_type === 'reach_out' && !isHost) {
+          const { data: response, error: rsvpError } = await supabase.rpc('submit_vibe_rsvp', {
+            p_slug: slug,
+            p_user_email: viewerEmailLc,
+            p_guest_name:
+              session?.user?.user_metadata?.full_name ||
+              viewerEmailLc.split('@')[0] ||
+              'Guest',
+            p_selected_dates: [],
+            p_note: null,
+            p_status: 'interested',
+            p_guest_token: typeof token === 'string' ? token : null,
+          });
+
+          if (rsvpError) throw rsvpError;
+
+          if (response?.join_request_created === true) {
+            setMessage('Request sent. The host will approve access before you join the chat.');
+            return;
+          }
+
+          if (response?.error) {
+            throw new Error(response.error);
+          }
+        }
 
         const threadResponse = await supabase.rpc('get_or_create_event_primary_chat_thread', {
           p_event_id: eventData.id,
@@ -70,7 +99,7 @@ export default function EventChatResolverPage() {
     return () => {
       cancelled = true;
     };
-  }, [router, session?.user?.email, slug]);
+  }, [router, session?.user?.email, session?.user?.user_metadata?.full_name, slug, token]);
 
   return (
     <SafeAreaView style={styles.safeArea}>

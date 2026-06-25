@@ -34,6 +34,7 @@ const COLORS = {
 export default function InviteOptionsScreen() {
   const { t } = useI18n();
   const { form, updateForm } = useFormalDraft();
+  const isPlanningChat = form.creation_mode === 'planning_chat';
 
   const chooseInviteOnly = () => {
     updateForm('invite_option', 'group');
@@ -60,7 +61,10 @@ export default function InviteOptionsScreen() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => router.replace('/create/event-type')} style={styles.navIconBtn}>
+        <TouchableOpacity
+          onPress={() => router.replace(isPlanningChat ? '/create/formal' : '/create/event-type')}
+          style={styles.navIconBtn}
+        >
           <Ionicons name="arrow-back" size={28} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
@@ -71,7 +75,7 @@ export default function InviteOptionsScreen() {
       >
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <StyledText style={styles.stepTitle}>
-            {t('invite_options_title')}
+            {t(isPlanningChat ? 'invite_options_chat_title' : 'invite_options_title')}
           </StyledText>
 
           <TouchableOpacity
@@ -89,7 +93,11 @@ export default function InviteOptionsScreen() {
             </View>
             <View style={styles.optionCopy}>
               <StyledText style={styles.optionTitle}>
-                {t('invite_options_invite_only_title')}
+                {t(
+                  isPlanningChat
+                    ? 'invite_options_chat_invite_only_title'
+                    : 'invite_options_invite_only_title'
+                )}
               </StyledText>
             </View>
           </TouchableOpacity>
@@ -109,7 +117,11 @@ export default function InviteOptionsScreen() {
             </View>
             <View style={styles.optionCopy}>
               <StyledText style={styles.optionTitle}>
-                {t('invite_options_feed_title')}
+                {t(
+                  isPlanningChat
+                    ? 'invite_options_chat_feed_title'
+                    : 'invite_options_feed_title'
+                )}
               </StyledText>
             </View>
           </TouchableOpacity>
@@ -117,7 +129,11 @@ export default function InviteOptionsScreen() {
           {form.invite_option === 'group' && form.visible_in_feed ? (
             <View style={styles.approvalBox}>
               <StyledText style={styles.approvalTitle}>
-                {t('invite_options_approval_title')}
+                {t(
+                  isPlanningChat
+                    ? 'invite_options_chat_approval_title'
+                    : 'invite_options_approval_title'
+                )}
               </StyledText>
 
               <TouchableOpacity
@@ -144,14 +160,21 @@ export default function InviteOptionsScreen() {
                   color={COLORS.primary}
                 />
                 <StyledText style={styles.radioText}>
-                  {t('invite_options_approval_no')}
+                  {t(
+                    isPlanningChat
+                      ? 'invite_options_chat_approval_no'
+                      : 'invite_options_approval_no'
+                  )}
                 </StyledText>
               </TouchableOpacity>
             </View>
           ) : null}
 
           <View style={styles.nav}>
-            <TouchableOpacity style={styles.btn} onPress={() => router.replace('/create/event-type')}>
+            <TouchableOpacity
+              style={styles.btn}
+              onPress={() => router.replace(isPlanningChat ? '/create/formal' : '/create/event-type')}
+            >
               <Ionicons name="arrow-back" size={28} color="#fff" />
             </TouchableOpacity>
 
