@@ -27,6 +27,7 @@ import * as SecureStore from 'expo-secure-store';
 import { goBackOrReplace } from '../../lib/navigation';
 import { getEventAccessDecision } from '../../lib/visibility/getEventAccessDecision';
 import { useI18n } from '@pallinky/i18n/client';
+import ExpandableDescription from '../../components/ExpandableDescription';
 
 const SYSTEM = {
   bg: '#EEF2EC',
@@ -307,7 +308,12 @@ export default function PeekPage() {
           ) : null}
 
           {description ? (
-            <StyledText style={styles.descriptionText}>{description}</StyledText>
+            <ExpandableDescription
+              description={description}
+              textStyle={styles.descriptionText}
+              textColor={SYSTEM.textMuted}
+              accentColor={SYSTEM.primary}
+            />
           ) : null}
 
           <TouchableOpacity

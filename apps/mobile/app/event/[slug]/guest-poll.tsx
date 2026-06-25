@@ -28,6 +28,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase, useSession } from '@pallinky/core';
 import { goBackOrReplace } from '../../../lib/navigation';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import ExpandableDescription from '../../../components/ExpandableDescription';
 
 const SYSTEM = {
   background: '#F6F7F9',
@@ -910,9 +911,12 @@ p_status: notThisTime ? 'no' : 'interested',
             </View>
 
             {event.description ? (
-              <Text style={[styles.desc, { color: theme.text, opacity: 0.82 }, customFont]}>
-                {event.description}
-              </Text>
+              <ExpandableDescription
+                description={event.description}
+                textStyle={[styles.desc, { opacity: 0.82 }, customFont]}
+                textColor={theme.text}
+                accentColor={theme.accent}
+              />
             ) : null}
 
             <Text style={[styles.voteSummary, { color: theme.textMuted }]}>

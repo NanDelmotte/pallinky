@@ -31,6 +31,7 @@ import { useI18n } from '@pallinky/i18n/client';
 import type { AppLanguage } from '@pallinky/i18n/types';
 import { getExternalUrlDomain, normalizeExternalUrl } from '../../../lib/externalUrl';
 import { syncAppIconBadge } from '../../../lib/appBadge';
+import ExpandableDescription from '../../../components/ExpandableDescription';
 
 const SYSTEM = {
   background: '#F6F7F9',
@@ -74,10 +75,6 @@ type EventModel = {
 
 function getExternalLinkText(value: string | null | undefined, fallback: string) {
   return getExternalUrlDomain(value) || fallback;
-}
-
-function getCollapsedDescription(value: string) {
-  return value.length > 156 ? `${value.slice(0, 156).trimEnd()}...` : value;
 }
 
 function getEventModel(event: any): EventModel {
@@ -233,53 +230,6 @@ function HostHeaderSection({
         </View>
       </TouchableOpacity>
     </View>
-  );
-}
-
-function ExpandableDescription({
-  description,
-  textStyle,
-  textColor,
-  accentColor,
-}: {
-  description: string | null | undefined;
-  textStyle: any;
-  textColor: string;
-  accentColor: string;
-}) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const cleanDescription = String(description || '').trim();
-  const collapsedDescription = getCollapsedDescription(cleanDescription);
-
-  if (!cleanDescription) return null;
-
-  return (
-    <TouchableOpacity
-      style={styles.eventInfoDescriptionToggle}
-      activeOpacity={0.82}
-      onPress={() => setIsExpanded((current) => !current)}
-      accessibilityRole="button"
-      accessibilityLabel={isExpanded ? 'Collapse event details' : 'Expand event details'}
-    >
-      <Text
-        style={[
-          textStyle,
-          !isExpanded && styles.eventInfoDescriptionCollapsed,
-          { color: textColor },
-        ]}
-        numberOfLines={isExpanded ? undefined : 3}
-        ellipsizeMode="tail"
-      >
-        {isExpanded ? cleanDescription : collapsedDescription}
-      </Text>
-
-      <Ionicons
-        name={isExpanded ? 'chevron-up' : 'chevron-down'}
-        size={18}
-        color={accentColor}
-        style={styles.eventInfoDescriptionChevron}
-      />
-    </TouchableOpacity>
   );
 }
 
@@ -1661,21 +1611,6 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     opacity: 0.82,
     flex: 1,
-  },
-
-  eventInfoDescriptionCollapsed: {
-    maxHeight: 78,
-    overflow: 'hidden',
-  },
-
-  eventInfoDescriptionToggle: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 6,
-  },
-
-  eventInfoDescriptionChevron: {
-    marginBottom: 1,
   },
 
   infoRow: {
