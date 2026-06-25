@@ -1048,8 +1048,12 @@ setInvites(invitesRes.data || []);
 
     if (isHost && isReachOut) {
       return {
-        label: t('event_manage_reach_out'),
-        onPress: () => router.push(`/event/${slug}/reach-out` as any),
+        label: t('event_open_planning_chat'),
+        onPress: () =>
+          router.push({
+            pathname: '/event/[slug]/chat',
+            params: { slug, token: typeof token === 'string' ? token : '' },
+          } as any),
       };
     }
 
@@ -1059,8 +1063,12 @@ setInvites(invitesRes.data || []);
 
     if (isReachOut) {
       return {
-        label: t('event_help_make_plan'),
-        onPress: () => router.push(`/event/${slug}/reach-out` as any),
+        label: t('event_join_planning_chat'),
+        onPress: () =>
+          router.push({
+            pathname: '/event/[slug]/chat',
+            params: { slug, token: typeof token === 'string' ? token : '' },
+          } as any),
       };
     }
 

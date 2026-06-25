@@ -29,6 +29,7 @@ type QuickStart = {
   icon: keyof typeof Ionicons.glyphMap;
   route: "/create/vibe" | "/create/formal";
   params: { prefill_title: TranslationKey; prefill_desc: TranslationKey };
+  creationMode?: "event" | "planning_chat";
   featured?: boolean;
 };
 
@@ -80,13 +81,14 @@ const AMBIENT_LINE_KEYS: TranslationKey[] = [
 
 const QUICK_STARTS: QuickStart[] = [
   {
-    labelKey: "create_quick_start",
-    icon: "add-outline",
-    route: "/create/vibe",
+    labelKey: "create_quick_planning_chat",
+    icon: "chatbubbles-outline",
+    route: "/create/formal",
     params: {
-      prefill_title: "create_prefill_event",
-      prefill_desc: "create_prefill_details",
+      prefill_title: "create_prefill_planning_chat_title",
+      prefill_desc: "create_prefill_planning_chat_desc",
     },
+    creationMode: "planning_chat",
   },
   {
     labelKey: "create_quick_coffee",
@@ -125,12 +127,12 @@ const QUICK_STARTS: QuickStart[] = [
     },
   },
   {
-    labelKey: "create_visit_museum",
-    icon: "business-outline",
+    labelKey: "create_quick_start",
+    icon: "add-outline",
     route: "/create/vibe",
     params: {
-      prefill_title: "create_prefill_museum_title",
-      prefill_desc: "create_prefill_museum_desc",
+      prefill_title: "create_prefill_event",
+      prefill_desc: "create_prefill_details",
     },
   },
 ];
@@ -186,6 +188,7 @@ export default function CreateLaunchpad() {
         prefill_title: t(item.params.prefill_title),
         prefill_desc: t(item.params.prefill_desc),
         prefill_nonce: String(Date.now()),
+        ...(item.creationMode ? { creation_mode: item.creationMode } : {}),
       },
     });
   };

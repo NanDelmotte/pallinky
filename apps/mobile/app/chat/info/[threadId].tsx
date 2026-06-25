@@ -33,6 +33,8 @@ type LinkedEvent = {
   event_id: string;
   event_slug: string | null;
   event_title: string | null;
+  event_type?: string | null;
+  proposed_dates?: string[] | null;
   starts_at: string | null;
   cover_image_url: string | null;
   host_name: string | null;
@@ -90,6 +92,13 @@ function formatEventMeta(event: LinkedEvent) {
   return parts.join(' • ');
 }
 
+function isPlanningEvent(event: LinkedEvent) {
+  return (
+    event.event_type === 'reach_out' ||
+    (!event.starts_at && (!Array.isArray(event.proposed_dates) || event.proposed_dates.length === 0))
+  );
+}
+
 export default function ChatInfoPage() {
   const { threadId } = useLocalSearchParams<{ threadId: string }>();
   const router = useRouter();
@@ -136,8 +145,38 @@ export default function ChatInfoPage() {
       if (eventError) throw eventError;
       if (memberError) throw memberError;
 
+      const linkedEvents = (eventData || []) as LinkedEvent[];
+      const eventIds = linkedEvents.map((event) => event.event_id).filter(Boolean);
+      let eventTypesById = new Map<string, string | null>();
+      let proposedDatesById = new Map<string, string[]>();
+
+      if (eventIds.length > 0) {
+        const { data: eventRows, error: eventRowsError } = await supabase
+          .from('events')
+          .select('id, event_type, proposed_dates')
+          .in('id', eventIds);
+
+        if (eventRowsError) throw eventRowsError;
+
+        eventTypesById = new Map(
+          ((eventRows || []) as any[]).map((event) => [String(event.id), event.event_type || null])
+        );
+        proposedDatesById = new Map(
+          ((eventRows || []) as any[]).map((event) => [
+            String(event.id),
+            Array.isArray(event.proposed_dates) ? event.proposed_dates : [],
+          ])
+        );
+      }
+
       setThread(((threadData || [])[0] || null) as ThreadDetails | null);
-      setEvents((eventData || []) as LinkedEvent[]);
+      setEvents(
+        linkedEvents.map((event) => ({
+          ...event,
+          event_type: eventTypesById.get(String(event.event_id)) || null,
+          proposed_dates: proposedDatesById.get(String(event.event_id)) || [],
+        }))
+      );
       setMembers((memberData || []) as Member[]);
     } catch (err) {
       console.error('Failed to load chat info', err);
@@ -158,10 +197,16 @@ export default function ChatInfoPage() {
   const upcomingCount = useMemo(() => {
     const now = Date.now();
     return events.filter((event) => {
+      if (isPlanningEvent(event)) return false;
       const startsAtMs = event.starts_at ? new Date(event.starts_at).getTime() : Number.NaN;
       return !Number.isFinite(startsAtMs) || startsAtMs >= now;
     }).length;
   }, [events]);
+
+  const displayEvents = useMemo(
+    () => events.filter((event) => !isPlanningEvent(event)),
+    [events]
+  );
 
   const handleChangeAvatar = useCallback(async () => {
     if (!threadId || !viewerEmail || uploadingAvatar) return;
@@ -355,7 +400,9 @@ export default function ChatInfoPage() {
           <View style={styles.sectionHeader}>
             <StyledText style={styles.sectionTitle}>Linked events</StyledText>
             <StyledText style={styles.sectionMeta}>
-              {upcomingCount > 0 ? `${upcomingCount} upcoming` : `${events.length} total`}
+              {upcomingCount > 0
+                ? `${upcomingCount} upcoming`
+                : `${displayEvents.length} total`}
             </StyledText>
           </View>
 
@@ -366,17 +413,17 @@ export default function ChatInfoPage() {
               router.push({ pathname: '/chat/events/[threadId]', params: { threadId } } as any)
             }
           >
-            {events.length === 0 ? (
+            {displayEvents.length === 0 ? (
               <View style={styles.emptyRow}>
                 <MaterialCommunityIcons name="calendar-heart" size={20} color={COLORS.purpleText} />
                 <StyledText style={styles.emptyRowText}>No events linked yet</StyledText>
               </View>
             ) : (
               <>
-                {events.slice(0, 3).map((event, index) => (
+                {displayEvents.slice(0, 3).map((event, index) => (
                   <View
                     key={event.event_id}
-                    style={[styles.eventPreviewRow, index === Math.min(events.length, 3) - 1 && styles.memberRowLast]}
+                    style={[styles.eventPreviewRow, index === Math.min(displayEvents.length, 3) - 1 && styles.memberRowLast]}
                   >
                     {event.cover_image_url ? (
                       <Image source={{ uri: event.cover_image_url }} style={styles.eventPreviewImage} />
@@ -393,9 +440,9 @@ export default function ChatInfoPage() {
                   </View>
                 ))}
 
-                {events.length > 3 ? (
+                {displayEvents.length > 3 ? (
                   <View style={styles.moreEventsRow}>
-                    <StyledText style={styles.moreEventsText}>See all {events.length} events</StyledText>
+                    <StyledText style={styles.moreEventsText}>See all {displayEvents.length} events</StyledText>
                     <Ionicons name="chevron-forward" size={16} color={COLORS.muted} />
                   </View>
                 ) : null}

@@ -5,6 +5,7 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  Share,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -71,6 +72,15 @@ type LinkedEvent = {
   cover_image_url: string | null;
   host_name: string | null;
   attached_at: string;
+};
+
+type PlanningEvent = {
+  id: string;
+  slug: string;
+  title: string | null;
+  event_type: string | null;
+  host_name: string | null;
+  host_email: string | null;
 };
 
 function normalizeEmail(value: string | null | undefined) {
@@ -146,7 +156,7 @@ function titleForSystemMessage(message: ChatMessage) {
 }
 
 export default function ChatThreadPage() {
-  const { threadId } = useLocalSearchParams<{ threadId: string }>();
+  const { threadId, eventSlug } = useLocalSearchParams<{ threadId: string; eventSlug?: string }>();
   const router = useRouter();
   const { session } = useSession();
   const scrollRef = useRef<ScrollView | null>(null);
@@ -160,6 +170,8 @@ export default function ChatThreadPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [profilesByEmail, setProfilesByEmail] = useState<Record<string, string>>({});
   const [linkedEventsById, setLinkedEventsById] = useState<Record<string, LinkedEvent>>({});
+  const [planningEvent, setPlanningEvent] = useState<PlanningEvent | null>(null);
+  const [sharingPlanningChat, setSharingPlanningChat] = useState(false);
   const [body, setBody] = useState('');
   const [showEmojiTray, setShowEmojiTray] = useState(false);
   const [showGiphyPicker, setShowGiphyPicker] = useState(false);
@@ -210,6 +222,27 @@ export default function ChatThreadPage() {
         }, {})
       );
 
+      const planningSlug =
+        typeof eventSlug === 'string' && eventSlug.trim()
+          ? eventSlug.trim()
+          : nextThread?.latest_event_slug || '';
+
+      if (planningSlug) {
+        const { data: eventRow, error: eventError } = await supabase
+          .from('events')
+          .select('id, slug, title, event_type, host_name, host_email')
+          .eq('slug', planningSlug)
+          .maybeSingle();
+
+        if (!eventError && eventRow?.event_type === 'reach_out') {
+          setPlanningEvent(eventRow as PlanningEvent);
+        } else {
+          setPlanningEvent(null);
+        }
+      } else {
+        setPlanningEvent(null);
+      }
+
       const senderEmails = Array.from(
         new Set(nextMessages.map((item) => normalizeEmail(item.sender_email_lc)).filter(Boolean))
       );
@@ -242,7 +275,7 @@ export default function ChatThreadPage() {
     } finally {
       setLoading(false);
     }
-  }, [threadId, viewerEmail]);
+  }, [eventSlug, threadId, viewerEmail]);
 
   useEffect(() => {
     void fetchChat();
@@ -444,6 +477,47 @@ export default function ChatThreadPage() {
   const title = thread?.title || 'Chat';
   const participantPreview = thread?.participant_preview || 'Chat';
   const avatarUrl = thread?.avatar_url || null;
+
+  const handleSharePlanningChat = useCallback(async () => {
+    if (!planningEvent?.slug || sharingPlanningChat) return;
+
+    setSharingPlanningChat(true);
+
+    try {
+      let groupLink = `https://pallinky.com/event/${planningEvent.slug}/chat`;
+
+      try {
+        const { data, error } = await supabase.rpc('create_external_event_invite', {
+          p_slug: planningEvent.slug,
+          p_invitee_name: null,
+          p_link_mode: 'multi',
+        });
+
+        if (error) throw error;
+
+        const inviteRow = Array.isArray(data) ? data[0] : data;
+        groupLink = inviteRow?.invite_url
+          ? String(inviteRow.invite_url).replace(
+              `/event/${planningEvent.slug}`,
+              `/event/${planningEvent.slug}/chat`
+            )
+          : groupLink;
+      } catch (err) {
+        console.error('Failed to create planning chat invite link', err);
+      }
+
+      const titleText = planningEvent.title || title;
+      await Share.share({
+        message: `I'm starting a chat about "${titleText}" on Pallinky. Join if you're interested and we'll figure it out together: ${groupLink}`,
+      });
+    } catch (err: any) {
+      console.error('Failed to share planning chat', err);
+      Alert.alert('Could not share chat', err?.message || 'Please try again.');
+    } finally {
+      setSharingPlanningChat(false);
+    }
+  }, [planningEvent, sharingPlanningChat, title]);
+
   const openEventFromMessage = useCallback(
     (message: ChatMessage) => {
       const metadataEventId = message.metadata?.event_id ? String(message.metadata.event_id) : '';
@@ -548,6 +622,29 @@ export default function ChatThreadPage() {
               </TouchableOpacity>
             </View>
           </View>
+
+          {planningEvent ? (
+            <View style={styles.planningStrip}>
+              <View style={styles.planningTextWrap}>
+                <Text style={styles.planningEyebrow}>Planning</Text>
+                <Text style={styles.planningTitle} numberOfLines={1}>
+                  {planningEvent.title || title}
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={styles.planningShareButton}
+                onPress={() => void handleSharePlanningChat()}
+                disabled={sharingPlanningChat}
+              >
+                {sharingPlanningChat ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Ionicons name="share-outline" size={18} color="#fff" />
+                )}
+              </TouchableOpacity>
+            </View>
+          ) : null}
 
         <View style={styles.chatArea}>
           <DoodleBackground />
@@ -816,6 +913,41 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: COLORS.muted,
+  },
+  planningStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: COLORS.divider,
+  },
+  planningTextWrap: {
+    flex: 1,
+    minWidth: 0,
+  },
+  planningEyebrow: {
+    color: COLORS.purple,
+    fontSize: 11,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+  },
+  planningTitle: {
+    marginTop: 2,
+    color: COLORS.headerText,
+    fontSize: 15,
+    fontWeight: '900',
+  },
+  planningShareButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.purple,
   },
   chatArea: {
     flex: 1,

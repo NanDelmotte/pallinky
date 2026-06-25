@@ -79,6 +79,7 @@ export default function FormalWhenScreen() {
   };
 
   const openSpecific = () => {
+    updateForm('creation_mode', 'event');
     updateForm('whenMode', 'specific');
     setTempDate(form.specificDate || new Date());
     setShowPicker(false);
@@ -113,6 +114,7 @@ export default function FormalWhenScreen() {
   };
 
   const openOptions = () => {
+    updateForm('creation_mode', 'event');
     updateForm('whenMode', 'options');
     setShowPicker(false);
     setShowEndPicker(false);
@@ -353,6 +355,7 @@ export default function FormalWhenScreen() {
       subtitle: t('create_when_unsure_subtitle'),
       example: t('create_when_unsure_example'),
       onPress: () => {
+        updateForm('creation_mode', 'planning_chat');
         updateForm('whenMode', 'unsure');
         router.replace('/create/invite-options');
       },

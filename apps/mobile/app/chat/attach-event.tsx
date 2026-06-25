@@ -154,7 +154,7 @@ export default function AttachEventPage() {
     }
 
     router.push({
-      pathname: '/create',
+      pathname: '/create/formal',
       params: { chatThreadId: String(threadId) },
     } as any);
   }, [router, threadId]);

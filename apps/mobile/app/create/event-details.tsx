@@ -103,6 +103,7 @@ export default function FormalDetailsScreen() {
   const requiresApproval = form.requires_approval ?? false;
   const legacyVisibility = getLegacyVisibility(visibleInFeed);
   const derivedForwardingMode = requiresApproval ? 'host_approval' : null;
+  const isPlanningChat = form.creation_mode === 'planning_chat';
 
   useEffect(() => {
     initializeFromPrefill({
@@ -259,7 +260,7 @@ export default function FormalDetailsScreen() {
 
       const externalUrl = normalizeExternalUrl(form.external_url);
 
-      const location = form.location || null;
+      const location = isPlanningChat ? null : form.location || null;
 
       if (
         form.whenMode === 'specific' ||
@@ -519,6 +520,31 @@ export default function FormalDetailsScreen() {
         externalUrl,
       });
 
+      if (isPlanningChat) {
+        const { data: threadId, error: threadError } = await supabase.rpc(
+          'get_or_create_event_primary_chat_thread',
+          {
+            p_event_id: result.id,
+            p_user_email: effectiveEmail,
+          }
+        );
+
+        if (threadError) throw threadError;
+        if (!threadId) {
+          throw new Error('Planning chat created, but the chat could not be opened.');
+        }
+
+        router.replace({
+          pathname: '/chat/[threadId]',
+          params: {
+            threadId: String(threadId),
+            eventSlug: result.slug,
+          },
+        } as any);
+
+        return;
+      }
+
       router.push({
         pathname: '/create/event-success',
 
@@ -585,14 +611,22 @@ export default function FormalDetailsScreen() {
         >
           <View>
             <StyledText style={styles.stepTitle}>
-              {t('create_details_title')}
+              {isPlanningChat
+                ? t('create_planning_chat_details_title')
+                : t('create_details_title')}
             </StyledText>
 
             <View style={styles.detailSection}>
-              <StyledText style={styles.sectionTitle}>Description</StyledText>
+              <StyledText style={styles.sectionTitle}>
+                {isPlanningChat ? t('create_planning_chat_context_label') : 'Description'}
+              </StyledText>
 
               <StyledInput
-                placeholder={t('manage_note_placeholder')}
+                placeholder={
+                  isPlanningChat
+                    ? t('create_planning_chat_context_placeholder')
+                    : t('manage_note_placeholder')
+                }
                 value={form.description}
                 onChangeText={(t: string) =>
                   updateForm(
@@ -608,6 +642,7 @@ export default function FormalDetailsScreen() {
               />
             </View>
 
+            {!isPlanningChat ? (
             <View style={styles.detailSection}>
               <StyledText style={styles.sectionTitle}>Location</StyledText>
 
@@ -623,7 +658,9 @@ export default function FormalDetailsScreen() {
                 />
               </View>
             </View>
+            ) : null}
 
+            {!isPlanningChat ? (
             <View style={styles.detailSection}>
               <StyledText style={styles.sectionTitle}>RSVP deadline</StyledText>
 
@@ -705,6 +742,7 @@ export default function FormalDetailsScreen() {
                 </View>
               )}
             </View>
+            ) : null}
 
             <View style={styles.nav}>
               <TouchableOpacity

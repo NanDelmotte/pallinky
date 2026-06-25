@@ -93,7 +93,10 @@ export default function FormalOptionsScreen() {
                 styles.modeCard,
                 form.whenMode === "options" && styles.modeCardSelected,
               ]}
-              onPress={() => updateForm("whenMode", "options")}
+              onPress={() => {
+                updateForm("creation_mode", "event");
+                updateForm("whenMode", "options");
+              }}
             >
               <StyledText style={styles.modeTitle}>
                 {t("create_few_options")}
@@ -117,7 +120,10 @@ export default function FormalOptionsScreen() {
                 styles.modeCard,
                 form.whenMode === "unsure" && styles.modeCardSelected,
               ]}
-              onPress={() => updateForm("whenMode", "unsure")}
+              onPress={() => {
+                updateForm("creation_mode", "planning_chat");
+                updateForm("whenMode", "unsure");
+              }}
             >
               <StyledText style={styles.modeTitle}>
                 {t("create_not_sure")}
