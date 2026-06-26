@@ -116,6 +116,7 @@ export default function EventSuccessScreen() {
     visible_in_feed,
     requires_approval,
     circleId,
+    event_type,
   } = useLocalSearchParams<{
     slug: string;
     manage_handle?: string;
@@ -125,10 +126,12 @@ export default function EventSuccessScreen() {
     visible_in_feed?: string;
     requires_approval?: string;
     circleId?: string;
+    event_type?: string;
   }>();
 
   const visibilityMode = Number(visibility ?? 2);
   const isPublicEvent = visibilityMode === 3;
+  const isPlanningChat = event_type === 'reach_out';
 
   const { isHost } = useHostGate(slug);
   const { session } = useSession();
@@ -175,7 +178,11 @@ export default function EventSuccessScreen() {
     }
 
     try {
-      const message = buildInviteMessage({ title, link: groupLink });
+      const message = buildInviteMessage({
+        title,
+        link: groupLink,
+        kind: isPlanningChat ? 'planning_chat' : 'event',
+      });
       await Share.share({ message });
     } catch (err) {
       console.error('Failed to open native share sheet', err);
@@ -188,7 +195,7 @@ export default function EventSuccessScreen() {
         Alert.alert(t('create_success_share_error'), t('create_success_share_sheet_error'));
       }
     }
-  }, [shareLink, slug, t, title]);
+  }, [isPlanningChat, shareLink, slug, t, title]);
 
   useEffect(() => {
     const timer = setTimeout(() => setShowConfetti(false), 4000);
@@ -498,6 +505,8 @@ export default function EventSuccessScreen() {
             requires_approval || ''
           )}&circleId=${encodeURIComponent(
             circleId || ''
+          )}&event_type=${encodeURIComponent(
+            event_type || ''
           )}`}
         />
 

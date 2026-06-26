@@ -15,7 +15,7 @@
  * - Updates CTA labels:
  *   - "View your event" -> "Open the event"
  *   - "Download Pallinky for iPhone" -> "Get Pallinky for iPhone"
- * - Leaves Reach-out on fallback copy for now
+ * - Uses planning-chat language for Reach-out plans
  */
 
 export const runtime = "nodejs";
@@ -68,12 +68,23 @@ function getConfirmationCopyKeys({
   response,
   isDatePoll,
   isUpdate,
+  isPlanningChat,
 }: {
   response?: string;
   isDatePoll?: boolean;
   isUpdate?: boolean;
+  isPlanningChat?: boolean;
 }): ConfirmationCopyKeys {
   const clean = String(response || "").toLowerCase();
+
+  if (isPlanningChat) {
+    return {
+      subjectKey: "planning_chat_joined_subject",
+      headlineKey: "planning_chat_joined_headline",
+      eventContextKey: "planning_chat_joined_event_context",
+      supportKey: "planning_chat_joined_support",
+    };
+  }
 
   if (isDatePoll) {
     return isUpdate
@@ -118,7 +129,6 @@ function getConfirmationCopyKeys({
     };
   }
 
-  // Temporary fallback for reach-out / unknown states.
   return {
     subjectKey: "formal_yes_subject",
     headlineKey: "formal_yes_headline",
@@ -141,6 +151,7 @@ function renderEmail(job: EmailJob) {
     ? job.payload.proposed_dates
     : [];
   const isDatePoll = proposedDates.length > 0;
+  const isPlanningChat = job.payload?.event_type === "reach_out";
   const isUpdate = job.payload?.is_update === true;
   const isPendingRequest =
     job.payload?.request_pending === true || response === "pending";
@@ -152,6 +163,7 @@ function renderEmail(job: EmailJob) {
     response,
     isDatePoll,
     isUpdate,
+    isPlanningChat,
   });
 
   const subject = t(lang, copyKeys.subjectKey, {
@@ -159,7 +171,12 @@ function renderEmail(job: EmailJob) {
     host: hostName,
   });
 
-  const headline = isPendingRequest
+  const headline = isPendingRequest && isPlanningChat
+    ? t(lang, "planning_chat_request_pending_headline", {
+        event: eventTitle,
+        host: hostName,
+      })
+    : isPendingRequest
     ? t(lang, "rsvp_request_pending_headline", {
         event: eventTitle,
         host: hostName,
@@ -174,7 +191,12 @@ function renderEmail(job: EmailJob) {
     host: hostName,
   });
 
-  const support = isPendingRequest
+  const support = isPendingRequest && isPlanningChat
+    ? t(lang, "planning_chat_request_pending_support", {
+        event: eventTitle,
+        host: hostName,
+      })
+    : isPendingRequest
     ? t(lang, "rsvp_request_pending_support", {
         event: eventTitle,
         host: hostName,
@@ -186,9 +208,11 @@ function renderEmail(job: EmailJob) {
 
   const installHint = t(lang, "post_rsvp_install_hint");
 
+  const eventPath = isPlanningChat ? `/event/${slug}/chat` : `/event/${slug}`;
   const eventUrl = slug
-    ? `https://pallinky.com/event/${slug}${token ? `?token=${token}` : ""}`
+    ? `https://pallinky.com${eventPath}${token ? `?token=${token}` : ""}`
     : "https://pallinky.com";
+  const eventCta = isPlanningChat ? "Open planning chat" : "Open the event";
 
   return {
     subject,
@@ -221,7 +245,7 @@ function renderEmail(job: EmailJob) {
                     href="${eventUrl}"
                     style="display:block;width:100%;box-sizing:border-box;background-color:#43691b;color:#FFFFFF;text-decoration:none;text-align:center;font-size:16px;font-weight:800;line-height:1.2;padding:16px 20px;border-radius:14px;"
                   >
-                    Open the event
+                    ${eventCta}
                   </a>
                 </td>
               </tr>

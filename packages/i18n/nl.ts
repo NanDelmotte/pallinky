@@ -36,6 +36,17 @@ export const nl: Record<TranslationKey, string> = {
   poll_updated_support:
     "Je kunt altijd terugkomen om de opties te bekijken of je stem opnieuw te wijzigen.",
   poll_updated_subject: "Je bijgewerkte stem voor {event} van {host}",
+
+  planning_chat_joined_headline: "Je zit in de planningchat",
+  planning_chat_joined_event_context: "{event}",
+  planning_chat_joined_support:
+    "Spring erin wanneer je wilt. De groep kan in de chat samen het plan uitzoeken.",
+  planning_chat_joined_subject: "Planningchat voor {event}",
+
+  planning_chat_request_pending_headline:
+    "Je verzoek om de planningchat te joinen is verstuurd",
+  planning_chat_request_pending_support:
+    "We laten je weten wanneer {host} je verzoek heeft goedgekeurd.",
   rsvp_request_pending_headline: "Je verzoek is naar de host gestuurd",
   rsvp_request_pending_support:
     "We laten je weten wanneer {host} je verzoek heeft goedgekeurd.",
@@ -480,7 +491,7 @@ export const nl: Record<TranslationKey, string> = {
   inbox_dismiss: "Verwijderen",
   inbox_someone: "Iemand",
   inbox_invited_body: "{host} heeft je uitgenodigd voor {event}",
-  inbox_reached_out_body: "{host} heeft contact gezocht voor {event}",
+  inbox_reached_out_body: "{host} is een planningchat gestart voor {event}",
   inbox_in_event: "In {event}",
   inbox_details_changed: "Details gewijzigd voor {event}",
   inbox_people_responded: "{count} mensen reageerden op {event}",
@@ -503,7 +514,7 @@ export const nl: Record<TranslationKey, string> = {
   inbox_just_now: "Net",
   inbox_direct_message: "Bericht",
   inbox_new_message: "Nieuw bericht",
-  inbox_reaching_out: "Contact",
+  inbox_reaching_out: "Planningchat",
   inbox_series_invitation: "Serie-uitnodiging",
   inbox_invitation: "Uitnodiging",
   inbox_event_updated: "Event aangepast",
@@ -513,7 +524,7 @@ export const nl: Record<TranslationKey, string> = {
   inbox_request_declined: "Afgewezen",
   inbox_event_cancelled: "Event geannuleerd",
   inbox_message_from_host: "Bericht van host",
-  inbox_plan_suggestion: "Nieuw planvoorstel",
+  inbox_plan_suggestion: "Update in planningchat",
   inbox_friend_event_created: "{host} gaat eropuit - ga je mee?",
   inbox_friend_event_created_body: "{host} heeft {event} aangemaakt",
   inbox_rsvp_reminder: "RSVP-reminder",
@@ -594,10 +605,16 @@ export const nl: Record<TranslationKey, string> = {
   event_requests: "Verzoeken",
   event_pending_approvals: "Wachtende goedkeuringen",
   event_manage_poll: "Poll beheren",
-  event_manage_reach_out: "Reach-out beheren",
+  event_manage_reach_out: "Planningchat beheren",
   event_help_make_plan: "Help een plan maken",
   event_open_planning_chat: "Open planningchat",
-  event_join_planning_chat: "Join de chat",
+  event_join_planning_chat: "Join de planningchat",
+  event_planning_chat: "Planningchat",
+  event_opening_planning_chat: "Planningchat openen...",
+  event_planning_chat_request_sent:
+    "Verzoek verstuurd. De host keurt je toegang goed voordat je de planningchat kunt joinen.",
+  event_planning_chat_joined: "Je zit in de planningchat!",
+  event_planning_chat_host_notified: "{host} heeft bericht gekregen.",
   event_edit_vote: "Stem aanpassen",
   event_vote_on_dates: "Stem op datums",
   event_edit_rsvp: "RSVP aanpassen",

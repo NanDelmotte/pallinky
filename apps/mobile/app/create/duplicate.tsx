@@ -525,6 +525,7 @@ const initialEndsAt = endsAtParam ? new Date(endsAtParam) : null;
             title: form.title,
             email: effectiveEmail,
             visibility: String(form.visibility),
+            event_type: 'formal',
           },
         });
 
@@ -565,6 +566,7 @@ const initialEndsAt = endsAtParam ? new Date(endsAtParam) : null;
           title: form.title,
           email: effectiveEmail,
           visibility: String(form.visibility),
+          event_type: form.whenMode === 'unsure' ? 'reach_out' : 'poll',
         },
       });
     } catch (e: any) {

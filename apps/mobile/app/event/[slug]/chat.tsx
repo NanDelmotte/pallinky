@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { supabase, useSession } from '@pallinky/core';
+import { useI18n } from '@pallinky/i18n/client';
 
 const COLORS = {
   background: '#EFEAE2',
@@ -21,8 +22,10 @@ export default function EventChatResolverPage() {
   const { slug, token } = useLocalSearchParams<{ slug: string; token?: string }>();
   const router = useRouter();
   const { session } = useSession();
+  const { t } = useI18n();
 
-  const [message, setMessage] = useState('Opening chat...');
+  const openingMessage = t('event_opening_planning_chat');
+  const [message, setMessage] = useState(openingMessage);
 
   useEffect(() => {
     let cancelled = false;
@@ -30,7 +33,7 @@ export default function EventChatResolverPage() {
     async function resolveThread() {
       const viewerEmail = session?.user?.email?.toLowerCase().trim() || '';
       if (!slug || !viewerEmail) {
-        setMessage('Sign in required');
+        setMessage(t('event_sign_in_required'));
         return;
       }
 
@@ -42,7 +45,7 @@ export default function EventChatResolverPage() {
           .single();
 
         if (eventError) throw eventError;
-        if (!eventData?.id) throw new Error('Event not found');
+        if (!eventData?.id) throw new Error(t('event_not_found'));
 
         const viewerEmailLc = viewerEmail.toLowerCase().trim();
         const isHost = viewerEmailLc === String(eventData.host_email || '').toLowerCase().trim();
@@ -64,7 +67,7 @@ export default function EventChatResolverPage() {
           if (rsvpError) throw rsvpError;
 
           if (response?.join_request_created === true) {
-            setMessage('Request sent. The host will approve access before you join the chat.');
+            setMessage(t('event_planning_chat_request_sent'));
             return;
           }
 
@@ -81,7 +84,7 @@ export default function EventChatResolverPage() {
         if (threadResponse.error) throw threadResponse.error;
         const threadId = threadResponse.data;
 
-        if (!threadId) throw new Error('Could not open chat');
+        if (!threadId) throw new Error(t('event_unable_open_message'));
         if (cancelled) return;
 
         router.replace({
@@ -90,7 +93,7 @@ export default function EventChatResolverPage() {
         } as any);
       } catch (err: any) {
         if (cancelled) return;
-        setMessage(err?.message || 'Could not open chat');
+        setMessage(err?.message || t('event_unable_open_message'));
       }
     }
 
@@ -99,12 +102,12 @@ export default function EventChatResolverPage() {
     return () => {
       cancelled = true;
     };
-  }, [router, session?.user?.email, session?.user?.user_metadata?.full_name, slug, token]);
+  }, [router, session?.user?.email, session?.user?.user_metadata?.full_name, slug, t, token]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.centered}>
-        {message === 'Opening chat...' ? <ActivityIndicator color={COLORS.green} /> : null}
+        {message === openingMessage ? <ActivityIndicator color={COLORS.green} /> : null}
         <Text style={styles.message}>{message}</Text>
       </View>
     </SafeAreaView>

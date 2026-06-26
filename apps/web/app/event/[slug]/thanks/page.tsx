@@ -12,7 +12,7 @@
  *   - headline
  *   - support
  * - Updates CTA labels to feel less transactional
- * - Leaves reach-out on fallback copy for now
+ * - Uses planning-chat language for Reach-out plans
  */
 
 import Link from 'next/link';
@@ -81,12 +81,23 @@ function getConfirmationCopyKeys({
   response,
   isDatePoll,
   isUpdate,
+  isPlanningChat,
 }: {
   response?: string;
   isDatePoll?: boolean;
   isUpdate?: boolean;
+  isPlanningChat?: boolean;
 }): ConfirmationCopyKeys {
   const clean = String(response || '').toLowerCase();
+
+  if (isPlanningChat) {
+    return {
+      subjectKey: 'planning_chat_joined_subject',
+      headlineKey: 'planning_chat_joined_headline',
+      eventContextKey: 'planning_chat_joined_event_context',
+      supportKey: 'planning_chat_joined_support',
+    };
+  }
 
   if (isDatePoll) {
     return isUpdate
@@ -251,6 +262,7 @@ export default async function ThanksPage({ params, searchParams }: Props) {
 
   const proposedDates = Array.isArray(event.proposed_dates) ? event.proposed_dates : [];
   const isDatePoll = proposedDates.length > 0;
+  const isPlanningChat = event.event_type === 'reach_out';
   const isUpdate = is_update === 'true';
   const response = status || 'interested';
   const lang = normalizeLanguage(langParam || locale || language);
@@ -259,6 +271,7 @@ export default async function ThanksPage({ params, searchParams }: Props) {
     response,
     isDatePoll,
     isUpdate,
+    isPlanningChat,
   });
 
   const eventTitle = event.title || 'your event';
@@ -270,14 +283,18 @@ export default async function ThanksPage({ params, searchParams }: Props) {
     host: hostName,
   });
 
-  const headline = isPendingRequest
+  const headline = isPendingRequest && isPlanningChat
+    ? t(lang, 'planning_chat_request_pending_headline', { event: eventTitle, host: hostName })
+    : isPendingRequest
     ? t(lang, 'rsvp_request_pending_headline', { event: eventTitle, host: hostName })
     : t(lang, copyKeys.headlineKey, {
         event: eventTitle,
         host: hostName,
       });
 
-  const support = isPendingRequest
+  const support = isPendingRequest && isPlanningChat
+    ? t(lang, 'planning_chat_request_pending_support', { event: eventTitle, host: hostName })
+    : isPendingRequest
     ? t(lang, 'rsvp_request_pending_support', { event: eventTitle, host: hostName })
     : t(lang, copyKeys.supportKey, {
         event: eventTitle,
@@ -447,7 +464,7 @@ export default async function ThanksPage({ params, searchParams }: Props) {
 
           {canOpenChat ? (
             <Link
-              href={`https://pallinky.com/event/${slug}${token ? `?token=${token}` : ''}`}
+              href={`https://pallinky.com/event/${slug}${isPlanningChat ? '/chat' : ''}${token ? `?token=${token}` : ''}`}
               style={{
                 width: '100%',
                 textDecoration: 'none',
@@ -493,7 +510,7 @@ export default async function ThanksPage({ params, searchParams }: Props) {
                       marginBottom: '2px',
                     }}
                   >
-                    Open the event
+                    {isPlanningChat ? 'Open planning chat' : 'Open the event'}
                   </div>
                   <div
                     style={{
@@ -502,7 +519,9 @@ export default async function ThanksPage({ params, searchParams }: Props) {
                       color: SYSTEM.textMuted,
                     }}
                   >
-                    Go back to the invitation, details, and guest list.
+                    {isPlanningChat
+                      ? 'Join the group chat and help figure out the plan.'
+                      : 'Go back to the invitation, details, and guest list.'}
                   </div>
                 </div>
               </div>
