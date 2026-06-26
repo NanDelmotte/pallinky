@@ -6,8 +6,11 @@
 import { formatInEventTimeZone } from '@pallinky/core/src/dateTime';
 import { createClient } from '../../../lib/supabase/server';
 import { notFound } from 'next/navigation';
-import { cookies } from 'next/headers';
 import RSVPButton from './RSVPButton';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 const SYSTEM = {
   background: '#F6F7F9',
@@ -126,14 +129,13 @@ export default async function EventPage({ params, searchParams }: Props) {
   const { token = '' } = await searchParams;
 
   const supabase = await createClient();
-  const cookieStore = await cookies();
 
   const { data: event } = await supabase.from('events').select('*').eq('slug', slug).single();
 
   if (!event) notFound();
 
   const isPoll = Array.isArray(event.proposed_dates) && event.proposed_dates.length > 0;
-const isFormal = !isPoll && (event.event_type === 'formal' || !!event.starts_at);
+  const isFormal = !isPoll && (event.event_type === 'formal' || !!event.starts_at);
   const themeKey =
     event?.gif_key && PALETTES[event.gif_key]
       ? event.gif_key
@@ -152,39 +154,59 @@ const isFormal = !isPoll && (event.event_type === 'formal' || !!event.starts_at)
     ? event.description.split('Location: ')[1].trim()
     : event?.location;
 
- let rememberedEmail =
-  cookieStore.get('pallinky_guest_email')?.value?.toLowerCase().trim() || '';
+  let rememberedEmail = '';
+  let guestToken: string | null = null;
+  const candidateToken = token.trim() || null;
 
-const guestToken =
-  token || cookieStore.get('pallinky_guest_token')?.value || null;
-
-if (guestToken) {
-  const { data: tokenRow } = await supabase
-    .from('rsvps')
-    .select('email_lc')
-    .eq('event_id', event.id)
-    .eq('guest_token', guestToken)
-    .maybeSingle();
-
-  if (tokenRow?.email_lc) {
-    rememberedEmail = tokenRow.email_lc.toLowerCase().trim();
-  } else {
-    const { data: requestTokenRow } = await supabase
-      .from('rsvp_join_requests')
-      .select('requester_email_lc')
+  if (candidateToken) {
+    const { data: inviteTokenRow } = await supabase
+      .from('event_invites')
+      .select('invitee_email_lc, invite_link_mode, source_type')
       .eq('event_id', event.id)
-      .eq('guest_token', guestToken)
-      .order('created_at', { ascending: false })
-      .limit(1)
+      .eq('guest_token', candidateToken)
       .maybeSingle();
 
-    if (requestTokenRow?.requester_email_lc) {
-      rememberedEmail = requestTokenRow.requester_email_lc.toLowerCase().trim();
+    const isGroupAccessToken =
+      inviteTokenRow &&
+      (inviteTokenRow.invite_link_mode === 'multi' ||
+        inviteTokenRow.source_type === 'group_share' ||
+        !inviteTokenRow.invitee_email_lc);
+
+    if (isGroupAccessToken) {
+      guestToken = candidateToken;
+    } else {
+      const { data: tokenRow } = await supabase
+        .from('rsvps')
+        .select('email_lc')
+        .eq('event_id', event.id)
+        .eq('guest_token', candidateToken)
+        .maybeSingle();
+
+      if (tokenRow?.email_lc) {
+        guestToken = candidateToken;
+        rememberedEmail = tokenRow.email_lc.toLowerCase().trim();
+      } else {
+        const { data: requestTokenRow } = await supabase
+          .from('rsvp_join_requests')
+          .select('requester_email_lc')
+          .eq('event_id', event.id)
+          .eq('guest_token', candidateToken)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (requestTokenRow?.requester_email_lc) {
+          guestToken = candidateToken;
+          rememberedEmail = requestTokenRow.requester_email_lc.toLowerCase().trim();
+        } else if (inviteTokenRow) {
+          guestToken = candidateToken;
+          rememberedEmail = inviteTokenRow.invitee_email_lc?.toLowerCase().trim() || '';
+        }
+      }
     }
   }
-	}
 
-  if (event.visibility !== 3) {
+  if (event.visibility === 1) {
     const { data: accessRows } = await supabase.rpc('get_event_access_decision', {
       p_event_id: event.id,
       p_viewer_email: rememberedEmail || null,

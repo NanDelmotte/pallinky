@@ -114,6 +114,9 @@ export default function RSVPButton({
   const secondaryBg = theme.isDark ? 'transparent' : SYSTEM.surface;
   const secondaryText = theme.accent;
   const placeholderColor = theme.isDark ? 'rgba(255,247,182,0.55)' : 'rgba(31,42,27,0.45)';
+  const fieldSlug = String(event?.slug || 'event').replace(/[^a-zA-Z0-9_-]/g, '_');
+  const fieldName = (field: string) => `pallinky_${fieldSlug}_${field}`;
+  const fieldAutoComplete = existingGuest ? 'off' : 'new-password';
 
   const baseFieldStyle: React.CSSProperties = {
     width: '100%',
@@ -232,8 +235,9 @@ export default function RSVPButton({
       const confirmationStatus = result?.join_request_created ? 'pending' : finalStatus;
 
       if (resultGuestToken) {
-        document.cookie = `pallinky_guest_token=${resultGuestToken}; path=/; max-age=31536000`;
-        document.cookie = `pallinky_guest_email=${cleanEmail}; path=/; max-age=31536000`;
+        document.cookie = `pallinky_guest_token_${String(event.slug).replace(/[^a-zA-Z0-9_-]/g, '_')}=; path=/; max-age=0`;
+        document.cookie = 'pallinky_guest_token=; path=/; max-age=0';
+        document.cookie = 'pallinky_guest_email=; path=/; max-age=0';
       }
 
       const fallbackThanksUrl = buildThanksUrl({
@@ -307,7 +311,9 @@ export default function RSVPButton({
           }}
         >
           <input
+            autoComplete={fieldAutoComplete}
             className="pallinky-rsvp-field"
+            name={fieldName('guest_name')}
             placeholder="Full Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -318,7 +324,10 @@ export default function RSVPButton({
             }}
           />
           <input
+            autoComplete={fieldAutoComplete}
             className="pallinky-rsvp-field"
+            inputMode="email"
+            name={fieldName('guest_email')}
             placeholder="Email Address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -329,7 +338,10 @@ export default function RSVPButton({
             }}
           />
           <input
+            autoComplete={fieldAutoComplete}
             className="pallinky-rsvp-field"
+            inputMode="tel"
+            name={fieldName('guest_phone')}
             placeholder="Phone number (optional)"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
@@ -340,7 +352,9 @@ export default function RSVPButton({
             }}
           />
           <textarea
+            autoComplete={fieldAutoComplete}
             className="pallinky-rsvp-textarea"
+            name={fieldName('guest_note')}
             placeholder="Note for the host..."
             value={note}
             onChange={(e) => setNote(e.target.value)}
@@ -538,7 +552,9 @@ export default function RSVPButton({
           </div>
 
           <textarea
+            autoComplete={fieldAutoComplete}
             className="pallinky-rsvp-textarea"
+            name={fieldName('guest_note')}
             placeholder="Add a note (optional)"
             value={note}
             onChange={(e) => setNote(e.target.value)}
@@ -576,7 +592,9 @@ export default function RSVPButton({
           }}
         >
           <input
+            autoComplete={fieldAutoComplete}
             className="pallinky-rsvp-field"
+            name={fieldName('guest_name')}
             placeholder="Your name"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -587,7 +605,10 @@ export default function RSVPButton({
             }}
           />
           <input
+            autoComplete={fieldAutoComplete}
             className="pallinky-rsvp-field"
+            inputMode="email"
+            name={fieldName('guest_email')}
             placeholder="Email address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -598,7 +619,10 @@ export default function RSVPButton({
             }}
           />
           <input
+            autoComplete={fieldAutoComplete}
             className="pallinky-rsvp-field"
+            inputMode="tel"
+            name={fieldName('guest_phone')}
             placeholder="Phone number (optional)"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
@@ -662,7 +686,9 @@ export default function RSVPButton({
         </div>
 
         <textarea
+          autoComplete={fieldAutoComplete}
           className="pallinky-rsvp-textarea"
+          name={fieldName('guest_note')}
           placeholder="Add a note (optional)"
           value={note}
           onChange={(e) => setNote(e.target.value)}
@@ -699,7 +725,9 @@ export default function RSVPButton({
         }}
       >
         <input
+          autoComplete={fieldAutoComplete}
           className="pallinky-rsvp-field"
+          name={fieldName('guest_name')}
           placeholder="Your name"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -710,7 +738,10 @@ export default function RSVPButton({
           }}
         />
         <input
+          autoComplete={fieldAutoComplete}
           className="pallinky-rsvp-field"
+          inputMode="email"
+          name={fieldName('guest_email')}
           placeholder="Email address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -721,7 +752,10 @@ export default function RSVPButton({
           }}
         />
         <input
+          autoComplete={fieldAutoComplete}
           className="pallinky-rsvp-field"
+          inputMode="tel"
+          name={fieldName('guest_phone')}
           placeholder="Phone number (optional)"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
