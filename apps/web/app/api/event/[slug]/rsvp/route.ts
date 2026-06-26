@@ -132,6 +132,7 @@ export async function POST(
             payload: {
               slug: event.slug,
               event_title: event.title,
+              event_type: event.event_type,
               host_name: event.host_name,
               response: 'pending',
               request_pending: true,
@@ -204,6 +205,7 @@ export async function POST(
           payload: {
             slug: event.slug,
             event_title: event.title,
+            event_type: event.event_type,
             host_name: event.host_name,
             response: status,
             token: guestToken,

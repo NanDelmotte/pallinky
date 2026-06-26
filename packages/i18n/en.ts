@@ -36,6 +36,17 @@ export const en: Record<TranslationKey, string> = {
     "You can go back anytime to see the options or change your vote again.",
   poll_updated_subject: "{event} organized by {host}",
 
+  planning_chat_joined_headline: "You’re in the planning chat",
+  planning_chat_joined_event_context: "{event}",
+  planning_chat_joined_support:
+    "Jump in when you’re ready. The group can use the chat to figure out the plan together.",
+  planning_chat_joined_subject: "Planning chat for {event}",
+
+  planning_chat_request_pending_headline:
+    "Your request to join the planning chat was sent",
+  planning_chat_request_pending_support:
+    "We’ll let you know when {host} approves your request.",
+
   rsvp_request_pending_headline: "Your request has been sent to the host",
   rsvp_request_pending_support:
     "We’ll let you know when {host} approves your request.",
@@ -444,7 +455,7 @@ export const en: Record<TranslationKey, string> = {
   inbox_dismiss: "Dismiss",
   inbox_someone: "Someone",
   inbox_invited_body: "{host} invited you to {event}",
-  inbox_reached_out_body: "{host} reached out for {event}",
+  inbox_reached_out_body: "{host} started a planning chat for {event}",
   inbox_in_event: "In {event}",
   inbox_details_changed: "Details changed for {event}",
   inbox_people_responded: "{count} people responded to {event}",
@@ -467,7 +478,7 @@ export const en: Record<TranslationKey, string> = {
   inbox_just_now: "Just now",
   inbox_direct_message: "Direct message",
   inbox_new_message: "New message",
-  inbox_reaching_out: "Reaching Out",
+  inbox_reaching_out: "Planning chat",
   inbox_series_invitation: "Series invitation",
   inbox_invitation: "Invitation",
   inbox_event_updated: "Event updated",
@@ -477,7 +488,7 @@ export const en: Record<TranslationKey, string> = {
   inbox_request_declined: "Request declined",
   inbox_event_cancelled: "Event cancelled",
   inbox_message_from_host: "Message from host",
-  inbox_plan_suggestion: "New plan suggestion",
+  inbox_plan_suggestion: "Planning chat update",
   inbox_friend_event_created: "{host} is going out - want to join?",
   inbox_friend_event_created_body: "{host} created {event}",
   inbox_rsvp_reminder: "RSVP reminder",
@@ -557,10 +568,16 @@ export const en: Record<TranslationKey, string> = {
   event_requests: "Requests",
   event_pending_approvals: "Pending approvals",
   event_manage_poll: "Manage poll",
-  event_manage_reach_out: "Manage reach-out",
+  event_manage_reach_out: "Manage planning chat",
   event_help_make_plan: "Help make a plan",
   event_open_planning_chat: "Open planning chat",
-  event_join_planning_chat: "Join the chat",
+  event_join_planning_chat: "Join planning chat",
+  event_planning_chat: "Planning chat",
+  event_opening_planning_chat: "Opening planning chat...",
+  event_planning_chat_request_sent:
+    "Request sent. The host will approve access before you join the planning chat.",
+  event_planning_chat_joined: "You’re in the planning chat!",
+  event_planning_chat_host_notified: "{host} has been notified.",
   event_edit_vote: "Edit vote",
   event_vote_on_dates: "Vote on dates",
   event_edit_rsvp: "Edit RSVP",

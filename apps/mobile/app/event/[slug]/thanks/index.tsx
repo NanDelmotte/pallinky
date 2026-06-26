@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '@pallinky/core';
+import { useI18n } from '@pallinky/i18n/client';
 import { CalendarButton } from '@pallinky/ui';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -58,6 +59,7 @@ const STORE_URL =
 export default function ThanksPage() {
   const { slug, status } = useLocalSearchParams<{ slug: string; status: string }>();
   const router = useRouter();
+  const { t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [event, setEvent] = useState<any>(null);
 
@@ -84,6 +86,7 @@ export default function ThanksPage() {
   }
 
   const canOpenChat = ['yes', 'maybe', 'interested'].includes(String(status || '').toLowerCase());
+  const isPlanningChat = event.event_type === 'reach_out';
   const theme = PALETTES[event.gif_key] || PALETTES.zen;
   const customFont = {
     fontFamily:
@@ -95,6 +98,7 @@ export default function ThanksPage() {
     'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExeTV1bmo3bXRrcGc1cmZtM3lzY2prdnV3aDcxazduOWUxY29uZDNteCZlcD12MV9naWZzX3RyZW5kaW5nJmN0PWc/89x4osEodHEoo/giphy.gif';
 
   const getStatusMessage = () => {
+    if (isPlanningChat && status === 'interested') return t('event_planning_chat_joined');
     if (status === 'yes') return "You're on the list!";
     if (status === 'maybe') return "We've marked you as a maybe.";
     if (status === 'interested') return "You're Hooked!";
@@ -121,7 +125,9 @@ export default function ThanksPage() {
 
           <Text style={[styles.title, { color: theme.text }, customFont]}>{getStatusMessage()}</Text>
           <Text style={[styles.subtitle, { color: theme.text, opacity: 0.7 }, customFont]}>
-            {event.host_name} has been notified.
+            {isPlanningChat
+              ? t('event_planning_chat_host_notified', { host: event.host_name || 'The host' })
+              : `${event.host_name} has been notified.`}
           </Text>
 
           {Platform.OS === 'web' && (
@@ -175,7 +181,9 @@ export default function ThanksPage() {
                 ]}
                 onPress={() => router.replace(`/event/${slug}/chat` as any)}
               >
-                <Text style={[styles.primaryBtnText, { color: theme.bg }]}>Open Chat</Text>
+                <Text style={[styles.primaryBtnText, { color: theme.bg }]}>
+                  {isPlanningChat ? t('event_open_planning_chat') : t('event_open_chat')}
+                </Text>
               </TouchableOpacity>
             )}
 

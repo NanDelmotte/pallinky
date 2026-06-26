@@ -19,7 +19,8 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-import { supabase, useSession } from '@pallinky/core';
+import { buildInviteMessage, supabase, useSession } from '@pallinky/core';
+import { useI18n } from '@pallinky/i18n/client';
 import { GiphyPicker } from '@pallinky/ui';
 import { syncAppIconBadge } from '../../lib/appBadge';
 
@@ -159,6 +160,7 @@ export default function ChatThreadPage() {
   const { threadId, eventSlug } = useLocalSearchParams<{ threadId: string; eventSlug?: string }>();
   const router = useRouter();
   const { session } = useSession();
+  const { t } = useI18n();
   const scrollRef = useRef<ScrollView | null>(null);
 
   const viewerEmail = normalizeEmail(session?.user?.email);
@@ -508,15 +510,20 @@ export default function ChatThreadPage() {
 
       const titleText = planningEvent.title || title;
       await Share.share({
-        message: `I'm starting a chat about "${titleText}" on Pallinky. Join if you're interested and we'll figure it out together: ${groupLink}`,
+        message: buildInviteMessage({
+          kind: 'planning_chat',
+          title: titleText,
+          link: groupLink,
+          hostName: planningEvent.host_name,
+        }),
       });
     } catch (err: any) {
       console.error('Failed to share planning chat', err);
-      Alert.alert('Could not share chat', err?.message || 'Please try again.');
+      Alert.alert(t('common_error'), err?.message || 'Please try again.');
     } finally {
       setSharingPlanningChat(false);
     }
-  }, [planningEvent, sharingPlanningChat, title]);
+  }, [planningEvent, sharingPlanningChat, t, title]);
 
   const openEventFromMessage = useCallback(
     (message: ChatMessage) => {
@@ -626,7 +633,7 @@ export default function ChatThreadPage() {
           {planningEvent ? (
             <View style={styles.planningStrip}>
               <View style={styles.planningTextWrap}>
-                <Text style={styles.planningEyebrow}>Planning</Text>
+                <Text style={styles.planningEyebrow}>{t('event_planning_chat')}</Text>
                 <Text style={styles.planningTitle} numberOfLines={1}>
                   {planningEvent.title || title}
                 </Text>

@@ -91,6 +91,7 @@ export default function RSVPButton({
 
   const proposedDates = Array.isArray(event.proposed_dates) ? event.proposed_dates : [];
   const isDatePoll = proposedDates.length > 0;
+  const isPlanningChat = event.event_type === 'reach_out';
   const isFormal = !isDatePoll && (event.event_type === 'formal' || !!event.starts_at);
 
   const themeKey =
@@ -682,14 +683,14 @@ export default function RSVPButton({
             opacity: 0.6,
           }}
         >
-          Optional note for the host
+          {isPlanningChat ? 'Optional message for the planning chat' : 'Optional note for the host'}
         </div>
 
         <textarea
           autoComplete={fieldAutoComplete}
           className="pallinky-rsvp-textarea"
           name={fieldName('guest_note')}
-          placeholder="Add a note (optional)"
+          placeholder={isPlanningChat ? 'Add a message (optional)' : 'Add a note (optional)'}
           value={note}
           onChange={(e) => setNote(e.target.value)}
           style={{
@@ -714,7 +715,7 @@ export default function RSVPButton({
           opacity: 0.6,
         }}
       >
-        Your details
+        {isPlanningChat ? 'Join the planning chat' : 'Your details'}
       </div>
 
       <div
@@ -787,7 +788,15 @@ export default function RSVPButton({
           cursor: 'pointer',
         }}
       >
-        {loading ? 'Saving...' : existingGuest ? 'Update response' : 'Submit'}
+        {loading
+          ? 'Saving...'
+          : existingGuest
+            ? isPlanningChat
+              ? 'Update your details'
+              : 'Update response'
+            : isPlanningChat
+              ? 'Join planning chat'
+              : 'Submit'}
       </button>
     </div>
   );

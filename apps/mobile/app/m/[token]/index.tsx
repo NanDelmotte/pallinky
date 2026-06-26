@@ -328,6 +328,7 @@ export default function ManageEventScreen() {
                   visibility: String(event.visibility ?? 3),
                   visible_in_feed: String(event.visible_in_feed ?? event.visibility !== 1),
                   requires_approval: String(event.requires_approval ?? false),
+                  event_type: event.event_type || "formal",
                 },
               })
             }

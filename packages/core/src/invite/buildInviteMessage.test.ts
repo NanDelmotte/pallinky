@@ -28,4 +28,17 @@ describe('buildInviteMessage', () => {
       `Join us:\n${link}`
     );
   });
+
+  it('uses planning chat language when requested', () => {
+    expect(
+      buildInviteMessage({
+        kind: 'planning_chat',
+        hostName: 'Alice',
+        title: 'Sunday coffee',
+        link: 'https://pallinky.com/event/coffee/chat',
+      })
+    ).toBe(
+      'Alice is starting a planning chat about Sunday coffee.\n\nJoin the planning chat:\nhttps://pallinky.com/event/coffee/chat'
+    );
+  });
 });

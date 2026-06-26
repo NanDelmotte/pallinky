@@ -279,11 +279,14 @@ function renderNotification(job: Job, badgeCount: number) {
   const senderName = job.payload?.sender_name || "Someone";
   const dmPreview = job.payload?.body || "Sent you a message";
   const message = job.payload?.message || "";
+  const isPlanningChat = job.payload?.event_type === "reach_out";
 
   const contentMap: Record<string, { title: string; body: string }> = {
     invite_created: {
-      title: "Invitation",
-      body: `${hostName} invited you to ${eventTitle}`,
+      title: isPlanningChat ? "Planning chat" : "Invitation",
+      body: isPlanningChat
+        ? `${hostName} started a planning chat for ${eventTitle}`
+        : `${hostName} invited you to ${eventTitle}`,
     },
     host_message: {
       title: "Message from host",
@@ -320,16 +323,22 @@ function renderNotification(job: Job, badgeCount: number) {
       }),
     },
     join_request_created: {
-      title: "Join request",
-      body: `${guestName} wants to join ${eventTitle}`,
+      title: isPlanningChat ? "Planning chat request" : "Join request",
+      body: isPlanningChat
+        ? `${guestName} wants to join the planning chat for ${eventTitle}`
+        : `${guestName} wants to join ${eventTitle}`,
     },
     join_request_approved: {
       title: "You're in",
-      body: `${hostName} approved your request for ${eventTitle}`,
+      body: isPlanningChat
+        ? `${hostName} approved your request to join the planning chat for ${eventTitle}`
+        : `${hostName} approved your request for ${eventTitle}`,
     },
     join_request_denied: {
       title: "Request declined",
-      body: `${hostName} declined your request for ${eventTitle}`,
+      body: isPlanningChat
+        ? `${hostName} declined your request to join the planning chat for ${eventTitle}`
+        : `${hostName} declined your request for ${eventTitle}`,
     },
     rsvp_deadline_reminder: {
       title: "RSVP reminder",
@@ -340,12 +349,14 @@ function renderNotification(job: Job, badgeCount: number) {
       body: dmPreview,
     },
     guest_rsvp_confirmation: {
-      title: "RSVP recorded",
-      body: `You're on the list for ${eventTitle}`,
+      title: isPlanningChat ? "Planning chat joined" : "RSVP recorded",
+      body: isPlanningChat
+        ? `You're in the planning chat for ${eventTitle}`
+        : `You're on the list for ${eventTitle}`,
     },
     reach_out_suggestion: {
-      title: "New plan suggestion",
-      body: message || `${guestName} suggested something for ${eventTitle}`,
+      title: "Planning chat update",
+      body: message || `${guestName} shared an idea for ${eventTitle}`,
     },
     friend_event_created: {
       title: `${hostName} is going out - want to join?`,
